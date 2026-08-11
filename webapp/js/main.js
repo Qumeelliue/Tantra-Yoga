@@ -3,16 +3,17 @@ import { h, mount } from './ui/dom.js'
 import { initFx, sfx, setTint } from './ui/fx.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
+import { meditationScreen } from './ui/screens/meditation.js'
 import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS } from './core/data.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
-  takeCardReward, gainRelic, meditatableCards, doMeditate,
+  takeCardReward, gainRelic,
   eventOptions, resolveEventChoice, isNodeDone, markNodeDone,
   floorComplete, advanceFloor, CHAKRAS,
   rollShop, buyShopCard, buyShopRemove, buyShopRelic, SHOP_COSTS,
 } from './core/run.js'
 import {
-  loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById,
+  loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById, cloudSync,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -30,6 +31,13 @@ function boot() {
   } catch {}
   app = { meta: loadMeta(), run: null, combat: null }
   showTitle()
+  // фаза 2 (§17.1): синк через Telegram CloudStorage — побеждает свежее сохранение
+  cloudSync(app.meta).then((fresh) => {
+    if (fresh) {
+      app.meta = fresh
+      showTitle()
+    }
+  })
 }
 
 function show(node) {
@@ -314,29 +322,7 @@ function pickRewardCard(id) {
 // ─────────────────────────────────────────────────────────────
 
 function showMeditation() {
-  const run = app.run
-  const burnable = meditatableCards(run)
-  show(h('div', { class: 'screen active node-screen' },
-    h('div', { class: 'breath' }, h('div', { class: 'breath-om' }, 'ॐ')),
-    h('div', { class: 'node-title display' }, 'Медитация'),
-    h('p', { class: 'node-text' }, 'Ум успокаивается. Восстановите 5 ХП. Отпустите до двух карт-оков — они навсегда покинут ум.'),
-    burnable.length > 0
-      ? h('div', { class: 'choices' },
-          [...new Set(burnable)].map((id) =>
-            h('div', { class: 'choice', onclick: () => pickMeditation([id]) },
-              h('div', { class: 'c-main' }, CARDS[id].name),
-              h('div', { class: 'c-sub' }, `сожжение · осталось в колоде: ${burnable.filter((x) => x === id).length}`))))
-      : h('p', { class: 'hint center' }, 'В колоде нет оков — ум чист. Возьмите покой.'),
-    h('button', { class: 'btn ghost', onclick: () => pickMeditation([]) }, 'Завершить медитацию'),
-  ))
-}
-
-function pickMeditation(ids) {
-  const run = app.run
-  const res = doMeditate(run, ids)
-  sfx.med()
-  markNodeDone(run)
-  afterNode()
+  show(meditationScreen(app, { onDone: () => { markNodeDone(app.run); afterNode() } }))
 }
 
 // ─────────────────────────────────────────────────────────────

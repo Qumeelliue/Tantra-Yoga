@@ -196,13 +196,31 @@ export function meditatableCards(run) {
   return run.deck.filter((id) => CARDS[id].type === 'curse' || CARDS[id].type === 'vritti')
 }
 
-export function doMeditate(run, burnIds) {
-  for (const id of burnIds) {
+// Эффекты медитации по глубине дыхания (quality 0..3, §16.2 идея №11).
+// Чем глубже дыхание, тем больше ХП и саттвы, и тем больше карт можно отпустить.
+export function meditateEffects(quality = 0) {
+  const q = Math.max(0, Math.min(3, Math.floor(quality) || 0))
+  return {
+    quality: q,
+    heal: 3 + q * 2, // 0→3, 1→5, 2→7, 3→9
+    maxBurn: 1 + q, // 0→1, 1→2, 2→3, 3→4
+    sattvaBonus: q >= 3 ? 2 : q >= 2 ? 1 : 0,
+  }
+}
+
+export function doMeditate(run, burnIds, { quality = 0 } = {}) {
+  const fx = meditateEffects(quality)
+  const toBurn = (burnIds || []).slice(0, fx.maxBurn)
+  for (const id of toBurn) {
     const i = run.deck.indexOf(id)
     if (i >= 0) run.deck.splice(i, 1)
   }
-  run.hp = Math.min(run.maxHp, run.hp + 5)
-  return { burned: burnIds.length, healed: 5 }
+  run.hp = Math.min(run.maxHp, run.hp + fx.heal)
+  if (fx.sattvaBonus > 0) {
+    const base = run.gunaStart || { s: 3, r: 3, t: 3 }
+    run.gunaStart = { ...base, s: base.s + fx.sattvaBonus }
+  }
+  return { burned: toBurn.length, healed: fx.heal, maxBurn: fx.maxBurn, sattvaBonus: fx.sattvaBonus, quality: fx.quality }
 }
 
 // ─────────────────────────────────────────────────────────────

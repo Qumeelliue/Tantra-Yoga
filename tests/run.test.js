@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createRun, startCombatAtNode, finishCombat, currentNode, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic } from '@webapp/js/core/run.js'
+import { createRun, startCombatAtNode, finishCombat, currentNode, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic, doMeditate, meditateEffects } from '@webapp/js/core/run.js'
 import { mulberry32, checkOutcome } from '@webapp/js/core/engine.js'
 import { EMPTY_META } from '@webapp/js/core/save.js'
 
@@ -145,6 +145,55 @@ describe('забег: поток', () => {
     expect(res.dead).toBe(true)
     expect(run.status).toBe('dead')
     expect(run.outcome).toBe('death')
+  })
+})
+
+describe('медитация с дыханием (§16.2, идея №11)', () => {
+  it('качество 0: +3 ХП, до 1 карты, без саттвы', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(2) })
+    run.hp = 50
+    const before = run.deck.length
+    const res = doMeditate(run, ['cinta'], { quality: 0 })
+    expect(res.healed).toBe(3)
+    expect(res.maxBurn).toBe(1)
+    expect(res.sattvaBonus).toBe(0)
+    expect(run.hp).toBe(53)
+    expect(run.deck.length).toBe(before - 1)
+  })
+
+  it('качество 3: +9 ХП, до 4 карт, +2 саттвы в следующий бой', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(2) })
+    run.hp = 50
+    const gunaBefore = run.gunaStart.s
+    const before = run.deck.length
+    const res = doMeditate(run, ['cinta', 'cinta', 'cinta', 'cinta', 'cinta'], { quality: 3 })
+    expect(res.healed).toBe(9)
+    expect(res.maxBurn).toBe(4)
+    expect(res.sattvaBonus).toBe(2)
+    expect(res.burned).toBe(4) // лимит не даёт сжечь больше 4
+    expect(run.hp).toBe(59)
+    expect(run.deck.length).toBe(before - 4)
+    expect(run.gunaStart.s).toBe(gunaBefore + 2)
+  })
+
+  it('качество 2: +7 ХП, +1 саттва', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(2) })
+    const res = doMeditate(run, [], { quality: 2 })
+    expect(res.healed).toBe(7)
+    expect(res.sattvaBonus).toBe(1)
+    expect(run.gunaStart.s).toBe(4)
+  })
+
+  it('качество обрезается и не бывает отрицательным', () => {
+    expect(meditateEffects(5)).toEqual({ quality: 3, heal: 9, maxBurn: 4, sattvaBonus: 2 })
+    expect(meditateEffects(-2).quality).toBe(0)
+  })
+
+  it('лечение не превышает максимум ХП', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(2) })
+    run.hp = run.maxHp - 1
+    doMeditate(run, [], { quality: 3 })
+    expect(run.hp).toBe(run.maxHp)
   })
 })
 

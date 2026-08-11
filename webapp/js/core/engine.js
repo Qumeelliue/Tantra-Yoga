@@ -233,6 +233,24 @@ export function playCard(state, handIndex, targetEnemy = 0) {
   return events
 }
 
+// Бонус кииртан-ритма (§16.2, идея №7): точное пение усиливает кииртану.
+// quality = 0..3 точных тапов по биту. 1→+1 саттва, 2→+1 саттва и +1 карта,
+// 3→+2 саттвы и +1 карта. Вызывается из UI ПОСЛЕ playCard.
+export function kiirtanaRhythmBonus(state, quality = 0) {
+  const events = []
+  const q = Math.max(0, Math.min(3, Math.floor(quality) || 0))
+  if (q >= 1) {
+    applyGuna(state, { s: q >= 3 ? 2 : 1 }, 'player', events)
+    recomputeGunas(state)
+  }
+  if (q >= 2) {
+    drawCards(state, 1, events)
+  }
+  events.push({ type: 'kiirtana_rhythm', quality: q, sattva: q >= 3 ? 2 : q >= 1 ? 1 : 0, drew: q >= 2 ? 1 : 0 })
+  checkOutcome(state, events)
+  return events
+}
+
 export function endTurn(state) {
   const events = []
   // вся рука в сброс

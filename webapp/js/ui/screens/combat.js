@@ -3,7 +3,8 @@ import { h, mount, clear } from '../dom.js'
 import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter } from '../widgets.js'
 import { burst, floatNum, setTint, sfx, kiirtanaWave } from '../fx.js'
 import { CARDS } from '../../core/data.js'
-import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome } from '../../core/engine.js'
+import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome, kiirtanaRhythmBonus } from '../../core/engine.js'
+import { kirtanRhythmOverlay } from '../minigames.js'
 
 export function combatScreen(app) {
   const { combat, run, meta } = app
@@ -111,6 +112,20 @@ export function combatScreen(app) {
     else if (card.type === 'mantra') sfx.med()
     else sfx.play()
 
+    // Кииртан-ритм (§16.2, идея №7): точное пение даёт бонус (саттва/карта)
+    if (card.type === 'kiirtana') {
+      kirtanRhythmOverlay({
+        onDone: (quality) => {
+          const events = playCard(combat, handIndex, 0)
+          events.push(...kiirtanaRhythmBonus(combat, quality))
+          applyEvents(events, from)
+          if (combat.outcome) finish()
+          else { render(); busy = false }
+        },
+      })
+      return
+    }
+
     const events = playCard(combat, handIndex, 0)
     applyEvents(events, from)
     if (combat.pending) {
@@ -165,6 +180,11 @@ export function combatScreen(app) {
       } else if (ev.type === 'samadhi') {
         sfx.samadhi()
         toast(ev.message, 'hl')
+      } else if (ev.type === 'kiirtana_rhythm') {
+        const parts = []
+        if (ev.sattva > 0) parts.push(`+${ev.sattva} саттвы`)
+        if (ev.drew > 0) parts.push('+карта')
+        toast(parts.length > 0 ? `Ритм кииртана: ${parts.join(' · ')}` : 'Кииртан прозвучал в тишине', parts.length > 0 ? 'good' : '')
       } else if (ev.type === 'anchor') {
         toast(`Якорь: ${ev.situation} → ${ev.practice}`, 'good')
       } else if (ev.type === 'log' || ev.type === 'stolen') {

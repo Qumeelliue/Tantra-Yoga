@@ -8,6 +8,7 @@ import {
   damagePlayer,
   effectiveCost,
   recomputeGunas,
+  kiirtanaRhythmBonus,
   mulberry32,
 } from '@webapp/js/core/engine.js'
 import cards from '@content/cards.json'
@@ -182,6 +183,50 @@ describe('самадхи', () => {
       guard += 1
     }
     expect(s.player.inSamadhi).toBe(true)
+  })
+})
+
+describe('кииртан-ритм (§16.2, идея №7)', () => {
+  it('качество 0 не даёт бонуса', () => {
+    const s = combatWith(['nama_kevalam'])
+    const sBefore = s.player.guna.s
+    const drawBefore = s.piles.hand.length
+    const ev = kiirtanaRhythmBonus(s, 0)
+    expect(ev.some((e) => e.type === 'kiirtana_rhythm')).toBe(true)
+    expect(s.player.guna.s).toBe(sBefore)
+    expect(s.piles.hand.length).toBe(drawBefore)
+  })
+
+  it('качество 1 даёт +1 саттву', () => {
+    const s = combatWith(['nama_kevalam'])
+    const sBefore = s.player.guna.s
+    kiirtanaRhythmBonus(s, 1)
+    expect(s.player.guna.s).toBe(sBefore + 1)
+  })
+
+  it('качество 2 даёт +1 саттву и +1 карту', () => {
+    const s = combatWith(['nama_kevalam'], 'krodha', { counts: { nama_kevalam: 8 } })
+    const sBefore = s.player.guna.s
+    const handBefore = s.piles.hand.length
+    kiirtanaRhythmBonus(s, 2)
+    expect(s.player.guna.s).toBe(sBefore + 1)
+    expect(s.piles.hand.length).toBeGreaterThan(handBefore)
+  })
+
+  it('качество 3 даёт +2 саттвы и +1 карту', () => {
+    const s = combatWith(['nama_kevalam'], 'krodha', { counts: { nama_kevalam: 8 } })
+    const sBefore = s.player.guna.s
+    const handBefore = s.piles.hand.length
+    kiirtanaRhythmBonus(s, 3)
+    expect(s.player.guna.s).toBe(sBefore + 2)
+    expect(s.piles.hand.length).toBeGreaterThan(handBefore)
+  })
+
+  it('качество обрезается до 0..3', () => {
+    const s = combatWith(['nama_kevalam'])
+    const sBefore = s.player.guna.s
+    kiirtanaRhythmBonus(s, 99)
+    expect(s.player.guna.s).toBe(sBefore + 2)
   })
 })
 

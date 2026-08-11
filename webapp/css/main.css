@@ -1039,3 +1039,95 @@ body {
   0%, 100% { transform: scale(0.94); box-shadow: 0 0 0 0 rgba(242, 196, 109, 0.12); }
   50% { transform: scale(1.02); box-shadow: 0 0 34px rgba(242, 196, 109, 0.22); }
 }
+
+/* ── Медитация с дыханием (§16.2, идея №11) ─────────────────── */
+
+.med-hint { font-size: 12.5px; color: var(--muted); min-height: 32px; padding: 0 10px; }
+.med-quality { display: flex; gap: 8px; justify-content: center; min-height: 14px; }
+.med-quality .q-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 1.5px solid var(--line-gold-soft);
+  transition: all 0.25s ease;
+}
+.med-quality .q-dot.on {
+  background: radial-gradient(circle at 35% 30%, #fff3d6, var(--gold));
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(242, 196, 109, 0.6);
+}
+.med-zone {
+  width: 240px; height: 240px; margin: 6px auto;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  position: relative;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.med-breath {
+  position: absolute; inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--line-gold);
+  background: radial-gradient(circle at 50% 40%, rgba(242, 196, 109, 0.14), rgba(0, 0, 0, 0.1) 70%);
+  box-shadow: 0 0 40px rgba(242, 196, 109, 0.15);
+  transition: box-shadow 0.3s ease;
+}
+.med-breath::before, .med-breath::after {
+  content: ''; position: absolute;
+  inset: 16%; border-radius: 50%;
+  border: 1px solid var(--line-gold-soft);
+}
+.med-breath::after { inset: 30%; }
+.med-breath.shake { animation: medShake 0.35s ease; border-color: rgba(255, 138, 74, 0.7); }
+@keyframes medShake {
+  0%, 100% { transform: scale(0.95); }
+  25% { transform: scale(0.92) translateX(-6px); }
+  75% { transform: scale(0.92) translateX(6px); }
+}
+.med-inner { position: relative; z-index: 2; text-align: center; }
+.med-om { font-family: 'Noto Sans Devanagari', serif; font-size: 30px; color: var(--gold); }
+.med-phase { margin-top: 6px; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--muted); }
+.med-next { width: 100%; }
+.med-result { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.med-result .row { justify-content: center; }
+.badge.sat { color: var(--sat); border-color: rgba(255, 233, 179, 0.5); background: rgba(255, 233, 179, 0.1); }
+.med-burn.on { border-color: var(--gold); background: rgba(242, 196, 109, 0.1); }
+.med-burn.on .c-main { color: var(--gold-soft); }
+.med-burn.disabled { opacity: 0.45; cursor: default; pointer-events: none; }
+
+/* ── Кииртан-ритм (§16.2, идея №7) ──────────────────────────── */
+
+.rhythm-overlay {
+  position: fixed; inset: 0; z-index: 21;
+  display: grid; place-items: center;
+  background: rgba(8, 5, 14, 0.66);
+  backdrop-filter: blur(5px);
+  animation: screenIn 0.22s ease;
+}
+.rhythm-panel {
+  width: min(84vw, 340px);
+  text-align: center; padding: 26px 18px;
+  border-radius: 22px;
+  background: var(--card-bg-hi);
+  border: 1px solid var(--line-gold);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 44px rgba(242, 196, 109, 0.16);
+}
+.rhythm-title { font-family: 'Noto Sans Devanagari', serif; font-size: 20px; color: var(--gold); letter-spacing: 0.1em; }
+.rhythm-label { margin: 10px 0; font-size: 12.5px; color: var(--muted); min-height: 18px; }
+.rhythm-circle {
+  width: 120px; height: 120px; margin: 4px auto 14px;
+  border-radius: 50%;
+  border: 2px solid var(--line-gold);
+  display: grid; place-items: center;
+  background: radial-gradient(circle at 50% 40%, rgba(242, 196, 109, 0.16), transparent 70%);
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+  touch-action: manipulation;
+}
+.rhythm-circle.beat { transform: scale(1.12); box-shadow: 0 0 34px rgba(242, 196, 109, 0.5); }
+.rhythm-circle.hit { transform: scale(1.2); border-color: #ffe9b3; box-shadow: 0 0 44px rgba(255, 233, 179, 0.7); }
+.rhythm-circle::after { content: 'ॐ'; font-family: 'Noto Sans Devanagari', serif; font-size: 30px; color: var(--gold); }
+.rhythm-dots { display: flex; gap: 8px; justify-content: center; margin-bottom: 14px; }
+.rhythm-dots .r-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  border: 1.5px solid var(--line-gold-soft);
+  transition: all 0.2s ease;
+}
+.rhythm-dots .r-dot.on { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 10px rgba(242, 196, 109, 0.6); }

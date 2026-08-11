@@ -161,6 +161,8 @@ export const sfx = {
   burn() { tone(200, 0.3, 'triangle', 0.04); tone(120, 0.34, 'triangle', 0.04, 0.05) },
   error() { tone(90, 0.12, 'square', 0.04) },
   turn() { tone(300, 0.1, 'sine', 0.035) },
+  beat() { tone(440, 0.09, 'triangle', 0.05) },
+  miss() { tone(180, 0.08, 'square', 0.035) },
   med() { tone(392, 0.5, 'sine', 0.04); tone(523, 0.6, 'sine', 0.035, 0.2); tone(659, 0.8, 'sine', 0.03, 0.4) },
   death() { tone(180, 0.6, 'sine', 0.05); tone(120, 0.8, 'sine', 0.05, 0.2); tone(80, 1.0, 'sine', 0.045, 0.4) },
   win() { tone(523, 0.25, 'sine', 0.05); tone(659, 0.25, 'sine', 0.05, 0.12); tone(784, 0.25, 'sine', 0.05, 0.24); tone(1047, 0.5, 'sine', 0.045, 0.36) },
