@@ -1,0 +1,865 @@
+{
+  "_comment": "Враги-Аковы — воплощения оков ума. intent — как отображается намерение (attack/defend/buff/debuff/special). moves.effects используют тот же движок эффектов, что и карты. calmMax — карт Ахимсы для успокоения при HP ≤ 50%. isBoss — босс чакры (эпитет «Владыка …»).",
+  "krodha": {
+    "id": "krodha",
+    "name": "Кродха",
+    "epithet": "Тлеющий",
+    "sanskrit": "क्रोध",
+    "glyph": "fire",
+    "maxHp": 22,
+    "calmMax": 2,
+    "quoteId": "krodha",
+    "moves": [
+      {
+        "name": "Вспышка",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 2,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Удар гнева",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Замах",
+        "intent": "attack",
+        "damage": 8,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 8,
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        }
+      ],
+      "log": "Кродха закипает: +2 силы!"
+    }
+  },
+  "lobha": {
+    "id": "lobha",
+    "name": "Лобха",
+    "epithet": "Разбухающий",
+    "sanskrit": "लोभ",
+    "glyph": "greed",
+    "maxHp": 18,
+    "calmMax": 2,
+    "quoteId": "lobha",
+    "moves": [
+      {
+        "name": "Присвоить",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          },
+          {
+            "kind": "block",
+            "amount": 3,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Захват",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "r",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Накопление",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 8,
+            "target": "self"
+          }
+        ]
+      }
+    ]
+  },
+  "nidra": {
+    "id": "nidra",
+    "name": "Нидра",
+    "epithet": "Сонная",
+    "sanskrit": "निद्रा",
+    "glyph": "sleep",
+    "maxHp": 20,
+    "calmMax": 2,
+    "quoteId": "nidra",
+    "moves": [
+      {
+        "name": "Дремота",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "drowsy",
+            "amount": 1,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Тяжёлая рука",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Спячка",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "heal",
+            "amount": 5,
+            "target": "self"
+          }
+        ]
+      }
+    ]
+  },
+  "kama": {
+    "id": "kama",
+    "name": "Кама",
+    "epithet": "Тянущий",
+    "sanskrit": "काम",
+    "glyph": "heart",
+    "maxHp": 20,
+    "calmMax": 2,
+    "quoteId": "kama",
+    "moves": [
+      {
+        "name": "Вожделение",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "r",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Притяжение",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Очарование",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
+        ]
+      }
+    ]
+  },
+  "mada": {
+    "id": "mada",
+    "name": "Мада",
+    "epithet": "Надменный",
+    "sanskrit": "मद",
+    "glyph": "crown",
+    "maxHp": 24,
+    "calmMax": 2,
+    "quoteId": "mada",
+    "moves": [
+      {
+        "name": "Самолюбование",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 5,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Надменность",
+        "intent": "attack",
+        "damage": 6,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 6,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Высокомерие",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
+        ]
+      }
+    ]
+  },
+  "matsarya": {
+    "id": "matsarya",
+    "name": "Матсарья",
+    "epithet": "Завистливый",
+    "sanskrit": "मात्सर्य",
+    "glyph": "eye",
+    "maxHp": 19,
+    "calmMax": 2,
+    "quoteId": "matsarya",
+    "moves": [
+      {
+        "name": "Зависть",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          }
+        ]
+      },
+      {
+        "name": "Укус зависти",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Подмена",
+        "intent": "special",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "addCurseToDeck",
+            "cardId": "cinta",
+            "amount": 1
+          }
+        ]
+      }
+    ]
+  },
+  "moha": {
+    "id": "moha",
+    "name": "Моха",
+    "epithet": "Владыка Муладхары",
+    "sanskrit": "मोह",
+    "glyph": "mask",
+    "isBoss": true,
+    "chakra": 0,
+    "maxHp": 55,
+    "calmMax": 3,
+    "quoteId": "moha",
+    "moves": [
+      {
+        "name": "Пелена",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Иллюзия",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          }
+        ]
+      },
+      {
+        "name": "Рокот",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 8,
+            "target": "self"
+          },
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Удар неведения",
+        "intent": "attack",
+        "damage": 10,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 10,
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "cinta",
+          "amount": 1
+        },
+        {
+          "kind": "strength",
+          "amount": 1,
+          "target": "self"
+        }
+      ],
+      "log": "Моха сбрасывает маску: в ваш ум прокралась Чинта."
+    }
+  },
+  "kama_raja": {
+    "id": "kama_raja",
+    "name": "Кама-Раджа",
+    "epithet": "Владыка Свадхистханы",
+    "sanskrit": "कामराज",
+    "glyph": "heart",
+    "isBoss": true,
+    "chakra": 1,
+    "maxHp": 58,
+    "calmMax": 3,
+    "quoteId": "kama",
+    "moves": [
+      {
+        "name": "Приворот",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          },
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Огонь желаний",
+        "intent": "attack",
+        "damage": 7,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 8,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "r",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Покров очарования",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 10,
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "cinta",
+          "amount": 1
+        },
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        }
+      ],
+      "log": "Кама-Раджа упивается собой: +2 силы, в ум — Чинта."
+    }
+  },
+  "krodha_maharaja": {
+    "id": "krodha_maharaja",
+    "name": "Маха-Кродха",
+    "epithet": "Владыка Манипуры",
+    "sanskrit": "महाक्रोध",
+    "glyph": "fire",
+    "isBoss": true,
+    "chakra": 2,
+    "maxHp": 52,
+    "calmMax": 3,
+    "quoteId": "krodha",
+    "moves": [
+      {
+        "name": "Закипание",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Пламя ярости",
+        "intent": "attack",
+        "damage": 6,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 6,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Всесжигающий",
+        "intent": "attack",
+        "damage": 9,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 9,
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "krodha",
+          "amount": 1
+        }
+      ],
+      "log": "Маха-Кродха впадает в бешенство: гнев входит в вашу колоду!"
+    }
+  },
+  "mada_natha": {
+    "id": "mada_natha",
+    "name": "Мада-Натха",
+    "epithet": "Владыка Анахаты",
+    "sanskrit": "मदनाथ",
+    "glyph": "crown",
+    "isBoss": true,
+    "chakra": 3,
+    "maxHp": 66,
+    "calmMax": 3,
+    "quoteId": "mada",
+    "moves": [
+      {
+        "name": "Самовосхваление",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 6,
+            "target": "self"
+          },
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Трон гордыни",
+        "intent": "attack",
+        "damage": 6,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 6,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "r",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Венценосный",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 2,
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "bhaya",
+          "amount": 1
+        },
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        }
+      ],
+      "log": "Мада-Натха дрожит от страха утраты и раздувается в силе."
+    }
+  },
+  "matsarya_kala": {
+    "id": "matsarya_kala",
+    "name": "Матсарья-Кала",
+    "epithet": "Владыка Вишуддхи",
+    "sanskrit": "मात्सर्यकला",
+    "glyph": "eye",
+    "isBoss": true,
+    "chakra": 4,
+    "maxHp": 64,
+    "calmMax": 3,
+    "quoteId": "matsarya",
+    "moves": [
+      {
+        "name": "Отнять",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 2
+          }
+        ]
+      },
+      {
+        "name": "Жало зависти",
+        "intent": "attack",
+        "damage": 7,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 8,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Отравленное зеркало",
+        "intent": "special",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "addCurseToDeck",
+            "cardId": "cinta",
+            "amount": 2
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "cinta",
+          "amount": 1
+        },
+        {
+          "kind": "status",
+          "status": "weak",
+          "amount": 1,
+          "target": "player"
+        }
+      ],
+      "log": "Матсарья-Кала обесценивает всё, что у вас есть."
+    }
+  },
+  "lobha_pati": {
+    "id": "lobha_pati",
+    "name": "Лобха-Пати",
+    "epithet": "Владыка Аджны",
+    "sanskrit": "लोभपति",
+    "glyph": "greed",
+    "isBoss": true,
+    "chakra": 5,
+    "maxHp": 72,
+    "calmMax": 3,
+    "quoteId": "lobha",
+    "moves": [
+      {
+        "name": "Глотать",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          },
+          {
+            "kind": "block",
+            "amount": 5,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Ненасытный",
+        "intent": "attack",
+        "damage": 9,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 10,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "r",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Копить",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 14,
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "cinta",
+          "amount": 2
+        },
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        }
+      ],
+      "log": "Лобха-Пати сгребает всё в свой зев: две Чинты в вашем уме."
+    }
+  },
+  "ahankara": {
+    "id": "ahankara",
+    "name": "Ахамкара",
+    "epithet": "Владыка Сахасрары",
+    "sanskrit": "अहंकार",
+    "glyph": "mask",
+    "isBoss": true,
+    "chakra": 6,
+    "maxHp": 82,
+    "calmMax": 3,
+    "quoteId": "ahankara",
+    "moves": [
+      {
+        "name": "Я-есть",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 6,
+            "target": "self"
+          },
+          {
+            "kind": "strength",
+            "amount": 2,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Удар эго",
+        "intent": "attack",
+        "damage": 10,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 11,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Затмение",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          }
+        ]
+      },
+      {
+        "name": "Гроза самости",
+        "intent": "attack",
+        "damage": 13,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 15,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "cinta",
+          "amount": 2
+        },
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "status",
+          "status": "weak",
+          "amount": 1,
+          "target": "player"
+        }
+      ],
+      "log": "Ахамкара восходит на трон «Я»: ваш ум затемняется."
+    }
+  }
+}

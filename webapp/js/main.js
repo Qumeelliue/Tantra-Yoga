@@ -1,0 +1,536 @@
+// Точка входа: маршрутизация экранов, забег, узлы, Грантха, дневник.
+import { h, mount } from './ui/dom.js'
+import { initFx, sfx, setTint } from './ui/fx.js'
+import { quoteBox, cardEl } from './ui/widgets.js'
+import { combatScreen } from './ui/screens/combat.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS } from './core/data.js'
+import {
+  createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
+  takeCardReward, gainRelic, meditatableCards, doMeditate,
+  eventOptions, resolveEventChoice, isNodeDone, markNodeDone,
+  floorComplete, advanceFloor, CHAKRAS,
+} from './core/run.js'
+import {
+  loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById,
+} from './core/save.js'
+
+const appEl = document.getElementById('app')
+
+let app = null
+let booted = false
+
+function boot() {
+  if (booted) return
+  booted = true
+  initFx()
+  try {
+    window.Telegram?.WebApp?.ready()
+    window.Telegram?.WebApp?.expand()
+  } catch {}
+  app = { meta: loadMeta(), run: null, combat: null }
+  showTitle()
+}
+
+function show(node) {
+  mount(appEl, node)
+  window.scrollTo(0, 0)
+}
+
+function markSeenMany(kind, ids) {
+  for (const id of ids) markSeen(app.meta, kind, id)
+  saveMeta(app.meta)
+}
+
+function unlockRandomQuote() {
+  const locked = Object.keys(QUOTES).filter((id) => !app.meta.quotesUnlocked[id])
+  if (locked.length === 0) return null
+  const id = locked[Math.floor(Math.random() * locked.length)]
+  app.meta.quotesUnlocked[id] = true
+  saveMeta(app.meta)
+  return id
+}
+
+// ─────────────────────────────────────────────────────────────
+// Титульный экран / Город
+// ─────────────────────────────────────────────────────────────
+
+function showTitle() {
+  const { meta } = app
+  const compCount = Object.keys(meta.compendium.cards).length +
+    Object.keys(meta.compendium.enemies).length +
+    Object.keys(meta.compendium.relics).length
+  const quoteCount = Object.keys(meta.quotesUnlocked).length
+
+  const cityStage = meta.stats.pacified + meta.stats.awakened
+  const cityText = cityStage === 0
+    ? 'Город спит под пеленой Тамаса. Начните восхождение.'
+    : cityStage <= 3
+      ? 'В Городе зажигаются первые огни.'
+      : 'Город пробуждается. Оковы рассеиваются, улицы светлеют.'
+
+  show(h('div', { class: 'screen active title-screen' },
+    h('div', { class: 'mandala-wrap' },
+      h('div', { class: 'mandala' }),
+      h('div', { class: 'mandala core' }),
+      h('div', { class: 'om-glyph', style: 'position:absolute' }, 'ॐ')),
+    h('div', { class: 'game-title' }, 'Tantra Yoga'),
+    h('div', { class: 'game-sub' }, 'игра-учение · колода — это ум'),
+    h('p', { class: 'hint', style: 'max-width:300px' }, cityText),
+
+    h('div', { class: 'panel city-card' },
+      h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
+        h('span', {}, 'забеги'),
+        h('span', {}, 'освобождено оков'),
+        h('span', {}, 'Грантха')),
+      h('div', { class: 'gauges' },
+        h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.runs), h('div', { class: 'lbl' }, 'забеги')),
+        h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.pacified), h('div', { class: 'lbl' }, 'мирных')),
+        h('div', { class: 'gauge' }, h('div', { class: 'num' }, `${quoteCount}/${Object.keys(QUOTES).length}`), h('div', { class: 'lbl' }, 'цитат'))),
+
+      h('div', { class: 'btn-row' },
+        h('button', { class: 'btn primary', onclick: startNewRun }, 'Начать забег'),
+        h('button', { class: 'btn', onclick: () => showCompendium() }, `Грантха (${compCount})`)),
+      h('div', { class: 'btn-row mt' },
+        h('button', { class: 'btn ghost', onclick: () => showDiary() }, 'Дневник практики'),
+        h('button', { class: 'btn ghost small', style: 'width:auto', onclick: () => showHowto() }, '?')),
+    )
+  ))
+}
+
+function showHowto() {
+  show(h('div', { class: 'screen active' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
+    h('div', { class: 'panel mt' },
+      h('div', { class: 'display', style: 'font-size:22px' }, 'Как играть'),
+      h('div', { class: 'hint mt' },
+        'Ваша колода — это ум. В ней — оковы и вртти (лента, гнев, жадность). Убирайте их медитацией и мантрами, добавляйте практики.'),
+      h('div', { class: 'hint mt' },
+        'Вместо маны — три гуны: саттва (ясность), раджас (действие), тамас (покой). Держите равновесие — прама даёт бонус. Перекос — штраф.'),
+      h('div', { class: 'hint mt' },
+        'Каждого врага можно победить силой… или успокоить ахимсой (сыграть N карт «Ахимса» при его ХП ≤ 50%). Мирный путь — истинный финал.'),
+      h('div', { class: 'hint mt' },
+        'Каждая карта и враг — подлинный термин Шастры. Первая встреча открывает карточку в Грантхе. Знание переживает смерть.'),
+    ),
+    h('button', { class: 'btn primary mt', onclick: startNewRun }, 'Понятно, начнём'),
+  ))
+}
+
+// ─────────────────────────────────────────────────────────────
+// Забег: карта
+// ─────────────────────────────────────────────────────────────
+
+function startNewRun() {
+  app.meta.stats.runs += 1
+  saveMeta(app.meta)
+  showJanna()
+}
+
+function showJanna() {
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, 'ॐ'),
+    h('div', { class: 'node-title display' }, 'Джанма'),
+    h('p', { class: 'node-text' }, 'Как вы родились в этот раз? Джанма задаёт преднастройку ума — не класс, а склонность.'),
+    h('div', { class: 'choices' },
+      Object.values(JANMAS).map((j) =>
+        h('div', { class: 'choice', onclick: () => beginRun(j.id) },
+          h('div', { class: 'c-main' }, `${j.name} · ${j.sanskrit}`),
+          h('div', { class: 'c-sub' }, j.desc)))),
+  ))
+}
+
+function beginRun(jannaId) {
+  app.run = createRun({ meta: app.meta, options: { janna: jannaId } })
+  markSeenMany('cards', app.run.deck)
+  // открываем врагов заранее в этом забеге нельзя — откроются при встрече
+  showMap()
+}
+
+const NODE_GLYPH = { combat: '⚔', elite: '⚔', meditate: 'ॐ', event: '✧', relic: '❖', boss: '◉' }
+const NODE_LABEL = { combat: 'бой', elite: 'элита', meditate: 'медитация', event: 'событие', relic: 'реликвия', boss: 'владыка' }
+
+function showMap() {
+  const run = app.run
+  if (!run) return showTitle()
+  const chakra = CHAKRAS[Math.min(run.floor, CHAKRAS.length - 1)]
+
+  const nodes = []
+  run.floors.forEach((floor, f) => {
+    if (f > run.floor) return
+    nodes.push(h('div', { class: 'floor-lbl' }, f < run.floor ? 'пройденный этаж' : `этаж ${f + 1} · ${f === run.floors.length - 1 ? 'вершина' : ''}`))
+    nodes.push(h('div', { class: 'row', style: 'justify-content:center;gap:18px;margin:6px 0' },
+      floor.map((node, i) => {
+        const done = run.floor > f || isNodeDone(run, i)
+        const available = f === run.floor && !done
+        return h('div', { class: `node ${done ? 'done' : ''} ${available ? 'available' : ''}`,
+            onclick: available ? () => enterNode(i) : null },
+          h('span', { class: 'glyph' }, NODE_GLYPH[node.type]),
+          h('span', { class: 'node-label' }, NODE_LABEL[node.type]))
+      })))
+    if (f < run.floors.length - 1 && f < run.floor) nodes.push(h('div', { class: 'connector' }))
+  })
+
+  show(h('div', { class: 'screen active map-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
+    h('div', { class: 'display chakra-title mt' }, chakra),
+    h('div', { class: 'chakra-sub' }, 'восхождение'),
+    h('div', { class: 'run-bar' },
+      h('div', { class: 'chip' }, `ХП <span class="gold">${run.hp}</span>`),
+      h('div', { class: 'chip' }, `Прана <span class="gold">${run.prana}</span>`),
+      h('div', { class: 'chip' }, `колода <span class="gold">${run.deck.length}</span>`),
+      h('div', { class: 'chip' }, `реликвии <span class="gold">${run.relics.length}</span>`)),
+    h('div', { class: 'path' }, nodes),
+    run.relics.length > 0 ? h('div', { class: 'hint center mt' }, 'реликвии: ' + run.relics.map((r) => RELICS[r].name).join(' · ')) : null,
+  ))
+}
+
+function enterNode(i) {
+  const run = app.run
+  run.nodeIndex = i
+  const node = currentNode(run)
+  if (node.type === 'combat' || node.type === 'elite' || node.type === 'boss') {
+    enterCombat()
+  } else if (node.type === 'meditate') {
+    showMeditation()
+  } else if (node.type === 'event') {
+    showEvent()
+  } else if (node.type === 'relic') {
+    showRelic()
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Бой
+// ─────────────────────────────────────────────────────────────
+
+function enterCombat() {
+  const run = app.run
+  const enemyId = currentEnemyId(run)
+  markSeen('enemies', enemyId)
+  saveMeta(app.meta)
+  app.combat = startCombatAtNode(run)
+  show(combatScreen(app))
+}
+
+function onCombatEnd(combat) {
+  const run = app.run
+  const node = currentNode(run)
+  const isFinalBoss = node.type === 'boss' && run.floor === run.floors.length - 1
+  const result = finishCombat(run, combat)
+
+  // якоря
+  for (const a of combat.anchors) addAnchor(app.meta, a)
+
+  if (result.dead) {
+    recordRunEnd(app.meta, 'death')
+    app.meta.stats.kills += combat.kills
+    app.meta.stats.pacified += combat.pacified
+    saveMeta(app.meta)
+    showDeath(result)
+    return
+  }
+
+  app.meta.stats.pacified += combat.pacified
+  app.meta.stats.kills += combat.kills
+  if (result.knowledge > 0) unlockRandomQuote()
+
+  if (isFinalBoss) {
+    recordRunEnd(app.meta, run.outcome === 'awakening' ? 'awakening' : 'victory')
+    if (run.bossPacified) app.meta.stats.awakened += 1
+    app.meta.bestRun = { pacified: app.meta.stats.pacified, awakened: run.bossPacified, date: Date.now() }
+    saveMeta(app.meta)
+    showVictory(run.outcome)
+    return
+  }
+
+  saveMeta(app.meta)
+  showRewards(result)
+}
+
+// ─────────────────────────────────────────────────────────────
+// Награды после боя
+// ─────────────────────────────────────────────────────────────
+
+function showRewards(result) {
+  const run = app.run
+
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, result.pacified ? '🕊️' : '⚔'),
+    h('div', { class: 'node-title display' }, result.pacified ? 'Освобождение' : 'Победа'),
+    h('p', { class: 'node-text' },
+      result.pacified
+        ? 'Враг распался в свет. Вы не убили — вы освободили. Так оковы становятся учителями.'
+        : 'Враг повержен. Но помните: сила порождает силу — самскара вернётся.'),
+
+    h('div', { class: 'panel' },
+      h('div', { class: 'row between' },
+        h('span', { class: 'hint' }, 'Прана'),
+        h('span', { style: 'color:var(--gold-soft);font-weight:800' }, `+${result.prana}`)),
+      result.pacified ? h('div', { class: 'row between mt' },
+        h('span', { class: 'hint' }, 'Саттва · Знание'),
+        h('span', { style: 'color:var(--sat);font-weight:800' }, '+3 · +1')) : null,
+    ),
+
+    result.pacified ? quoteBox('ahimsa') : null,
+
+    h('div', { class: 'hint center' }, 'Выберите карту в колоду (ум)'),
+    h('div', { class: 'reward-cards' },
+      result.cardChoices.map((id) => cardEl(CARDS[id], { onPlay: () => pickRewardCard(id) }))),
+  ))
+}
+
+function pickRewardCard(id) {
+  takeCardReward(app.run, id)
+  markSeen('cards', id)
+  saveMeta(app.meta)
+  sfx.unlock()
+  afterNode()
+}
+
+// ─────────────────────────────────────────────────────────────
+// Медитация
+// ─────────────────────────────────────────────────────────────
+
+function showMeditation() {
+  const run = app.run
+  const burnable = meditatableCards(run)
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'breath' }, h('div', { class: 'breath-om' }, 'ॐ')),
+    h('div', { class: 'node-title display' }, 'Медитация'),
+    h('p', { class: 'node-text' }, 'Ум успокаивается. Восстановите 5 ХП. Отпустите до двух карт-оков — они навсегда покинут ум.'),
+    burnable.length > 0
+      ? h('div', { class: 'choices' },
+          [...new Set(burnable)].map((id) =>
+            h('div', { class: 'choice', onclick: () => pickMeditation([id]) },
+              h('div', { class: 'c-main' }, CARDS[id].name),
+              h('div', { class: 'c-sub' }, `сожжение · осталось в колоде: ${burnable.filter((x) => x === id).length}`))))
+      : h('p', { class: 'hint center' }, 'В колоде нет оков — ум чист. Возьмите покой.'),
+    h('button', { class: 'btn ghost', onclick: () => pickMeditation([]) }, 'Завершить медитацию'),
+  ))
+}
+
+function pickMeditation(ids) {
+  const run = app.run
+  const res = doMeditate(run, ids)
+  sfx.med()
+  markNodeDone(run)
+  afterNode()
+}
+
+// ─────────────────────────────────────────────────────────────
+// Событие
+// ─────────────────────────────────────────────────────────────
+
+function showEvent() {
+  const { id, event } = eventOptions(app.run)
+  markSeen('events', id)
+  saveMeta(app.meta)
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, '✧'),
+    h('div', { class: 'node-title display' }, event.name),
+    h('p', { class: 'node-text' }, event.text),
+    h('div', { class: 'choices' },
+      event.choices.map((c, i) =>
+        h('div', { class: 'choice', onclick: () => pickEvent(id, i) },
+          h('div', { class: 'c-main' }, c.text),
+          h('div', { class: 'c-sub' }, c.sub)))),
+  ))
+}
+
+function pickEvent(id, choiceIndex) {
+  const run = app.run
+  const res = resolveEventChoice(run, id, choiceIndex)
+  for (const a of res.anchors) addAnchor(app.meta, a)
+  saveMeta(app.meta)
+  const quoteToShow = res.knowledge > 0 ? unlockRandomQuote() : null
+  sfx.unlock()
+  markNodeDone(run)
+  if (quoteToShow) {
+    show(h('div', { class: 'screen active node-screen' },
+      quoteBox(quoteToShow, { onClose: afterNode })))
+  } else {
+    afterNode()
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Реликвия
+// ─────────────────────────────────────────────────────────────
+
+function showRelic() {
+  const locked = Object.keys(RELICS).filter((id) => !app.run.relics.includes(id))
+  const id = locked[Math.floor(Math.random() * locked.length)] || Object.keys(RELICS)[0]
+  const relic = RELICS[id]
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, '❖'),
+    h('div', { class: 'node-title display' }, relic.name),
+    h('p', { class: 'node-text' }, relic.desc),
+    quoteBox(relic.quoteId),
+    h('button', { class: 'btn primary', onclick: () => takeRelic(id) }, 'Взять реликвию'),
+  ))
+}
+
+function takeRelic(id) {
+  gainRelic(app.run, id)
+  markSeen('relics', id)
+  saveMeta(app.meta)
+  sfx.unlock()
+  markNodeDone(app.run)
+  afterNode()
+}
+
+// ─────────────────────────────────────────────────────────────
+// Смерть и победа
+// ─────────────────────────────────────────────────────────────
+
+function showDeath(result) {
+  setTint('t')
+  show(h('div', { class: 'screen active end-screen' },
+    h('div', { class: 'end-om' }, 'ॐ'),
+    h('div', { class: 'game-title', style: 'font-size:30px' }, 'Перерождение'),
+    h('p', { class: 'node-text' }, 'Тело ушло — ум унёс свои самскары. В следующей жизни сохранится только знание.'),
+    h('div', { class: 'samskar-card' },
+      h('div', { class: 's-title' }, 'Дневник самскар'),
+      h('div', { class: 's-line' }, `Вы пали в битве с <b>${result.killedBy}</b>${result.lastIntent ? ` (${result.lastIntent})` : ''}.`),
+      h('div', { class: 's-line' }, 'Что не хватило? Посмотрите в Грантху — карточки открыты, они остаются с вами.')),
+    h('div', { class: 'knowledge-kept' },
+      h('div', { class: 'k-chip' }, `Грантха: <b>${Object.keys(app.meta.compendium.cards).length}</b>`),
+      h('div', { class: 'k-chip' }, `цитат: <b>${Object.keys(app.meta.quotesUnlocked).length}</b>`),
+      h('div', { class: 'k-chip' }, `якорей: <b>${app.meta.practiceDiary.length}</b>`)),
+    h('button', { class: 'btn primary', onclick: () => { setTint(null); showTitle() } }, 'Вернуться в Город'),
+  ))
+}
+
+function showVictory(outcome) {
+  const awakened = outcome === 'awakening'
+  setTint(null)
+  const run = app.run
+  show(h('div', { class: 'screen active end-screen' },
+    h('div', { class: 'end-om' }, 'ॐ'),
+    h('div', { class: 'game-title', style: 'font-size:30px' }, awakened ? 'Пробуждение' : 'Сила'),
+    h('p', { class: 'node-text' },
+      awakened
+        ? 'Вы успокоили всех семерых владык чакр. Город просыпается — оковы распались в свет, и ум стал тише.'
+        : `Вы одолели Владыку Сахасрары силой. Но пелена рассеется снова: успокоено ${run.bossesPacified || 0} из 7 владык. Мирный путь — истинный финал.`),
+    h('div', { class: 'knowledge-kept' },
+      h('div', { class: 'k-chip' }, `владык успокоено: <b>${run.bossesPacified || 0} / 7</b>`),
+      h('div', { class: 'k-chip' }, `цитат: <b>${Object.keys(app.meta.quotesUnlocked).length}</b>`)),
+    awakened ? quoteBox('samadhi') : quoteBox('moha'),
+    h('button', { class: 'btn primary', onclick: () => { setTint(null); showTitle() } }, 'Новый забег'),
+  ))
+}
+
+// ─────────────────────────────────────────────────────────────
+// Грантха / Дневник
+// ─────────────────────────────────────────────────────────────
+
+const COMP_TABS = ['Карты', 'Враги', 'Реликвии', 'Цитаты']
+
+function showCompendium(tab = 'Цитаты') {
+  const { meta } = app
+  let listEl = h('div', {})
+
+  function renderTab(t) {
+    if (t === 'Карты') {
+      const ids = Object.keys(meta.compendium.cards)
+      mount(listEl, ids.length === 0
+        ? h('p', { class: 'hint center' }, 'Пока пусто — карточки откроются при встрече.')
+        : ids.map((id) => entryRow(CARDS[id].name, CARDS[id].sanskrit, typeRu(CARDS[id]), CARDS[id].quoteId)))
+    } else if (t === 'Враги') {
+      const ids = Object.keys(meta.compendium.enemies)
+      mount(listEl, ids.length === 0
+        ? h('p', { class: 'hint center' }, 'Пока пусто — враги откроются при встрече.')
+        : ids.map((id) => entryRow(`${ENEMIES[id].name} — ${ENEMIES[id].epithet}`, ENEMIES[id].sanskrit, '', ENEMIES[id].quoteId)))
+    } else if (t === 'Реликвии') {
+      const ids = Object.keys(meta.compendium.relics)
+      mount(listEl, ids.length === 0
+        ? h('p', { class: 'hint center' }, 'Пока пусто — реликвии открываются при получении.')
+        : ids.map((id) => entryRow(RELICS[id].name, '', '', RELICS[id].quoteId)))
+    } else {
+      const ids = Object.keys(meta.quotesUnlocked)
+      mount(listEl, ids.length === 0
+        ? h('p', { class: 'hint center' }, 'Цитаты открываются по мере игры.')
+        : ids.map((id) => quoteCard(quoteById(id))))
+    }
+  }
+
+  function quoteCard(q) {
+    if (!q) return null
+    return h('div', { class: 'quote-card' },
+      h('div', { class: 'qc-term sanscr' }, `${q.term} · ${q.sanskrit}`),
+      h('div', { class: 'qc-quote' }, `«${q.quote}»`),
+      h('div', { class: 'qc-src' }, q.source),
+      h('div', { class: 'qc-life' }, q.life))
+  }
+
+  function entryRow(name, sanscr, sub, quoteId) {
+    return h('div', { class: 'entry', onclick: () => showQuote(quoteId) },
+      h('div', { class: 'entry-head' },
+        h('span', { class: 'e-name' }, name),
+        sanscr ? h('span', { class: 'e-sanscr sanscr' }, sanscr) : null),
+      sub ? h('div', { class: 'e-desc' }, sub) : null)
+  }
+
+  show(h('div', { class: 'screen active comp-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
+    h('div', { class: 'display chakra-title' }, 'Грантха'),
+    h('div', { class: 'chakra-sub' }, 'знание переживает смерть'),
+    h('div', { class: 'comp-tabs' },
+      COMP_TABS.map((t) => h('button', { class: `btn ${t === tab ? 'primary' : 'ghost'}`, onclick: () => showCompendium(t) }, t))),
+    listEl,
+  ))
+  renderTab(tab)
+}
+
+function showQuote(quoteId) {
+  const q = quoteById(quoteId)
+  if (!q) return
+  show(h('div', { class: 'screen active' },
+    h('button', { class: 'btn ghost small', onclick: showCompendium }, '← Грантха'),
+    h('div', { class: 'mt' }, quoteBox(quoteId, { onClose: showCompendium })),
+    q.original ? h('div', { class: 'panel mt' },
+      h('div', { class: 'hint' }, 'Оригинал:'),
+      h('div', { class: 'hint mt', style: 'font-style:italic;color:var(--ink-dim)' }, q.original)) : null,
+  ))
+}
+
+function showDiary() {
+  const { meta } = app
+  show(h('div', { class: 'screen active comp-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
+    h('div', { class: 'display chakra-title' }, 'Дневник практики'),
+    h('div', { class: 'chakra-sub' }, 'игра работает на жизнь'),
+    h('p', { class: 'hint mt' }, 'Когда игра совпала с настоящим состоянием ума и вы ответили практикой — рождается якорь. Вот они:'),
+    meta.practiceDiary.length === 0
+      ? h('p', { class: 'hint center mt' }, 'Пока якорей нет. Сыграйте кииртану при унынии — и связь останется с вами.')
+      : meta.practiceDiary.map((a) =>
+          h('div', { class: 'anchor-entry' },
+            h('div', { class: 'a-item' }, a.situation),
+            h('div', { class: 'a-arrow' }, '↓'),
+            h('div', { class: 'a-item', style: 'color:var(--gold-soft)' }, a.practice),
+            h('div', { class: 'hint center mt' }, 'Попробуйте сегодня: правда работает.'))),
+  ))
+}
+
+// ─────────────────────────────────────────────────────────────
+// Переходы между узлами
+// ─────────────────────────────────────────────────────────────
+
+function afterNode() {
+  const run = app.run
+  if (run.status !== 'active') return showTitle()
+  if (floorComplete(run)) {
+    if (!advanceFloor(run)) {
+      return showTitle()
+    }
+  }
+  showMap()
+}
+
+function typeRu(card) {
+  return { curse: 'мусор', vritti: 'овка', practice: 'практика', mantra: 'мантра', kiirtana: 'кииртан', seva: 'служение' }[card.type]
+}
+
+app.onCombatEnd = onCombatEnd
+
+window.addEventListener('load', boot)
+if (document.readyState === 'complete' || document.readyState === 'interactive') boot()

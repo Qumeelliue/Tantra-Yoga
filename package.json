@@ -1,0 +1,21 @@
+{
+  "name": "tantra-yoga",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Tantra Yoga — рогалик-колодостроитель в Telegram (фаза 0: прототип ядра)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "balance": "node --experimental-loader ./scripts/aliases.mjs scripts/balance.mjs"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0",
+    "vitest": "^3.2.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

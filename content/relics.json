@@ -1,0 +1,83 @@
+{
+  "_comment": "Реликвии — постоянные бонусы забега.",
+  "pratik": {
+    "id": "pratik",
+    "name": "Пратик",
+    "desc": "Символ чистоты. Ваши Ахимса-карты дают +1 успокоение.",
+    "effects": [{ "kind": "mod_pacify", "amount": 1 }],
+    "quoteId": "ahimsa",
+    "rarity": "uncommon"
+  },
+  "tridanda": {
+    "id": "tridanda",
+    "name": "Триданда",
+    "desc": "Три жезла усилия. Практики, мантры и кииртаны стоят на 1 энергии меньше (минимум 0).",
+    "effects": [{ "kind": "mod_practice_cost", "amount": -1 }],
+    "quoteId": "tapah",
+    "rarity": "uncommon"
+  },
+  "shankha": {
+    "id": "shankha",
+    "name": "Шанкха",
+    "desc": "Раковина чистоты. Каждое успокоение даёт +1 саттву дополнительно.",
+    "effects": [{ "kind": "mod_pacify_sattva", "amount": 1 }],
+    "quoteId": "samadhi",
+    "rarity": "rare"
+  },
+  "kambala": {
+    "id": "kambala",
+    "name": "Камбала",
+    "desc": "Тёплая накидка. Перекос Тамаса ослаблен: враги не яростнее, рука не уменьшается.",
+    "effects": [{ "kind": "mod_tamas_imbalance" }],
+    "quoteId": "nidra",
+    "rarity": "rare"
+  },
+  "mahamantra_mala": {
+    "id": "mahamantra_mala",
+    "name": "Чётки Махамантры",
+    "desc": "Кииртаны приходят на 1 ход раньше: при розыгрыше Нама Кевалам возьмите 1 карту.",
+    "effects": [{ "kind": "mod_kiirtana_draw", "amount": 1 }],
+    "quoteId": "kiirtana",
+    "rarity": "rare"
+  },
+  "shiva_lingam": {
+    "id": "shiva_lingam",
+    "name": "Шива-Лингам",
+    "desc": "Начальный баланс гун чуть в сторону саттвы: стартуете с +1 саттвой.",
+    "effects": [{ "kind": "mod_guna_start", "s": 1 }],
+    "quoteId": "shiva",
+    "rarity": "rare"
+  },
+  "kalachakra": {
+    "id": "kalachakra",
+    "name": "Кала-чакра",
+    "desc": "Колесо времени: в начале каждого боя враг стартует с −1 силой.",
+    "effects": [{ "kind": "mod_enemy_start_strength", "amount": -1 }],
+    "quoteId": "kala",
+    "rarity": "uncommon"
+  },
+  "tulasi": {
+    "id": "tulasi",
+    "name": "Туласи",
+    "desc": "Священный базилик: перекос Тамаса ослаблен вдвое (штраф меньше).",
+    "effects": [{ "kind": "mod_tamas_imbalance" }],
+    "quoteId": "shaoca",
+    "rarity": "common"
+  },
+  "prana_drop": {
+    "id": "prana_drop",
+    "name": "Прана-капля",
+    "desc": "Капля жизни: в начале каждого боя получаете +3 к максимуму ХП.",
+    "effects": [{ "kind": "mod_combat_start_heal", "amount": 3 }],
+    "quoteId": "samskara",
+    "rarity": "common"
+  },
+  "guru_darshana": {
+    "id": "guru_darshana",
+    "name": "Гуру-даршан",
+    "desc": "Встреча с Учителем: карты мантр и кииртана стоят на 1 меньше энергии.",
+    "effects": [{ "kind": "mod_practice_cost", "amount": -1 }],
+    "quoteId": "guru",
+    "rarity": "rare"
+  }
+}

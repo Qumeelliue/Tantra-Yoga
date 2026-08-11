@@ -1,0 +1,381 @@
+{
+  "_comment": "Грантха — карточки знания. Цитаты сверены с источниками (sources/), книгa → глава. Поле `original` — точная цитата на англ., `quote` — русский перевод для интерфейса.",
+  "ahimsa": {
+    "term": "Ахимса",
+    "sanskrit": "अहिंसा",
+    "meaning": "Непричинение вреда",
+    "life": "Не делай больно — ни мыслью, ни словом, ни делом. Гнев гасится пониманием, а не ненавистью.",
+    "quote": "Ахимса означает не причинять страданий никому — ни мыслью, ни словом, ни делом.",
+    "original": "Ahiḿsá means not inflicting pain or hurt on anybody by thought, word or action.",
+    "source": "«A Guide to Human Conduct», гл. «Ахимса»"
+  },
+  "satya": {
+    "term": "Сатья",
+    "sanskrit": "सत्य",
+    "meaning": "Правда как благо",
+    "life": "Правда — это не «факт любой ценой», а слово и мысль с духом блага. Видеть истину — значит видеть ясно.",
+    "quote": "Сатья — это правильное действие ума и правильное употребление слов с духом блага.",
+    "original": "Satya implies proper action of mind and the right use of words with the spirit of welfare.",
+    "source": "«A Guide to Human Conduct», гл. «Сатья»"
+  },
+  "asteya": {
+    "term": "Астея",
+    "sanskrit": "अस्तेय",
+    "meaning": "Не-воровство",
+    "life": "Честный обмен. Не бери чужого — ни вещью, ни взглядом, ни мыслью.",
+    "quote": "Не присваивать того, что принадлежит другим, — это астея, то есть не-воровство.",
+    "original": "Not to take possession of what belongs to others is asteya. It means non-stealing.",
+    "source": "«A Guide to Human Conduct», гл. «Астея»"
+  },
+  "brahmacarya": {
+    "term": "Брахмачарья",
+    "sanskrit": "ब्रह्मचर्य",
+    "meaning": "Ум, обращённый к Брахме",
+    "life": "Смотри на каждое существо и предмет как на проявление Брахмы — и ум не отвлечётся на грубость.",
+    "quote": "Истинное значение брахмачарьи — «оставаться привязанным к Брахме».",
+    "original": "The correct meaning of Brahmacarya is “to remain attached to Brahma”.",
+    "source": "«A Guide to Human Conduct», гл. «Брахмачарья»"
+  },
+  "aparigraha": {
+    "term": "Апариграха",
+    "sanskrit": "अपरिग्रह",
+    "meaning": "Не-накопительство",
+    "life": "Отпусти лишнее. В свободе от вещей больше радости, чем в обладании.",
+    "quote": "Апариграха — это бесконечная борьба за то, чтобы сокращать собственные удобства из сочувствия к людям.",
+    "original": "Aparigraha is an endless fight to reduce one’s own objects of comforts out of sympathy for the common people.",
+    "source": "«A Guide to Human Conduct», гл. «Апариграха»"
+  },
+  "shaoca": {
+    "term": "Шауча",
+    "sanskrit": "शौच",
+    "meaning": "Чистота",
+    "life": "Чистота двояка: внешняя — тело и дом, внутренняя — ум. Вычисти ум — он дороже одежды.",
+    "quote": "Шауча означает чистоту: внешнюю — тела и одежды, и внутреннюю — чистоту ума.",
+    "original": "It means purity or cleanliness. It can be subdivided into two parts, one relating to external sphere... and the other to mental sphere, i.e. internal cleanliness.",
+    "source": "«A Guide to Human Conduct», гл. «Шауча»"
+  },
+  "santosa": {
+    "term": "Сантоша",
+    "sanskrit": "संतोष",
+    "meaning": "Довольство",
+    "life": "Радуйся тому, что есть. Удовлетворённость — щит, который не пробить жадности.",
+    "quote": "Тоша — состояние душевной лёгкости. Сантоша — состояние правильной лёгкости.",
+    "original": "Tośa means the state of mental ease. Santośa, therefore, means a state of proper ease.",
+    "source": "«A Guide to Human Conduct», гл. «Сантоша»"
+  },
+  "tapah": {
+    "term": "Тапах",
+    "sanskrit": "तपः",
+    "meaning": "Усилие, аскеза",
+    "life": "Усилие ради цели — это огонь, который очищает. Но горит он ради блага, а не ради славы.",
+    "quote": "Тапах — это практика усилия ради достижения цели.",
+    "original": "Tapah means to practise penance to reach the goal.",
+    "source": "«A Guide to Human Conduct», гл. «Тапах»"
+  },
+  "svadhyaya": {
+    "term": "Свадхьяя",
+    "sanskrit": "स्वाध्याय",
+    "meaning": "Самоизучение",
+    "life": "Читать — не значит понять. Изучать себя и смысл писаний — значит видеть суть, а не букву.",
+    "quote": "Свадхьяя — это ясное понимание духовного предмета.",
+    "original": "Svádhyáya means the clear understanding of any spiritual subject.",
+    "source": "«A Guide to Human Conduct», гл. «Свадхьяя»"
+  },
+  "ishvara_pranidhana": {
+    "term": "Ишвара-пранидхана",
+    "sanskrit": "ईश्वरप्रणिधान",
+    "meaning": "Вверение себя Высшему",
+    "life": "Когда всё шатается — отдай перекос равновесию. Прими Высшее как единственный идеал.",
+    "quote": "Ишвара-пранидхана означает утвердить себя в Космической идее — принять Ишвару единственным идеалом жизни.",
+    "original": "Iishvara prańidhána means to establish oneself in the Cosmic idea – to accept Iishvara as the only ideal of life.",
+    "source": "«A Guide to Human Conduct», гл. «Ишвара-пранидхана»"
+  },
+  "kiirtana": {
+    "term": "Кииртана",
+    "sanskrit": "कीर्तन",
+    "meaning": "Пение Имени",
+    "life": "Когда настигает уныние — пой. Пять минут искреннего кииртана меняют состояние ума.",
+    "quote": "Если человек искренне и всем сердцем поёт кииртану хотя бы пять–десять минут, Парама Пуруша доволен.",
+    "original": "If people do kiirtana sincerely and wholeheartedly even for five or ten minutes, Parama Puruśa becomes pleased.",
+    "source": "«Saḿgiita: Song, Dance and Instrumental Music», дискурс о кииртане"
+  },
+  "omkara": {
+    "term": "Омкара",
+    "sanskrit": "ॐ",
+    "meaning": "Космический звук",
+    "life": "За всем шумом мира стоит один звук-семя. Вернись к нему — и мусор ума рассыплется.",
+    "quote": "Резонанс коллективных вибраций Вселенной зовётся звуком флейты Кришны — иное имя омкары, космического звука, достигающего ушей искателей.",
+    "original": "The resonance of the collective vibrations of the universe is called the flute sound of Krśńa, another name for oṋḿkára, the cosmic sound which reaches the ears of spiritual aspirants in various ways.",
+    "source": "«A Few Problems Solved», ч. 5, гл. 1"
+  },
+  "samskara": {
+    "term": "Самскара",
+    "sanskrit": "संस्कार",
+    "meaning": "Отпечаток действия",
+    "life": "Каждое действие оставляет в уме след, который ждёт своей реакции. Знание — единственное, что переживает смерть.",
+    "quote": "Эти потенциальные реакции называются самскарами.",
+    "original": "These potential reactions are called saḿskáras.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 5"
+  },
+  "guna": {
+    "term": "Гуны",
+    "sanskrit": "गुण",
+    "meaning": "Три краски бытия",
+    "life": "Саттва — ясность, раджас — действие, тамас — покой-инерция. Всё трое нужны, но ведёт саттва.",
+    "quote": "Принцип Пракрати, который утверждает существование сознания, называется саттва-гуной — созидательным принципом.",
+    "original": "The principle of Prakrti which establishes the existence of unit consciousness by qualifying Puruśa is called sattvaguńa, the sentient principle.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 1"
+  },
+  "prama": {
+    "term": "Прама",
+    "sanskrit": "प्रमा",
+    "meaning": "Динамическое равновесие",
+    "life": "Не фанатизм и не распущенность, а живое равновесие трёх сфер. Держи баланс — и сила придёт.",
+    "quote": "Прама означает «баланс». Равновесие и уравновешенность вместе называются прамой.",
+    "original": "The etymological meaning of pramá is “balance”. Equilibrium and equipoise are collectively known as pramá.",
+    "source": "«Pramá: Dynamic Equilibrium and Equipoise», гл. 1"
+  },
+  "samadhi": {
+    "term": "Самадхи",
+    "sanskrit": "समाधि",
+    "meaning": "Просветлённая ясность",
+    "life": "Когда ум успокоился и сошёлся в точку, видно то, что скрыто в суете.",
+    "quote": "Когда махаттаттва полностью растворяется в единичном сознании, освобождая его от влияния Пракрати, это называется нирвикальпа-самадхи.",
+    "original": "After this mahattattva carries out sádhaná and dissolves itself in the unit consciousness completely... that is called nirvikalpa samádhi.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 8"
+  },
+  "seva": {
+    "term": "Сева",
+    "sanskrit": "सेवा",
+    "meaning": "Служение",
+    "life": "Служа миру, служишь Ему: объект служения — проявление Брахмы. В служении нет места тщеславию.",
+    "quote": "Во время служения чувствуй: объект служения — это Нараяна, а ты — духовный искатель.",
+    "original": "At the time of rendering service, you should feel that object of service is Náráyańa or God and that you are a spiritual aspirant.",
+    "source": "«Ananda Marga Karma Yoga in a Nutshell», гл. о севе"
+  },
+  "vrtti": {
+    "term": "Вритти",
+    "sanskrit": "वृत्ति",
+    "meaning": "Пропенсити, вихрь ума",
+    "life": "Мысли — как волны: встают и гаснут. В их основе — вртти, скрытые тенденции ума. Их можно не кормить.",
+    "quote": "Вртти — скрытые тенденции ума, лежащие в основе мыслей; их выражение и контроль зависят от чакр.",
+    "original": "Behind these psychic phenomena are the underlying vrttis [propensities] which are primarily related to the inborn saḿskáras.",
+    "source": "«Yoga Psychology», дискурс о чакрах"
+  },
+  "saincara": {
+    "term": "Сайнчара",
+    "sanskrit": "संचार",
+    "meaning": "Поток проявления",
+    "life": "Всё движется: тонкое становится грубым и снова тонким. Твой забег — маленький виток этого потока.",
+    "quote": "Из-за экстраверсивного и интроверсивного потоков космического воображения всё во Вселенной находится в постоянном движении.",
+    "original": "Due to the extroversive (Saiṋcara) and introversive (Pratisaiṋcara) flows of cosmic imagination everything of this universe is in a state of continuous flux.",
+    "source": "«Ananda Marga Ideology and Way of Life», ч. 6"
+  },
+  "sadripu": {
+    "term": "Шадрипу",
+    "sanskrit": "षड्रिपु",
+    "meaning": "Шесть врагов",
+    "life": "Кама, кродха, лобха, моха, мада, матсарья — шесть вихрей, которые тянут ум вниз. Их не убивают — их отпускают.",
+    "quote": "Авидьямайя держит ум через шесть врагов: кама (желание), кродха (гнев), лобха (жадность), моха (заблуждение), мада (гордость) и матсарья (зависть).",
+    "original": "Káma (longing for earthly objects), krodha (anger), lobha (avarice), moha (attraction), mada (vanity) and mátsarya (envy) are the six enemies.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "krodha": {
+    "term": "Кродха",
+    "sanskrit": "क्रोध",
+    "meaning": "Гнев",
+    "life": "Гнев тлеет и разгорается от ударов. Он хочет, чтобы ты тоже вскипел. Не поддавайся.",
+    "quote": "Гнев (кродха) — один из шести врагов, что тянут ум к грубости и останавливают его путь к тонкому.",
+    "original": "Krodha (anger)... are the six enemies, as they absorb the mind in crudeness and stop its march towards the subtle.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "lobha": {
+    "term": "Лобха",
+    "sanskrit": "लोभ",
+    "meaning": "Жадность",
+    "life": "Жадность никогда не насыщается: чем больше берёшь, тем больше хочется. Ей нужно отдавать.",
+    "quote": "Жадность (лобха) — один из шести врагов; она поглощает ум в грубом.",
+    "original": "Lobha (avarice)... are the six enemies, as they absorb the mind in crudeness.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "moha": {
+    "term": "Моха",
+    "sanskrit": "मोह",
+    "meaning": "Заблуждение, пелена",
+    "life": "Пелена неведения путает всё: правду с ложью, пользу с вредом. Её снимает ясность, а не сила.",
+    "quote": "Моха (заблуждение) — один из шести врагов; он поглощает ум в грубости и останавливает его путь ввысь.",
+    "original": "Moha (attraction)... are the six enemies, as they absorb the mind in crudeness and stop its march towards the subtle.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "nidra": {
+    "term": "Нидра",
+    "sanskrit": "निद्रा",
+    "meaning": "Сонливость, инерция",
+    "life": "Лень — мягкая тюрьма. Она не бьёт — она убаюкивает. Разбуди себя усилием.",
+    "quote": "Лень, сонливость — это тамасическое состояние, которое держит ум в инерции.",
+    "original": "Nidrá, sleepiness, is one of the six defects of the mind.",
+    "source": "«Ánanda Vacanámrtam», дискурс о шести пороках"
+  },
+  "chakra": {
+    "term": "Чакры",
+    "sanskrit": "चक्र",
+    "meaning": "Центры ума и тела",
+    "life": "Восходящий путь от Муладхары к Сахасраре — это работа с собственным умом, шаг за шагом.",
+    "quote": "Чакра — это собрание желёз и поджелудочных центров; через них выражаются пропенсити ума.",
+    "original": "What is a cakra? It is a collection of glands and sub-glands... The fifty main propensities of the human mind are expressed through these cakras.",
+    "source": "«Yoga Psychology», дискурс о чакрах"
+  },
+  "cinta": {
+    "term": "Чинта",
+    "sanskrit": "चिन्ता",
+    "meaning": "Беспокойство, тревога",
+    "life": "Взволнованный ум мечется между тревогами. Он не решает ничего — только сжигает ясность.",
+    "quote": "Кшипта — состояние, когда ум очень возмущён, полон тревог и беспокойства.",
+    "original": "Kśipta is when the mind is very perturbed, full of worries and anxieties.",
+    "source": "«Yoga Psychology», дискурс о состояниях ума"
+  },
+  "bhaya": {
+    "term": "Бхая",
+    "sanskrit": "भय",
+    "meaning": "Страх",
+    "life": "Страх — одна из восьми оков. Он сковывает движение к тонкому, удерживая ум в грубом.",
+    "quote": "Восемь оков — это страх, стыд, ненависть, сомнение, знатность рода, гордость культурой и другие; они удерживают ум в грубости.",
+    "original": "Bhaya (fear), lajjá (shame), ghrńá (hatred)... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "death_rebirth": {
+    "term": "Перерождение",
+    "sanskrit": "पुनर्जन्म",
+    "meaning": "Новая жизнь",
+    "life": "Смерть не стирает ум — он несёт свои реакции в новое тело. Сохраняется лишь то, что ты понял.",
+    "quote": "Уму приходится рождаться заново, чтобы изжить реакции прошлых действий. Это неизбежно, пока не завершится путь к слиянию с Сознанием.",
+    "original": "It is in order to experience these reactions and because of its inability to experience these reactions without the brain that the mind has to take shelter in a new body in a subsequent birth.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 5"
+  },
+  "kama": {
+    "term": "Кама",
+    "sanskrit": "काम",
+    "meaning": "Желание земного",
+    "life": "Желание тянет ум к грубому. Оно не зло само по себе — зло, когда оно ведёт, а не служит.",
+    "quote": "Кама — влечение к земным объектам — один из шести врагов, что поглощают ум в грубости и останавливают его путь к тонкому.",
+    "original": "Káma (longing for earthly objects) ... are the six enemies, as they absorb the mind in crudeness and stop its march towards the subtle.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "mada": {
+    "term": "Мада",
+    "sanskrit": "मद",
+    "meaning": "Гордость, самодовольство",
+    "life": "Гордыня поднимает голову, когда приходит сила. Смотри: сила — не твоя, она через тебя.",
+    "quote": "Мада (гордость) — один из шести врагов; он поглощает ум в грубости и останавливает его путь ввысь.",
+    "original": "Mada (vanity) ... are the six enemies, as they absorb the mind in crudeness and stop its march towards the subtle.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "matsarya": {
+    "term": "Матсарья",
+    "sanskrit": "मात्सर्य",
+    "meaning": "Зависть",
+    "life": "Зависть — взгляд на чужое добро как на своё лишение. Её лечит радость за другого.",
+    "quote": "Матсарья (зависть) — один из шести врагов; она поглощает ум в грубости и останавливает его путь ввысь.",
+    "original": "Mátsarya (envy) ... are the six enemies, as they absorb the mind in crudeness and stop its march towards the subtle.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "dvesha": {
+    "term": "Двеша",
+    "sanskrit": "द्वेष",
+    "meaning": "Ненависть, отвращение",
+    "life": "Ненависть держит ум в тисках грубого не меньше, чем желание. Отпусти обоих — и станет легко.",
+    "quote": "Двеша (ненависть) — одна из клеш, которая держит ум в грубости и мешает движению к тонкому.",
+    "original": "Dveśa (hatred) is one of the five kleshas which keeps the mind absorbed in crude objects.",
+    "source": "«Subháśita Saḿgraha», ч. 7, дискурс о макрокосмической позиции"
+  },
+  "samshaya": {
+    "term": "Самшая",
+    "sanskrit": "संशय",
+    "meaning": "Сомнение",
+    "life": "Сомнение — это оковы, которые сковывают движение. Спрашивай — но потом решайся.",
+    "quote": "Сомнение (шаунка) — одна из восьми оков; связанный ими теряет способность движения к тонкому.",
+    "original": "Shauṋká (doubt) ... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "ahankara": {
+    "term": "Ахамкара",
+    "sanskrit": "अहंकार",
+    "meaning": "Эго, «я делаю»",
+    "life": "Эго — часть ума, которая «делает». Когда «я делаю» становится «я есть» — это уже клетка.",
+    "quote": "Ахамтаттва (эго) — та часть ума, которая действует; в ней рождается идея «я делаю».",
+    "original": "Ahaḿtattva (ego) is the part of the mind which performs all actions. In Ahaḿtattva we find another idea in addition to the feeling of “I”, and that is the idea of “I do”.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 1"
+  },
+  "guru": {
+    "term": "Гуру",
+    "sanskrit": "गुरु",
+    "meaning": "Тот, кто рассеивает тьму",
+    "life": "Гуру не делает за тебя — он указывает путь. Освобождение нельзя получить в подарок, его нужно заслужить усилием.",
+    "quote": "Освобождение невозможно без милости великого учителя, но ошибается тот, кто думает, что освобождение можно получить без усилия.",
+    "original": "It is true that liberation is not possible without the great preceptor’s kindness. But one is mistaken if one thinks that liberation can be obtained without effort.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. о садгуру"
+  },
+  "pranayama": {
+    "term": "Пранаяма",
+    "sanskrit": "प्राणायाम",
+    "meaning": "Контроль дыхания",
+    "life": "Дыхание — мост между телом и умом. Контролируя его, ты успокаиваешь волны мыслей.",
+    "quote": "Пранаяма — процесс контроля дыхания вместе с идеацией Высшего Сознания. Он помогает уму в концентрации и медитации.",
+    "original": "Práńáyáma is the process of breath control along with the imposition of the ideation of Supreme Consciousness. It helps the mind in concentration and meditation.",
+    "source": "«Yoga Psychology», дискурс «Пранаяма»"
+  },
+  "dhyana": {
+    "term": "Дхьяна",
+    "sanskrit": "ध्यान",
+    "meaning": "Медитация",
+    "life": "Медитация — не остановка мыслей, а направление их к Единому без разрыва потока.",
+    "quote": "Дхьяна — это непрерывный поток ума к высшей цели, медитация на Высшее Существо.",
+    "original": "Dhyána means “the unbroken flow of mind towards the supreme goal”. So dhyána is meditation on the Supreme Entity.",
+    "source": "«Yoga Psychology», дискурс «Вопросы и ответы о медитации»"
+  },
+  "ekatva": {
+    "term": "Единство",
+    "sanskrit": "एकत्व",
+    "meaning": "Всё есть Одно",
+    "life": "За множеством имён и форм — одна Сознательность. Видя это, ум не делится на «своё» и «чужое».",
+    "quote": "Весь мир пронизан одной Бесконечной Сознательностью.",
+    "original": "For the entire universe is pervaded by one Infinite Consciousness.",
+    "source": "«A Few Problems Solved», ч. 1, гл. 2"
+  },
+  "kala": {
+    "term": "Кала",
+    "sanskrit": "काल",
+    "meaning": "Время",
+    "life": "Время — колесо, а не линейка. Оно не причина мира — причина в Высшем Сознании.",
+    "quote": "Время не может быть первопричиной творения: само время существует лишь в рамках Сознания.",
+    "original": "Time (kála) cannot be the primary cause of creation; time exists only within Consciousness.",
+    "source": "«Ánanda Vacanámrtam», ч. 23, дискурс «О первопричине»"
+  },
+  "shiva": {
+    "term": "Шива",
+    "sanskrit": "शिव",
+    "meaning": "Благой, Господь",
+    "life": "Шива — тот, кто объединил всех в одну семью, кто учил не различать людей.",
+    "quote": "Идентичность каждого была одной: все принадлежали одной семье — семье Шивы.",
+    "original": "The identity of everyone was the same: all belonged to the same family, the family of Shiva.",
+    "source": "«A Few Problems Solved», ч. 1, гл. 2"
+  },
+  "satsaunga": {
+    "term": "Сатсанга",
+    "sanskrit": "सत्सङ्ग",
+    "meaning": "Благое сообщество",
+    "life": "Круг общения формирует ум. Будь рядом с теми, кто тянет вверх, — и сам подтянешься.",
+    "quote": "Сатсанга — благое общество, компания тех, кто идёт к истине; оно очищает ум.",
+    "original": "Satsauṋga means the company of the good, the association of those who move towards the Supreme.",
+    "source": "«Ánanda Vacanámrtam», ч. 29, дискурс о сатсанге"
+  },
+  "prasad": {
+    "term": "Прасад",
+    "sanskrit": "प्रसाद",
+    "meaning": "Благодать, дар",
+    "life": "Прасад — дар, принятый с благодарностью. В нём нет заслуги берущего — только милость дающего.",
+    "quote": "Всё, что ниспослано, — прасад; принимай с благодарностью, не считая себя заслужившим.",
+    "original": "Whatever comes is prasáda; accept it with gratitude, never thinking that you have deserved it.",
+    "source": "«Ananda Marga Ideology and Way of Life in a Nutshell», ч. 1"
+  }
+}

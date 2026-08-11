@@ -1,0 +1,80 @@
+{
+  "_comment": "События-выборы: «искушение vs практика». choices: [{text, then effects/grants}].",
+  "despondency": {
+    "id": "despondency",
+    "name": "Уныние",
+    "glyph": "dusk",
+    "text": "Тусклый свет гаснет. Вас настигает уныние — тяжесть Тамаса затягивает ум. Внутри, как эхо, слышно Имя.",
+    "choices": [
+      {
+        "text": "Петь Имя",
+        "sub": "Сыграть кииртану. Уныние рассеется, и вы запомните этот якорь.",
+        "kind": "practice",
+        "effects": [
+          { "kind": "add_card", "cardId": "nama_kevalam" },
+          { "kind": "heal", "amount": 3 },
+          { "kind": "anchor", "situation": "УНЫНИЕ", "practice": "КИИРТАН" }
+        ]
+      },
+      {
+        "text": "Заглушить силой",
+        "sub": "Сжать зубы и перетерпеть. Это даст краткую силу, но гнев останется в колоде.",
+        "kind": "strength",
+        "effects": [
+          { "kind": "add_card", "cardId": "krodha" },
+          { "kind": "prana", "amount": 6 }
+        ]
+      }
+    ]
+  },
+  "temptation": {
+    "id": "temptation",
+    "name": "Суета",
+    "glyph": "coin",
+    "text": "Лавка на перекрёстке. Купец суеты протягивает мешочек Праны: «Возьми. Тебе ведь пригодится».",
+    "choices": [
+      {
+        "text": "Взять Прану",
+        "sub": "+15 Праны. Но беспокойство просочится в ум.",
+        "kind": "strength",
+        "effects": [
+          { "kind": "prana", "amount": 15 },
+          { "kind": "add_card", "cardId": "cinta" }
+        ]
+      },
+      {
+        "text": "Отказаться",
+        "sub": "Не брать лишнего. Апариграха дарит покой и знание.",
+        "kind": "practice",
+        "effects": [
+          { "kind": "guna", "amount": 2, "which": "s" },
+          { "kind": "prana", "amount": 2 },
+          { "kind": "knowledge", "amount": 1 }
+        ]
+      }
+    ]
+  },
+  "wayfarer": {
+    "id": "wayfarer",
+    "name": "Путник",
+    "glyph": "pilgrim",
+    "text": "У обочины сидит путник. Нога вывихнута, улыбка усталая. Рядом стоит тёплый чайник.",
+    "choices": [
+      {
+        "text": "Помочь",
+        "sub": "Служение исцеляет того, кто служит. Восстановите 6 ХП.",
+        "kind": "practice",
+        "effects": [
+          { "kind": "heal", "amount": 6 },
+          { "kind": "guna", "amount": 1, "which": "s" }
+        ]
+      },
+      {
+        "text": "Пройти мимо",
+        "sub": "У каждого своя дорога.",
+        "kind": "strength",
+        "effects": []
+      }
+    ]
+  }
+}
