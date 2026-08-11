@@ -1,7 +1,7 @@
 // Экран боя: HUD, гуны, враг, рука, анимации.
 import { h, mount, clear } from '../dom.js'
 import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter } from '../widgets.js'
-import { burst, floatNum, setTint, sfx } from '../fx.js'
+import { burst, floatNum, setTint, sfx, kiirtanaWave } from '../fx.js'
 import { CARDS } from '../../core/data.js'
 import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome } from '../../core/engine.js'
 
@@ -107,7 +107,9 @@ export function combatScreen(app) {
     const cardEls = handEl.children
     const el = cardEls[handIndex]
     const from = el ? posOf(el) : { x: innerWidth / 2, y: innerHeight / 2 }
-    sfx.play()
+    if (card.type === 'kiirtana') { sfx.kiirtana(); kiirtanaWave() }
+    else if (card.type === 'mantra') sfx.med()
+    else sfx.play()
 
     const events = playCard(combat, handIndex, 0)
     applyEvents(events, from)

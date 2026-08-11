@@ -233,6 +233,55 @@ export function resolveEventChoice(run, eventId, choiceIndex) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Лавка Садхака (магазин между чакрами, §13.1/§13.3)
+// ─────────────────────────────────────────────────────────────
+
+export const SHOP_COSTS = { card: 8, remove: 6, relic: 20 }
+
+export function rollShop(run) {
+  const pool = cardRewardPool()
+  const cards = []
+  const seen = new Set()
+  while (cards.length < 3 && pool.length > 0) {
+    const c = pool[Math.floor(run.rand() * pool.length)]
+    if (!seen.has(c.id)) {
+      seen.add(c.id)
+      cards.push(c.id)
+    }
+  }
+  const lockedRelics = Object.keys(RELICS).filter((id) => !run.relics.includes(id))
+  const relic = lockedRelics.length > 0
+    ? lockedRelics[Math.floor(run.rand() * lockedRelics.length)]
+    : null
+  const removable = run.deck.filter((id) => CARDS[id].type === 'curse' || CARDS[id].type === 'vritti')
+  return { cards, relic, removable: [...new Set(removable)] }
+}
+
+export function buyShopCard(run, cardId) {
+  if (run.prana < SHOP_COSTS.card) return { ok: false, reason: 'Не хватает Праны' }
+  run.prana -= SHOP_COSTS.card
+  run.deck.push(cardId)
+  return { ok: true, card: cardId }
+}
+
+export function buyShopRemove(run, cardId) {
+  if (run.prana < SHOP_COSTS.remove) return { ok: false, reason: 'Не хватает Праны' }
+  const i = run.deck.indexOf(cardId)
+  if (i < 0) return { ok: false, reason: 'Карта не найдена' }
+  run.prana -= SHOP_COSTS.remove
+  run.deck.splice(i, 1)
+  return { ok: true, card: cardId }
+}
+
+export function buyShopRelic(run, relicId) {
+  if (run.prana < SHOP_COSTS.relic) return { ok: false, reason: 'Не хватает Праны' }
+  if (run.relics.includes(relicId)) return { ok: false, reason: 'Уже есть' }
+  run.prana -= SHOP_COSTS.relic
+  run.relics.push(relicId)
+  return { ok: true, relic: relicId }
+}
+
+// ─────────────────────────────────────────────────────────────
 // Продвижение по карте
 // ─────────────────────────────────────────────────────────────
 

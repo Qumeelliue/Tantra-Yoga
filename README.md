@@ -42,6 +42,10 @@ tantra-yoga/
 ├── scripts/
 │   ├── balance.mjs               — баланс-симуляция (ИИ играет N забегов)
 │   └── aliases.mjs               — резолвер алиасов для `npm run balance`
+├── bot/                      ← Telegram-бот-обёртка («дверь» в мини-апп, aiogram)
+│   ├── main.py                    — /start → WebApp-кнопка + кнопка меню
+│   ├── requirements.txt
+│   └── README.md                  — запуск (токен, HTTPS-хостинг)
 ├── tests/                  ← юнит-тесты движка и забега (vitest)
 ├── content/                ← контент игры (цитаты, карты, враги, реликвии, события)
 ├── .opencode/skills/       ← 218 скиллов Шастры (копия из проекта Shastra)

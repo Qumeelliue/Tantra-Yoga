@@ -79,6 +79,20 @@ export function burst(x, y, color = '#f2c46d', count = 14) {
   }
 }
 
+// Кииртан-волна: золотое кольцо, расходящееся из центра экрана
+export function kiirtanaWave() {
+  const body = document.body
+  for (let i = 0; i < 3; i++) {
+    const el = document.createElement('div')
+    el.className = 'kiirtana-ring'
+    el.style.left = '50%'
+    el.style.top = '45%'
+    el.style.animationDelay = `${i * 0.18}s`
+    body.append(el)
+    setTimeout(() => el.remove(), 1400)
+  }
+}
+
 // Всплывающее число
 export function floatNum(x, y, text, cls = 'dmg') {
   const el = document.createElement('div')
@@ -151,4 +165,11 @@ export const sfx = {
   death() { tone(180, 0.6, 'sine', 0.05); tone(120, 0.8, 'sine', 0.05, 0.2); tone(80, 1.0, 'sine', 0.045, 0.4) },
   win() { tone(523, 0.25, 'sine', 0.05); tone(659, 0.25, 'sine', 0.05, 0.12); tone(784, 0.25, 'sine', 0.05, 0.24); tone(1047, 0.5, 'sine', 0.045, 0.36) },
   samadhi() { tone(700, 0.5, 'sine', 0.04); tone(1050, 0.6, 'sine', 0.03, 0.1); tone(1400, 0.7, 'sine', 0.02, 0.2) },
+  // Кииртан: нисходящая гамма имени (Баба Нам Кевалам)
+  kiirtana() {
+    const notes = [587.3, 523.3, 493.9, 440, 392, 329.6, 293.7]
+    notes.forEach((f, i) => tone(f, 0.16, 'sine', 0.04, i * 0.09))
+    tone(329.6, 0.3, 'triangle', 0.03, notes.length * 0.09)
+  },
+  buy() { tone(440, 0.16, 'sine', 0.045); tone(660, 0.2, 'sine', 0.04, 0.08); tone(880, 0.24, 'sine', 0.035, 0.16) },
 }

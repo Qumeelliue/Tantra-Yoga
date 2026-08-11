@@ -1,5 +1,5 @@
 // Баланс-прогон: умный ИИ играет N забегов, считаем винрейт и статистику.
-import { createRun, startCombatAtNode, finishCombat, currentNode, floorComplete, advanceFloor, resolveEventChoice } from '../webapp/js/core/run.js'
+import { createRun, startCombatAtNode, finishCombat, currentNode, floorComplete, advanceFloor, resolveEventChoice, rollShop, buyShopCard, buyShopRemove } from '../webapp/js/core/run.js'
 import { mulberry32, playCard, endTurn, resolveRemoval, effectiveCost } from '../webapp/js/core/engine.js'
 import { CARDS, EVENTS, RELICS } from '../webapp/js/core/data.js'
 import { EMPTY_META } from '../webapp/js/core/save.js'
@@ -125,6 +125,15 @@ function runOnce(seed, pacifist = false) {
         const id = locked[Math.floor(run.rand() * locked.length)] || Object.keys(RELICS)[0]
         run.relics.push(id)
         run.done[run.floor][i] = true
+      }
+    }
+    // Лавка между чакрами: тратим Прану на лучшие карты
+    if (run.status === 'active' && run.floor < run.floors.length - 1) {
+      const shop = rollShop(run)
+      for (const id of shop.cards) {
+        if (run.prana >= 8 && (id === 'om' || id === 'seva' || id === 'ahimsa' || id === 'santosa')) {
+          buyShopCard(run, id)
+        }
       }
     }
     if (run.status !== 'active') break

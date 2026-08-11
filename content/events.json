@@ -76,5 +76,78 @@
         "effects": []
       }
     ]
+  },
+  "merchant": {
+    "id": "merchant",
+    "name": "Гордость",
+    "glyph": "coin",
+    "text": "На перекрёстке стоит лавочник и хвалится товаром: «Взгляни, какой редкий камень! Другие таким не владеют».",
+    "choices": [
+      {
+        "text": "Удержаться от покупки",
+        "sub": "Апариграха: не брать лишнего. +2 саттвы и +1 знание.",
+        "kind": "practice",
+        "effects": [
+          { "kind": "guna", "amount": 2, "which": "s" },
+          { "kind": "knowledge", "amount": 1 }
+        ]
+      },
+      {
+        "text": "Купить камень",
+        "sub": "+15 Праны, но гордость проберётся в ум.",
+        "kind": "strength",
+        "effects": [
+          { "kind": "prana", "amount": 15 },
+          { "kind": "add_card", "cardId": "mada" }
+        ]
+      }
+    ]
+  },
+  "elder": {
+    "id": "elder",
+    "name": "Старец",
+    "glyph": "pilgrim",
+    "text": "Седоусый старец сидит у костра. «Садись, — говорит он. — Пока ты идёшь, я поведаю о Гуру».",
+    "choices": [
+      {
+        "text": "Слушать",
+        "sub": "Знание — свет. Возьмите карту мантры «Ом» и восстановите 3 ХП.",
+        "kind": "practice",
+        "effects": [
+          { "kind": "add_card", "cardId": "om" },
+          { "kind": "heal", "amount": 3 },
+          { "kind": "knowledge", "amount": 1 }
+        ]
+      },
+      {
+        "text": "Идти дальше",
+        "sub": "Некогда слушать. −0.",
+        "kind": "strength",
+        "effects": []
+      }
+    ]
+  },
+  "kiirtana_echo": {
+    "id": "kiirtana_echo",
+    "name": "Эхо Имени",
+    "glyph": "dusk",
+    "text": "В тишине гор что-то поёт само собой — эхо кииртаны гуляет между склонами. Уныние тает.",
+    "choices": [
+      {
+        "text": "Вплестись в пение",
+        "sub": "Якорь: УНЫНИЕ → КИИРТАН. +1 карта кииртана в колоду.",
+        "kind": "practice",
+        "effects": [
+          { "kind": "add_card", "cardId": "nama_kevalam" },
+          { "kind": "anchor", "situation": "УНЫНИЕ", "practice": "КИИРТАН" }
+        ]
+      },
+      {
+        "text": "Молча пройти",
+        "sub": "Стыдно петь. Ничего не происходит.",
+        "kind": "strength",
+        "effects": []
+      }
+    ]
   }
 }

@@ -9,6 +9,7 @@ import {
   takeCardReward, gainRelic, meditatableCards, doMeditate,
   eventOptions, resolveEventChoice, isNodeDone, markNodeDone,
   floorComplete, advanceFloor, CHAKRAS,
+  rollShop, buyShopCard, buyShopRemove, buyShopRelic, SHOP_COSTS,
 } from './core/run.js'
 import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById,
@@ -61,12 +62,34 @@ function showTitle() {
     Object.keys(meta.compendium.relics).length
   const quoteCount = Object.keys(meta.quotesUnlocked).length
 
-  const cityStage = meta.stats.pacified + meta.stats.awakened
-  const cityText = cityStage === 0
-    ? 'Город спит под пеленой Тамаса. Начните восхождение.'
-    : cityStage <= 3
-      ? 'В Городе зажигаются первые огни.'
-      : 'Город пробуждается. Оковы рассеиваются, улицы светлеют.'
+  const cityStage = Math.min(4, meta.stats.pacified + meta.stats.awakened)
+  const CITY_TEXT = [
+    'Город спит под пеленой Тамаса. Начните восхождение.',
+    'В Городе зажигаются первые огни.',
+    'Улицы светлеют — оковы распадаются, люди поднимают глаза.',
+    'Город пробуждается. Бывшие владыки становятся учителями.',
+    'Город светится. Цикл неведения разомкнут.',
+  ]
+  const cityText = CITY_TEXT[cityStage]
+
+  const gauges = [
+    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.runs), h('div', { class: 'lbl' }, 'забеги')),
+    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.pacified), h('div', { class: 'lbl' }, 'мирных')),
+    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.victories), h('div', { class: 'lbl' }, 'побед')),
+    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.awakened), h('div', { class: 'lbl' }, 'пробуждений')),
+    h('div', { class: 'gauge' }, h('div', { class: 'num' }, `${quoteCount}/${Object.keys(QUOTES).length}`), h('div', { class: 'lbl' }, 'цитат')),
+  ]
+
+  const cityDots = h('div', { class: 'city-stages' },
+    Array.from({ length: 5 }, (_, i) =>
+      h('div', { class: `stage-dot ${i <= cityStage ? 'on' : ''}` }, h('span', {}, `✦ ${i + 1}`))))
+
+  const best = meta.bestRun
+    ? h('div', { class: 'hint mt', style: 'text-align:center' },
+        best.awakened
+          ? 'Лучший забег: полное Пробуждение.'
+          : `Лучший забег: ${best.pacified} мирных освобождений.`)
+    : null
 
   show(h('div', { class: 'screen active title-screen' },
     h('div', { class: 'mandala-wrap' },
@@ -76,16 +99,15 @@ function showTitle() {
     h('div', { class: 'game-title' }, 'Tantra Yoga'),
     h('div', { class: 'game-sub' }, 'игра-учение · колода — это ум'),
     h('p', { class: 'hint', style: 'max-width:300px' }, cityText),
+    cityDots,
 
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
-        h('span', {}, 'забеги'),
+        h('span', {}, 'путь города'),
         h('span', {}, 'освобождено оков'),
         h('span', {}, 'Грантха')),
-      h('div', { class: 'gauges' },
-        h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.runs), h('div', { class: 'lbl' }, 'забеги')),
-        h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.pacified), h('div', { class: 'lbl' }, 'мирных')),
-        h('div', { class: 'gauge' }, h('div', { class: 'num' }, `${quoteCount}/${Object.keys(QUOTES).length}`), h('div', { class: 'lbl' }, 'цитат'))),
+      h('div', { class: 'gauges' }, gauges),
+      best,
 
       h('div', { class: 'btn-row' },
         h('button', { class: 'btn primary', onclick: startNewRun }, 'Начать забег'),
@@ -283,6 +305,7 @@ function pickRewardCard(id) {
   markSeen('cards', id)
   saveMeta(app.meta)
   sfx.unlock()
+  markNodeDone(app.run)
   afterNode()
 }
 
@@ -519,11 +542,87 @@ function afterNode() {
   const run = app.run
   if (run.status !== 'active') return showTitle()
   if (floorComplete(run)) {
-    if (!advanceFloor(run)) {
-      return showTitle()
-    }
+    if (run.floor >= run.floors.length - 1) return showMap()
+    app.shop = rollShop(run)
+    showShop()
+    return
   }
   showMap()
+}
+
+// ─────────────────────────────────────────────────────────────
+// Лавка Садхака
+// ─────────────────────────────────────────────────────────────
+
+function showShop() {
+  const run = app.run
+  const shop = app.shop || rollShop(run)
+  app.shop = shop
+
+  const pranaEl = h('div', { class: 'hint center', style: 'font-size:14px;color:var(--gold-soft);font-weight:800' }, `Прана: ${run.prana}`)
+
+  const row = (title, sub, price, onclick, disabled) =>
+    h('div', { class: `shop-item ${disabled ? 'disabled' : ''}`, onclick: disabled ? null : onclick },
+      h('div', {},
+        h('div', { class: 'si-name' }, title),
+        sub ? h('div', { class: 'si-desc' }, sub) : null),
+      h('div', { class: 'si-price' }, price))
+
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, '❖'),
+    h('div', { class: 'node-title display' }, 'Лавка Садхака'),
+    h('p', { class: 'node-text' }, 'Между чакрами — привал. Здесь Прана возвращается как жертва: карты в ум, очищение, память.'),
+    pranaEl,
+
+    h('div', { class: 'hint mt' }, 'Карты в колоду (ум)'),
+    h('div', { class: 'choices' },
+      shop.cards.map((id) => {
+        const c = CARDS[id]
+        return row(`${c.name} · ${c.sanskrit || ''}`, c.desc, `${SHOP_COSTS.card} ⚡`, () => doBuy(() => buyShopCard(run, id), id))
+      })),
+
+    h('div', { class: 'hint mt' }, 'Отпустить карту-овку'),
+    h('div', { class: 'choices' },
+      shop.removable.length === 0
+        ? h('div', { class: 'hint center' }, 'В уме нет оков.')
+        : shop.removable.map((id) =>
+            row(`Сжечь: ${CARDS[id].name}`, '', `${SHOP_COSTS.remove} ⚡`, () => doBuy(() => buyShopRemove(run, id), id)))),
+
+    shop.relic
+      ? h('div', { class: 'hint mt' }, 'Память (реликвия)')
+      : null,
+    shop.relic
+      ? h('div', { class: 'choices' },
+          row(`${RELICS[shop.relic].name}`, RELICS[shop.relic].desc, `${SHOP_COSTS.relic} ⚡`, () => doBuy(() => buyShopRelic(run, shop.relic), shop.relic)))
+      : null,
+
+    h('div', { class: 'btn-row mt' },
+      h('button', { class: 'btn primary', onclick: () => { app.shop = null; advanceFloor(run); showMap() } }, 'В путь →')),
+  ))
+}
+
+function doBuy(fn, id) {
+  const res = fn()
+  if (!res.ok) {
+    toast(res.reason, 'danger')
+    return
+  }
+  sfx.buy()
+  markSeen('cards', id)
+  markSeen('relics', id)
+  saveMeta(app.meta)
+  showShop()
+}
+
+function toast(text, cls) {
+  const el = h('div', { class: `log-line ${cls || ''}` }, text)
+  document.body.append(el)
+  el.style.position = 'fixed'
+  el.style.left = '50%'
+  el.style.top = '40%'
+  el.style.transform = 'translateX(-50%)'
+  el.style.zIndex = 99
+  setTimeout(() => el.remove(), 2200)
 }
 
 function typeRu(card) {

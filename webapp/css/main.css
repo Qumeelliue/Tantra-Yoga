@@ -260,6 +260,33 @@ body {
 
 .city-card { margin-top: 10px; }
 
+.city-stages {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 8px 0 4px;
+}
+.stage-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: var(--muted-2);
+  border: 1px solid var(--line-gold-soft);
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.4s ease;
+}
+.stage-dot.on {
+  color: #1a1207;
+  background: radial-gradient(circle at 38% 30%, #ffe9b3, var(--gold) 70%);
+  border-color: rgba(255, 233, 179, 0.6);
+  box-shadow: 0 0 14px rgba(242, 196, 109, 0.55);
+}
+
 .gauges {
   display: flex;
   justify-content: space-between;
@@ -767,6 +794,23 @@ body {
   to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2); }
 }
 
+/* кииртан-волна */
+.kiirtana-ring {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  border: 2px solid rgba(242, 196, 109, 0.8);
+  pointer-events: none;
+  z-index: 7;
+  animation: kiirtanaRing 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+@keyframes kiirtanaRing {
+  from { transform: scale(0.2); opacity: 1; }
+  to { transform: scale(14); opacity: 0; }
+}
+
 /* печать отречения (сожжение) */
 .burn-overlay {
   position: fixed;
@@ -863,7 +907,11 @@ body {
   border: 1px solid var(--line-gold-soft);
   background: rgba(0, 0, 0, 0.2);
   margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
 }
+.shop-item:hover { border-color: var(--line-gold); background: var(--card-bg-hi); }
+.shop-item.disabled { opacity: 0.5; pointer-events: none; }
 .shop-item .si-name { font-weight: 700; color: var(--ink); font-size: 14px; }
 .shop-item .si-desc { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
 .shop-item .si-price { color: var(--gold-soft); font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }

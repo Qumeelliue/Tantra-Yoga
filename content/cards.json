@@ -459,5 +459,114 @@
     "rarity": "uncommon",
     "quoteId": "satsaunga",
     "tags": ["practice"]
+  },
+  "madhuvidya": {
+    "id": "madhuvidya",
+    "name": "Мадхувидья",
+    "sanskrit": "मधुविद्या",
+    "type": "mantra",
+    "cost": 1,
+    "desc": "Знание-мёд: 4 блока и +2 саттвы.",
+    "effects": [
+      { "kind": "block", "amount": 4 },
+      { "kind": "guna", "amount": 2, "which": "s" }
+    ],
+    "guna": { "s": 0, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "pranayama",
+    "tags": ["mantra", "defend"]
+  },
+  "samyama": {
+    "id": "samyama",
+    "name": "Самьяма",
+    "sanskrit": "संयम",
+    "type": "mantra",
+    "cost": 2,
+    "desc": "Правильное использование: 8 урона и −2 успокоение не нужно — просто 8 урона.",
+    "effects": [{ "kind": "damage", "amount": 8 }],
+    "guna": { "s": 1, "r": 0, "t": 0 },
+    "rarity": "rare",
+    "quoteId": "dhyana",
+    "tags": ["mantra", "attack"]
+  },
+  "nitya_anitya": {
+    "id": "nitya_anitya",
+    "name": "Нитья-антья",
+    "sanskrit": "नित्यानित्य",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Различение вечного и невечного: 5 блоков, посмотрите 1 верхнюю карту.",
+    "effects": [
+      { "kind": "block", "amount": 5 },
+      { "kind": "scry", "amount": 1 }
+    ],
+    "guna": { "s": 1, "r": 0, "t": 0 },
+    "rarity": "common",
+    "quoteId": "svadhyaya",
+    "tags": ["practice", "defend"]
+  },
+  "tapasyah": {
+    "id": "tapasyah",
+    "name": "Тапас",
+    "sanskrit": "तपस्य",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Усилие: 4 урона и 3 блока.",
+    "effects": [
+      { "kind": "damage", "amount": 4 },
+      { "kind": "block", "amount": 3 }
+    ],
+    "guna": { "s": 1, "r": 0, "t": 0 },
+    "rarity": "common",
+    "quoteId": "tapah",
+    "tags": ["practice", "attack", "defend"]
+  },
+  "japa": {
+    "id": "japa",
+    "name": "Джапа",
+    "sanskrit": "जप",
+    "type": "mantra",
+    "cost": 0,
+    "desc": "Повторение мантры: +1 энергия и +1 саттва.",
+    "effects": [
+      { "kind": "energy", "amount": 1 },
+      { "kind": "guna", "amount": 1, "which": "s" }
+    ],
+    "guna": { "s": 0, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "omkara",
+    "tags": ["mantra"]
+  },
+  "dana": {
+    "id": "dana",
+    "name": "Дана",
+    "sanskrit": "दान",
+    "type": "seva",
+    "cost": 1,
+    "desc": "Щедрость: восстановите 2 ХП и возьмите 2 карты.",
+    "effects": [
+      { "kind": "heal", "amount": 2 },
+      { "kind": "draw", "amount": 2 }
+    ],
+    "guna": { "s": 1, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "seva",
+    "tags": ["seva"]
+  },
+  "smarana": {
+    "id": "smarana",
+    "name": "Смарана",
+    "sanskrit": "स्मरण",
+    "type": "kiirtana",
+    "cost": 0,
+    "desc": "Памятование: +1 саттва, сожгите 1 мусор из руки.",
+    "effects": [
+      { "kind": "guna", "amount": 1, "which": "s" },
+      { "kind": "exhaustFromHand", "filter": ["vritti", "curse"], "amount": 1 }
+    ],
+    "guna": { "s": 0, "r": 0, "t": 0 },
+    "rarity": "common",
+    "quoteId": "satsaunga",
+    "tags": ["kiirtana"]
   }
 }

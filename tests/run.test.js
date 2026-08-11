@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createRun, startCombatAtNode, finishCombat, currentNode, isNodeDone, floorComplete, advanceFloor } from '@webapp/js/core/run.js'
+import { createRun, startCombatAtNode, finishCombat, currentNode, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic } from '@webapp/js/core/run.js'
 import { mulberry32, checkOutcome } from '@webapp/js/core/engine.js'
 import { EMPTY_META } from '@webapp/js/core/save.js'
 
@@ -145,5 +145,43 @@ describe('забег: поток', () => {
     expect(res.dead).toBe(true)
     expect(run.status).toBe('dead')
     expect(run.outcome).toBe('death')
+  })
+})
+
+describe('лавка садхака', () => {
+  it('ролл лавки даёт 3 карты и реликвию без дублей', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    const shop = rollShop(run)
+    expect(shop.cards.length).toBeGreaterThanOrEqual(3)
+    expect(new Set(shop.cards).size).toBe(shop.cards.length)
+    expect(shop.relic).toBeTruthy()
+  })
+
+  it('покупка карты списывает Прану и кладёт карту в колоду', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.prana = 20
+    const shop = rollShop(run)
+    const before = run.deck.length
+    const res = buyShopCard(run, shop.cards[0])
+    expect(res.ok).toBe(true)
+    expect(run.prana).toBe(12)
+    expect(run.deck.length).toBe(before + 1)
+  })
+
+  it('не даёт купить без Праны', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.prana = 1
+    const shop = rollShop(run)
+    const res = buyShopCard(run, shop.cards[0])
+    expect(res.ok).toBe(false)
+  })
+
+  it('покупка реликвии убирает её из пула', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.prana = 30
+    const shop = rollShop(run)
+    const res = buyShopRelic(run, shop.relic)
+    expect(res.ok).toBe(true)
+    expect(run.relics).toContain(shop.relic)
   })
 })
