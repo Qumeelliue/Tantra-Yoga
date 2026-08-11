@@ -1,0 +1,1834 @@
+Sarkar's English Grammar
+
+DEDICATED
+unto the sacred memory of the
+first grammarian of the world,
+the late Mahapandit Panini
+
+CONTENTS
+
+1.	Parts of Speech
+2.	Articles
+3.	Case
+4.	Plural Forms of Nouns
+5.	Do Verbs Have Plural Forms?
+6.	Transitive, Intransitive and Auxiliary Verbs
+7.	Tenses
+8.	Voice
+9.	Speech
+10.	Mood
+11.	Verb Contractions
+12.	Use of Prepositions
+13.	Some Rules of Pronunciation
+14.	Some Rules of Spelling
+15.	Some Definitions: Avoiding Common Errors
+16.	Some Latin Adjectives
+17.	Diminutives
+18.	Some Condensed Words
+19.	Structural Formula: Suffix and Prefix
+20.	The Origin of a Few Words
+21.	General Knowledge on Composition
+22.	Some Models of Composition
+23.	Letter-Writing
+24.	Prйcis-Writing
+ 	Afterword
+
+CHAPTER 1
+
+PARTS OF SPEECH
+
+Usually eight parts of speech are recognized in English grammar. They are: noun, pronoun, adjective, verb, adverb, preposition, conjunction and interjection.
+
+Noun: A noun is usually defined as the name of an object, or a person, or a country; or [as the] subjective [part] of a sentence.
+
+Joseph is eating.
+The peacock is dancing.
+India is a big country.
+The mighty Himalayas are in the north of India.
+The Indus is a big river.
+The Punjab is a land of five rivers.
+The rose is a beautiful flower.
+The magnolia is a sweet-smelling flower.
+Baikal is a lake.
+Bengali is a language.
+The Bengalees are an ancient people.
+
+Pronoun: A pronoun is a part of speech used in lieu of an original noun to avoid boring repetition.
+
+Mohan lives in Calcutta, but today he is in Dacca.
+
+Adjective: An adjective is a part of speech that qualifies a noun or a noun-equivalent.
+
+He is a good boy.
+Poppy seed is an indispensable item in a West Bengal dish.
+
+Verb: A verb is a part of speech that denotes an action, that associates the subject with the predicate.
+
+Jadu is singing Rabindra Sangita.
+
+Adverb: An adverb is a part of speech that modifies a verb.
+
+He is running fast.
+
+Here fast is an adverb modifying the verb is running.
+
+Preposition: A preposition is a part of speech which grants position to an object or an action.
+
+put on (wear)        put off (extinguish)
+
+Conjunction: A conjunction is a part of speech that maintains a link amongst different ideas in both compound and complex sentences.
+
+He went to Calcutta, and there he visited the zoological garden.
+
+And is the connecting link between the two sentences: "He went to Calcutta." "There he visited the zoological garden."
+
+Interjection: An interjection is a part of speech that expresses a mental idea through an affirmative or negative word.
+
+Oh!  Hello!  Alas!
+
+Pro-verb: In the list of the above-mentioned eight parts of speech, the pro-verb is not included. But it will be better if the pro-verb is treated as a separate part of speech.
+
+I shall never kill an innocent bird as Dickie does.
+
+Here does is a pro-verb, because it has been used in lieu of the verb kill. Just as a pronoun is a part of speech used in place of a noun, a pro-verb is a part of speech which substitutes for the original verb.
+
+Verbal Noun: A noun denotes the name and existential form of an entitative idea. When an action takes place in such a way that it comes within the scope of a special name and existential form of an entitative idea, it is regarded as a verbal noun.
+
+Running is a good exercise.
+Walking in the morning is good for the health.
+
+Verbal Adjective: When a verb qualifies a noun or a noun-equivalent, it is called a verbal adjective.
+
+A running panorama is more interesting than a stagnant picture.
+
+Here running is a verbal adjective, qualifying the noun panorama. [The equivalent word] in Bengali [would be considered] an adjective. In such cases generally the suffix -shatr (শত্র) or the suffix -shánac (শানচ) is used in Sanskrit, and the suffix -anta (ন্ত) is used in Bengali: for example, calanta (চলন্ত), ghumanta (ঘুমন্ত). (1)
+
+Syntax
+
+The word syntax(2) denotes the particular style of composition according to grammatical rules. That is, syntax means how and where the different parts of speech (noun, pronoun, adjective, verb, adverb, preposition, conjunction, interjection) are to be used in a sentence.
+
+(1) The above sections on Verbal Noun and Verbal Adjective are taken from the section on "Kriyá" ("Verb") in the author's Shabda Cayaniká ("A Collection of Words") Part 10, 1987. Accompanying them is the following definition of gerund (which departs from conventional definitions): "When a verb qualifies another verb, or a noun, or a noun-equivalent, and has a special idea behind it, it is called a gerund. But [the equivalent form] is treated as an adjective in Bengali, and has the suffix -d́a (ড). Example of gerund: 'Listen to the gurgling sound of the swift-flowing river.'" –Eds.
+
+(2) There is great confusion among scholars about the origin of the word syntax. Some say that the word is of Latin origin, others are of the opinion that it is of Greek origin, some maintain that it is of Ottoman Turkish origin, while, according to others, it is of mixed Semitic and Greek origin.
+
+CHAPTER 2
+
+ARTICLES
+
+An article is a word generally used before a noun or a noun-equivalent. Generally three kinds of articles are recognized in English grammar: (1) definite, (2) indefinite (general) and (3) numeral. Some hold the opinion that an article is a kind of adjective, but not everyone agrees with this definition.
+
+Definite article: The, that, those may be treated as definite articles.
+
+Indefinite (general) article:
+
+One who knows French may easily learn Spanish. To learn Bengali one does not have go to Calcutta; one can learn it just as well in Benares.
+
+Here one is an indefinite article. It does not indicate any particular person, but refers to people in general.
+
+Numeral article:
+
+Seven hundred Bengalee youths under the leadership of Prince Vijaya Sinha went to Lanka in 534 B.C.
+
+Here Seven hundred (700) is a numeral article.
+
+CHAPTER 3
+
+CASE
+
+Generally, the following are the recognized cases in English grammar:
+
+Nominative case: Ram is going.
+
+Objective case: He gave food to a beggar.
+
+Instrumental case: Jadu cut the vegetables with a knife.
+
+Dative case: My uncle brought a nice pen for me.
+
+Ablative case: Ripe mangoes were hanging from the tree.
+
+Possessive case: Aurangzeb was the third son of Emperor Shahjahan.
+
+Containing, or locative, case: Fishes live in water.
+
+Vocative case, or case of address: O my Lord! Give me strength to serve humanity.
+
+All the cases in one [Bengali] rhyme:
+
+Jiiv Iishvarersrśt́i	জীব ঈশ্বরের সৃষ্টি
+Jiivke dбo dбm,	জীব্কে দাও দাম,
+Jiiver dvбrб hay sбdhanб	জীবের দ্বারা হয় সাধনা
+Jiiver janyei nбm;	জীবের জন্যেই নাম |
+Jiiv haite бsiyбche	জীব হিতে আসিযাছে
+Pragatir mбn,	প্রগতির মান,
+Jiiver sevб kare’ yбo	জীবের সেবা করে’ যাও
+D́hele’ man prбń;	ঢেলে’ মন প্রাণ |
+Jiivete nihita áche	জীবেতে নিহিত আছে
+Doś-guń yata,	দোষ–গুণ যত,
+Dośke sariye’ guń	দোষকে সরিযে’ গুণ
+Bбŕбo satata;	বাড়াও সতত |
+Sambodhan pad sabe	সম্বোধন পদ সবে
+D́eke’ d́eke’ kay	ডেকে’ ডেকে’ কয,
+He jiiv! vinбsh kabhu	হে জীব! বিনাশ কভু
+Koro nб samay.	কোরো না সময় | | (1)
+
+[Unit beings are the creations of God,
+Respect unit beings,
+Meditation is practised by unit beings,
+There are different names for different units;
+A rising standard of progress
+Comes from unit beings,
+Continue to render service to unit beings,(2)
+With all your mind and all your life;
+In unit beings there lie
+Both virtues and vices,
+Remove the vices
+And increase the virtues always;
+The vocative case
+Calls to everyone,
+“O beings, never waste
+Your valuable time.”]
+
+And in one Sanskrit verse:
+
+Rámah rájamńih sadá vijayate,	রামঃ রাজমণিঃ সদা বিজযতে,
+Rámaḿ Rameshaḿ bhaje;	রামং রমেশং ভজে  |
+Rámeńá bhihat́áh nishácaracamúh,	রামেণাভিহতাঃ নিশাচরচমূঃ,
+Rámáya tasmae namah;	রামায় তস্মৈ নমঃ |
+Rámánńasti parájayah,	রামান্নাস্তি পরাজয়ঃ,
+Rámasya dáso’smyaham;	রামস্য দাসোঽস্ম্যহম্ |
+Ráme cittalayah sadб,	রামে চিত্তলয়ঃ সদা,
+Bho Ráma mбmuddharah.	ভো রাম মামুদ্ধরঃ | | (3)
+
+[Rama, the jewel of a king, is always victorious,
+I worship Rama and Vishnu;
+The demon army are killed by Rama,
+Salutations to that Rama;
+There cannot be any real defeat from Rama,(4)
+I am the humble servant of Rama;
+The mind should always concentrate on Rama,(5)
+O Rama, protect me.]
+
+(1) Táŕá Bándhá Chaŕá ("A Bundle of Rhymes") 1991, rhyme 4. –Eds.
+
+(2) Literally "of unit beings", i.e., possessive case, in Bengali. –Eds.
+
+(3) From Varńa Vijiṋána ("The Science of Letters") 1984, p. 242. –Eds.
+
+(4) I.e., if one is killed by Rama, the person wins liberation. –Eds.
+
+(5) Literally "in Rama", i.e., locative case, in Sanskrit. –Eds.
+
+CHAPTER 4
+
+PLURAL FORMS OF NOUNS
+
+When a word denotes only one object, it is singular in number. When it denotes more than one object, it is plural in number.
+
+Rule 1: The general rule for forming plurals is to add -s to the word in the singular number:
+
+SINGULAR	PLURAL
+dog	dogs
+book	books
+hand	hands
+house	houses
+town	towns
+village	villages
+
+Exceptions: If the noun ends in -ss, -sh, -ch, -x or -z, the plural is formed by adding -es to the singular:
+
+SINGULAR	PLURAL
+class	classes
+glass	glasses
+bench	benches
+brush	brushes
+box	boxes
+fox	foxes
+topaz	topazes
+
+Rule 2: If the last letter of the noun is -y and if -y is preceded by a consonant, the plural is formed by changing -y into -ies:
+
+SINGULAR	PLURAL
+fly	flies
+sky	skies
+lady	ladies
+family	families
+city	cities
+
+But if the final -y is preceded by a vowel, the plural is formed by adding only -s to the word in the singular number:
+
+SINGULAR	PLURAL
+day	days
+tray	trays
+key	keys
+monkey	monkeys
+boy	boys
+toy	toys
+
+Rule 3: If the last letter of a noun is -o and if -o is preceded by a consonant, the plural is usually formed by adding -es to the singular:
+
+SINGULAR	PLURAL
+hero	heroes
+buffalo	buffaloes
+echo	echoes
+mango	mangoes
+mosquito	mosquitoes
+potato	potatoes
+
+a. Some exceptions: cantos, mementos, solos, pianos, provisos.
+
+b. The plural of nouns ending in -oo, -io, -eo and -yo is formed by adding -s and not -es:
+
+SINGULAR	PLURAL
+bamboo	bamboos
+cuckoo	cuckoos
+portfolio	portfolios
+cameo	cameos
+embryo	embryos
+
+Rule 4: If a noun ends in -f or -fe, the plural is generally formed by changing -f or -fe into -ves:
+
+SINGULAR	PLURAL
+life	lives
+wife	wives
+calf	calves
+knife	knives
+leaf	leaves
+wolf	wolves
+thief	thieves
+
+Exceptions: The plural of nouns ending in -ief, -ff, -oof, -rf, -eef, is formed by adding only -s to the word in the singular number:
+
+SINGULAR	PLURAL
+chief	chiefs
+cliff	cliffs
+proof	proofs
+dwarf	dwarfs
+reef	reefs
+
+Rule 5: There are eight nouns which form their plurals by changing the inside vowels(s):
+
+SINGULAR	PLURAL
+man	men
+woman	women
+foot	feet
+tooth	teeth
+goose	geese
+mouse	mice
+louse	lice
+dormouse	dormice
+
+Rule 6: There are some nouns which form their plurals by adding -en.
+
+SINGULAR	PLURAL
+child	children
+ox	oxen
+brother	brethren (brothers)
+
+Rule 7: In the case of compound nouns, plurals are fomrned by adding -s to the principal word:
+
+SINGULAR	PLURAL
+father-in-law	fathers-in-law
+daughter-in-law	daughters-in-law
+passer-by	passers-by
+step-brother	step-brothers
+commander-in-chief	commanders-in-chief
+
+Rule 8: Some nouns are singular in form but plural in meaning: cattle, people, swine, vermin, gentry, nobility, aristocracy, clergy, folk, etc.
+
+The Kaoravas wanted to steal the cattle of King Virata.
+Virtuous people get peace in life.
+
+Rule 9: Some nouns are plural in form but singular in meaning: mathematics, physics, politics, economics, whereabouts, gallows, ethics, etc.
+
+Rule 10: Some nouns have no plural form: alphabet, furniture, poetry, scenery, offspring, luggage, expenditure, issue (in the sense of child or children).
+
+Rule 11:
+a. Some nouns have only plural form: alms, annals, assets, bellows, riches.
+b. Some nouns have plural form but are used in the singular: means, news, innings.
+
+Rule 12: Some nouns have double plural forms but with different meanings:
+
+fish (many fish of the same variety)	fishes (many fishes of different varieties)
+people (many people live in Calcutta)	peoples (nations – many peoples of the world)
+
+System of Making Latin Plurals
+
+For Latin words ending in -um in the singular number, the plural is formed by replacing -um with -a.
+
+SINGULAR	PLURAL
+vitum	vita
+stratum	strata
+datum	data
+memorandum	memoranda
+microvitum	microvita
+medium	media
+cash memo	cash mema
+quantum	quanta
+corrigendum	corrigenda
+propagandum	propaganda
+agendum	agenda
+desideratum	desiderata
+
+For Latin words ending in -us in the singular number, the plural is formed by replacing -us with -i:
+
+SINGULAR	PLURAL
+radius	radii
+lotus	loti
+cactus	cacti
+plexus	plexi
+genius	genii
+alumnus	alumni
+
+CHAPTER 5
+
+DO VERBS HAVE PLURAL FORMS?
+
+Principal verbs have no plural forms.(1) For instance, I meditate, we meditate. He/she sang three songs, they sang three songs.
+
+Auxiliary verbs, with the exception of the verbs be [and have] have no plural forms. Only the be verb [and have verb] have both singular and plural forms:
+
+SINGULAR	PLURAL
+am (I am going.)	are (We are going.)
+is (He is doing.)	are (They are doing.)
+was (A mouse was playing.)	were (Mice were playing.)
+are (Thou art playing.)	are (You are playing.)
+has (Tom has a kite.)	have (Boys have kites.)
+
+(1) In the third-person present indicative tense, principal verbs do have a singular form: they meditate, he/she meditates. –Eds.
+
+CHAPTER 6
+
+TRANSITIVE, INTRANSITIVE AND AUXILIARY VERBS
+
+In cases where the verb is indispensably associated with an object, it is called a transitive verb. Where the verb can do without the help of an object, it is called an intransitive verb.
+
+Transitive verbs:
+
+Ram gave food to the poor.
+
+Intransitive verbs:
+
+Ram is laughing.
+
+In Bengali, transitive verbs are called sakarmak kriyá (সকর্মক ক্রিযা), and intransitive akarmak kriyá (অকর্মক ক্রিযা).
+
+Auxiliary verbs: Incomplete verbs helping in the formation of complete verbs are known as auxiliary verbs. Auxiliary means helping. Shall, will, should, would, etc., are examples of auxiliary verbs.
+
+I would like to bring to your notice the fact that . . .
+
+CHAPTER 7
+
+TENSES
+
+Present Indicative
+ 	1st Person	2nd Person	3rd Person
+Singular	I read	you read	he/she reads
+who reads
+Plural	we read	you read	they read
+who read?
+Present Continuous
+ 	1st Person	2nd Person	3rd Person
+Singular	I am reading	you are reading	he/she is reading
+who is reading?
+Plural	we are reading	you are reading	they are reading
+who are reading?
+Present Perfect
+ 	1st Person	2nd Person	3rd Person
+Singular	I have eaten	you have eaten	he/she has eaten
+who has eaten?
+Plural	we have eaten	you have eaten	they have eaten
+who have eaten?
+Present Perfect Continuous
+ 	1st Person	2nd Person	3rd Person
+Singular	I have been reading	you have been reading	he/she has been reading
+who has been reading?
+Plural	we have been reading	you have been reading	they have been reading
+who have been reading?
+Past Indicative
+ 	1st Person	2nd Person	3rd Person
+Singular	I ate	you ate	he/she ate
+who ate?
+Plural	we ate	you ate	they ate
+who ate?
+Past Continuous
+ 	1st Person	2nd Person	3rd Person
+Singular	I was taking	you were taking	he/she was taking
+who was taking?
+Plural	we were taking	you were taking	they were taking
+who were taking?
+Past Perfect
+ 	1st Person	2nd Person	3rd Person
+Singular	I had eaten	you had eaten	he/she had eaten
+who had eaten?
+Plural	we had eaten	you had eaten	they had eaten
+who had eaten?
+Past Perfect Continuous
+ 	1st Person	2nd Person	3rd Person
+Singular	I had been eating	you had been eating	he/she had been eating
+who had been eating?
+Plural	we had been eating	you had been eating	they had been eating
+who had been eating?
+Future Indicative
+ 	1st Person	2nd Person	3rd Person
+Singular	I shall wash	you will wash	he/she will wash
+who will wash?
+Plural	we shall wash	you will wash	they will wash
+who will wash?
+Future Continuous
+ 	1st Person	2nd Person	3rd Person
+Singular	I shall be going	you will be going	he/she will be going
+who will be going?
+Plural	we shall be going	you will be going	they will be going
+who will be going?
+Future Perfect
+ 	1st Person	2nd Person	3rd Person
+Singular	I shall have gone	you will have gone	he/she will have gone
+who will have gone?
+Plural	we shall have gone	you will have gone	they will have gone
+who will have gone?
+Future Perfect Continuous
+ 	1st Person	2nd Person	3rd Person
+Singular	I shall have been going	you will have been going	he/she will have been going
+who will have been going?
+Plural	we shall have been going	you will have been going	they will have been going
+who will have been going?
+Habit: used to (svabhбvagata atiita – স্বভাবগত অতীত)
+ 	1st Person	2nd Person	3rd Person
+Singular	I used to go	you used to go	he/she used to go
+who used to go?
+Plural	we used to go	you used to go	they used to go
+who used to go?
+N.B.: In English used to has no corresponding present form.
+[Conditional:] would (ardha samapikб atiita – অর্ধ সমপিকা অতীত)
+ 	1st Person	2nd Person	3rd Person
+Singular	I would go	you would go	he/she would go
+who would go?
+Plural	we would go	you would go	they would go
+who would go?
+Doubt: might (dvidhбtmaka atiita – দ্বিধাত্মক অতীত)
+ 	1st Person	2nd Person	3rd Person
+Singular	I might have read	you might have read	he/she might have read
+who might have read?
+Plural	we might have read	you might have read	they might have read
+who might have read?
+Present Imperative
+ 	1st Person	2nd Person	3rd Person
+Singular	let me do	do	let him/her do
+Plural	let us do	do	let them do
+
+CHAPTER 8
+
+VOICE
+
+While expressing an idea, we may use two kinds of voice: the active voice and the passive voice.
+
+When, in an expression, the subject predominates the idea, the expression is known as active voice; and when the object of the verbal form predominates [i.e., the object becomes the subject], it is called passive voice.
+
+(It may be remembered in this connection that in the Bengali language there are three voices: the active voice, the passive voice, and the subjunctive voice.)
+
+"Rama killed Ravana": Here the fact is expressed in the active voice.
+
+"Ravana was killed by Rama." Here the killing [of Ravana] was done by Rama, and is in the passive voice.
+
+CHAPTER 9
+
+SPEECH
+
+When the language of a person is represented as it is or as it was or as it would have been, it is called direct speech. When the speech of a person is not directly expressed, but expressed in the language of a person conveying that speech, it is called indirect speech.
+
+Direct:
+
+Ram said that Shyam had told him, “I shall visit Anandanagar tomorrow.”
+
+Indirect:
+
+Ram said that Shyam had told him that he would visit Anandanagar the next (following) day.
+
+CHAPTER 10
+
+MOOD
+
+Generally four kinds of mood are recognized in English grammar. They are (1) imperative mood, (2) indicative mood, (3) infinitive mood, and (4) subjunctive mood.
+
+Imperative mood: There is a little difference between the imperative and [the Bengali] vidhiliuṋ (বিধিলিঙ 1). While the imperative mood denotes order or request or persuasion, the vidhiliuṋ denotes desirability. While the imperative comes within the range of the present and the future tenses, the vidhiliuṋ comes within the scope of the past and future tenses.
+
+Future vidhiliuṋ:
+
+You should do.
+
+Past vidhiliuṋ:
+
+You should have done.
+
+Present imperative:
+
+Do it.
+
+There is no separate form for the future imperative. The present imperative form is used in both cases. In certain languages there is a separate form for the future imperative. In the Ráŕhii dialect of the Bengali language there are separate forms for the present imperative and future imperatives: khán (খান ["eat"] – present imperative), kháben (খাবেন ["eat"] – future indicative2), kheyen ( খেয়েন ["eat"] – future imperative).
+
+Indicative mood: In the indicative mood almost all the tenses are used.
+
+Infinitive mood: The infinitive mood is a sort of verbal noun – to set, to be, to go, etc.
+
+Subjunctive Mood:
+
+Had I been in Calcutta I would have visited the zoological garden there.
+
+In such a case, we show the correlation between two past verbal expressions: "Had I been in Calcutta." "I would have visited the zoological garden there."
+
+In Bengali:
+
+Shoń re бmбr buddhu sońб	শোণ রে আমার বুদ্ধু সোণা
+Shoń re бmбr bhutum,	শোণ রে আমার ভুতুম,
+Thбkta yadi mayъrpauṋkhii	থাক্ত যদি মযূরপঙ্খী
+Dъr videshe yetum.	দূর বিদেশে যেতুম | | (3)
+
+[Listen, O my golden child,
+Listen, my little bird,
+If I had had a peacock-shaped boat,
+I would have gone to far-off lands.]
+
+(1) [...]
+
+(2) It is indicative in form, but imperative in spirit. –Eds.
+
+(3) A traditional lullaby. –Eds.
+
+CHAPTER 11
+
+VERB CONTRACTIONS
+
+So far as the written language is concerned, we should write the full forms of verbs and not the verb contractions. But in colloquial language, in different verbal expressions such as announcements, in drama, etc., we use verb contractions. For instance:
+
+WRITTEN FORM	COLLOQUIAL FORM
+will not	won't
+should not	shouldn't
+would not	wouldn't
+could not	couldn't
+has not	hasn't
+have not	haven't
+had not	hadn't
+was not	wasn't
+were not	weren't
+is not	isn't
+are not	aren't
+do not	don't
+
+CHAPTER 12
+
+USE OF PREPOSITIONS
+
+On, upon, above: [Taking the original senses of the words,] on is to be used where there is a tactual relationship between two objects, for example, "The glass is on the table." But when there is no tactual relationship (the upper object maintains a gap in relation to the lower), upon (up + on = on + on = upon)1 is used: for example, "The ceiling is upon the table."
+
+[Taking the original senses,] upon and above are almost synonymous, but in practical use upon is primarily used in the case of material objects and above is used in the case of immaterial objects, for example, "The ceiling is upon one's head," but, "He is above all prejudice."
+
+To look upon means "to consider or treat":
+
+He looks upon him as his elder brother. (I.e., he maintains a relationship with him as with an elder brother).
+
+In, on, to:
+
+The Punjab is in the west of India.
+Pakistan is on the west of India.
+Iran is to the west of India.
+
+The Punjab is in the west and is within Indian territory. So we should say in the west. In the second sentence, Pakistan is on the west – it is outside Indian territory but touching the Indian border. In this case, on the west should be used. In the third case, Iran is to the west of India. Iran does not touch the border of India – there is no common border – so here to the west should be used.
+
+In, into, unto: In old English, into was used in the sense of coming inside from outside, and in was used when something was already inside.
+
+He is entering into the room. (He is going into the room from outside, crossing the threshold.)
+
+But if we say, "He is in the room," it means that he is already inside the room.
+
+In modern English into is fast becoming extinct.
+
+About 1200 years ago in old English, the preposition unto had three kinds of use: towards, to and from. Now it use is almost restricted to Biblical language.
+
+Between, among, amongst: When a matter concerns two persons or two objects, the preposition between should be used, but when the parties concerned are more than two in number, among or amongst should be used.
+
+There was a tug-of-war between Ram and Shyam.
+They were discussing among/amongst themselves.
+
+Between, in between: Between means in the two. "Bengal is between Assam and Bihar." In between is a common error. In between means in in the two, in which case there lies the defect of duality.
+
+(1) The original implication of adding up to on was to double the sense of elevation – so that the tactual relationship would be lost and a gap would be introduced. –Eds.
+
+CHAPTER 13
+
+SOME RULES OF PRONUNCIATION
+
+The following is a list of words which are spelt in one way but pronounced in a different way.
+
+WORDS	CORRECT PRONUNCIATION 1
+housewife [in the sense of a case for needles, thread]	huzif
+Dalhousie	daluzi
+colonel	cornel
+lieutenant	leftnant
+sandwich	sandich
+Greenwich	[gren]ich
+Gloucester	glauster
+pall-mall [a game of ancient times]	pel-mel
+viscount	vicount
+government	guvment
+parliament2	parliment
+northwestern wind	nor'western wind
+
+[The words eighty and eighteen, though correctly pronounced as they are spelt, are sometimes mispronounced "eight-ty" and "eight-teen".]
+
+Use: The s in use will be pronounced like s when the word is a noun, and like z when the word is a verb.
+
+French and English pronunciation: In French, the definite article the is le in the masculine gender, la in the feminine gender, and les in plural. But the pronunciation of la, le and les is changed while in diphthong with other words. In such cases the system of spelling becomes the primary factor; for instance, the men will be, in French, les hommes (pronounced "lez-omme" instead of "les-omme").
+
+The English word knife has come from the French word kanif. In this case the letter k remains mute. But as the word originally comes from French, the system of retaining the k in spelling is followed. In French the k is pronounced.
+
+The first h in a French word remains mute; for example, the English hotel is pronounced "otel" in French, and the English hospital is pronounced "aupital" in French. In the case of the word honour, the French pronunciation has been accepted [in English]. Even uneducated French people follow this [as their] natural system of pronunciation.
+
+A historian / an historian: When the first h remains mute in words of French origin, such as honour, hour, heir, history, hospital, and hotel, the article an must be used before the noun. [And when the h is pronounced, either a or an may be used.] In old English, an historian was correct; in modern English, both a historian and an historian are correct.
+
+Of / off: Of, as in “Bank of India,“ is pronounced “ov“ (অব্), (বাঙ্ক্ অব্ ইন্ডিয). Off is pronounced ”of“ (অফ্). Of means র,3 off means "far" (দূরে).
+
+Tug of war: Tug of war is pronounced "tug-ah-far" (টগ-আ-ফার).
+
+Is: Is is pronounced "iz"[, not "ij"] (ইজ়), not (ইজ), for example, "He is ("iz") a good boy."
+
+Pronunciation of d [as d and as j] in English: The English language follows two main schools of intonation: Anglo-Saxon and Norman. According to Anglo-Saxon intonation, English d [in the middle of a word] is pronounced "j". According to Norman intonation, English d is pronounced "d", as in dog. Both these schools of pronunciation are equally correct. For instance:
+
+NORMAN	ANGLO-SAXON
+education	ejucation
+immediate	immejiate
+budget	budjet
+guardian	garjian
+
+Pronunciation of g as "g" or "j", and c as "s" or "k", in English: Sometimes if g is followed by e, i or y, it is pronounced "j" (general, gist). Elsewhere it is pronounced "g" (as in get, give). The word jail has two recognized spellings: jail and gaol. In the latter case it is an exception to the rule because even though g is not followed by e, i, or y (it is followed by a), even then it is pronounced "j".
+
+In the case of c, if it is followed by e, i, or y, it is pronounced like "s", but elsewhere it is pronounced like "k".
+
+For example, cat, but cinema, centre, concede, cycle, etc. In French, c with cedilla [ё] will be pronounced like "s", as in garзon ("boy").
+
+Anglo-Saxon vs. Norman pronunciation: Many people are inclined to criticize the English language, saying that it does not follow any particular system of pronunciation. This is completely incorrect. Why is but pronounced in one way and put in another way? There is a clear and consistent rule for this. But is a word of Anglo-Saxon origin, and here u is a short u sound pronounced as in under, unfair, etc.; whereas put is a word of Norman origin.
+
+Double u in English and double v in French: In the English language, to prolong the pronunciation of u, two u's were used and that has become the letter w. In original French, there was no use for this letter. But in order to properly write [some] words of non-French origin, French-speaking people initially used double-v. The French people gave the letter the name double-v (pronunc. dublve, (দুব্লবে).
+
+Pronunciation of a in English and French: In English the letter a has twenty-one kinds of pronunciation, but in French it has only one pronunciation – like the Bengali á (আ), as in Paris.
+
+A rule regarding French consonants: In the French word Paris the last s remains mute because according to the French rule, all consonants except c, f, l, r, remain mute at the end of a word. To pronounce them fully, a vowel should be added at the end of the word. Many people wrongly spell the French word madame as madam in English. But if madam is written in French, the pronunciation will be mádáṋ (মাদাঁ). To keep the pronunciation of the last letter intact, you will have to write the letter e at the end of the word. In French, mon is used for my in the masculine, ma for my in the feminine, and mes for my in the plural. So the plural of madame will be mesdames. Many people wrongly pronounce this as "mes dames" (mes d́ems, মেস্-ডেমস).
+
+Sanskrit f: The letter f is used in Arabic, Persian, Latin, English and French, but there is no such pronunciation in Sanskrit. In Sanskrit there is ph (ফ), but no f. Thus to spell words such as Fazal [a name], Finnish, fain, kanif, and fraternal in the Sanskrit [alphabet] is impossible. Hence I am in favour of putting one dot under the letter ফ in Sanskrit [ফ়] to indicate the letter f.
+
+Pronunciation of r: When r is the last letter of a syllable (but that syllable is not the last syllable), and is followed by a consonant, it is not pronounced. The time that should have been allotted for r is given to its preceding vowel, for example, "forty" → "fau-au-ty", "fourteen" → "fo-o-teen", "party" → "pah-ah-ty".
+
+If r is the [last] letter of the last syllable, and if it is followed by another word starting with a consonant, then it also remains mute. For example, "For them, I had to start for Calcutta" (here the r's are mute); "He has come for you" (here the r is pronounced because although y is a consonant, it is pronounced like a vowel). "The Damodar is a big river" – here all three r's are to be pronounced.
+
+Pronunciation of ch: Ch is pronounced sometimes as "ch" (চ), as in chalk, chair, chess; sometimes as "q" [ক sound], as in monarch, patriarch, matriarch, etc.; and sometimes as "sh" [ স ], as in branch, etc.
+
+In the case of words of French origin, ch is always pronounced "sh", for example, Pondichery (পঁদীসেরী), Chandernagore (সঁদরনগর), chauffeur, chevrolet. If n is followed by ch in a particular syllable, then ch is pronounced "sh", for example, branch, inchcape; but when ch follows n in a different syllable, then it is pronounced "ch", as in charm: for example, enchanting, Ranchi.
+
+When ch in Latin-derived words is not followed by a consonant, it is pronounced "q", as in monarch, patriarch, etc.
+
+Non-English words incorrectly pronounced in English:
+
+WORD	CORRECT PRONUNCIATION
+enclave	আঁক্লাব
+en masse	আঁ মাস্
+en route	আঁ রূত্
+madame	মাদাম
+mesdames	মেদাম
+Paris	পারী
+Argentina	Бrhentinб, আর্হেন্তিনা
+royal	রোআইয়াল
+bon voyage	বঁ বোয়াজ
+Rio de Janeiro	রীও দ্য জেনেইরো
+pell-mell	পেল-মেল
+eau-de-Cologne	ও দ্য কলোঁ
+aide-de-camp	এদ-দ্য-কঁ
+chambre (i.e., chamber)	শঁব্র
+viscount	বাইকাউণ্ট
+capita	কাপিতা
+capital	কাপিতাল
+philology	ফিলোলোজি (not ফাইলোলোজি)
+Edinburgh	এডিনবরা
+charge-d'affaires	সার্জ-দ্যাফেয়ার
+restaurant	রেস্তরাঁ
+
+(1) The author has here used the English alphabet to represent the correct pronunciations. In the last section of this chapter, added for the second edition, the author uses the Indo-Aryan, or "Sanskrit", alphabet (see p. ix) to represent the correct pronunciations. –Eds.
+
+(2) The word parley is used for "speaking". Hence parliament means "a place for speaking".
+
+(3) Bengali possessive suffix. –Eds.
+
+CHAPTER 14
+
+SOME RULES OF SPELLING
+
+Double consonant after light vowel: If a consonant is preceded by a light vowel, that is, a or o, the consonant becomes doubled.1
+
+a + count	= account
+a + cuse	= accuse
+a + quire	= acquire
+a + cident	= accident
+o + cult	= occult
+o + cident	= occident
+
+But re + quire = require. Here there is one q, because e in re- is not a light vowel.
+
+i before e: In English where the two vowels i and e come side by side, as a general rule i comes first and e succeeds i.2 Because the pronunciation of i is longer and more emphatic than that of e, i [when it is the only vowel in a syllable] is always pronounced as in kid. But the pronunciation of e varies; it may be as in met, mete, berth, etc. So in most cases i precedes e, but there are some exceptions: for instance, the verb[-root] ceive and its noun-form ceipt (e.g., receive, conceive, perceive, receipt); and also leisure (short rest), counterfeit (base), etc.
+
+Benefited or Benefitted? If the last consonant of a verb is preceded by a single vowel, and that verb is converted into a participle, then the consonant is doubled, for example, fit → fitted. But benefited is an exception.
+
+The suffix -ful: In ordinary circumstances, the English word full is spelt with two l's, but if it is a conjunct word, it is spelt -ful, for example, beautiful, handful. If the importance of the pronunciation of l is reduced, one l is dropped. This should be considered as a rule, rather than an exception.
+
+(1) See also the examples at the end of Chapter 19. –Eds.
+
+(2) See also the end of Chapter 19. –Eds.
+
+CHAPTER 15
+
+SOME DEFINITIONS:
+AVOIDING COMMON ERRORS
+
+Patriarchal, patrilineal, patrimony, patrilateral, patricidal:
+
+Patriarchal: Where the social order is handed down from father to son, as in patriarchal order of society.
+
+Patrilineal: Where the lineage is handed down from father to son; for example, where Amit Bose's son is Ajit Bose, Ajit's son is Anil Bose, and so on.
+
+Patrimony: "Father's property". But "mother's property" is not matrimony. Matrimony means "marriage" (e.g., matrimonial relations).
+
+Patrilateral: It means "related to father's side".
+
+Patricidal: The old Latin verb cide means "to kill". Thus:
+
+patricide	killing one's own father
+matricide	killing one's own mother
+fratricide	killing one's own brother
+infanticide	killing children
+homicide	killing persons
+suicide	killing oneself (suis means "I am")
+pesticide	a substance to kill pests
+insecticide	a substance to kill insects
+
+Special and especial: Special means "extra". Especial means "particular"; especially means "particularly".
+
+Today a special train will run from Calcutta to Puri due to the Chariot Festival (Rathayatra) being held in the city.
+That person who came from Italia, especially, is a good painter.
+
+Far, farther, further: Far means "distant". Farther means "more distant", it is the comparative degree of far. Further means "more afront" ["more ahead"].
+
+Purulia is far from Anandanagar.
+Asansol is farther [than Purulia] from Anandanagar.
+He went one step further.
+
+Spirituality and spiritualism: Spirituality means "pertaining to spiritual matters" or "concerning the Cognitive Principle". Spiritualism means "the cult of spirits, ghosts, etc."
+
+Veracity and voracity: Veracity means "truthfulness" or "concerning truthfulness". Voracity means "overeating", "gluttony".
+
+Observation and observance: Observation is a noun form of the verb to observe, meaning "to watch" or "to scrutinize". Observance means "ceremony".
+
+He was kept under strict observation.
+He did not take part in the social observance.
+
+School: It means "to remould". It comes from the French word йcole.
+
+Duty: Duty means "that which should be done". [In traditional English] in this sense, the word is always singular.
+
+Duty also means "tax". In this sense it is used in the plural number also.
+
+In modern English, duty in the sense of "what should be done" may also be used in the plural form.
+
+Mercenary and missionary:
+
+Mercenary: In old Latin, mercene meant "cash money", so mercenary means "one who works for money or for any other reward". Mercenary soldiers means "paid soldiers, hired soldiers".
+
+Missionary: Missionary means a "person who works for a noble cause". The word missionary is derived from the root verb mit. Mit means "to do something worthwhile, something noble".
+
+Note: As per the rule, if the suffix -ion is added to a verb ending in a consonant other than -t, the noun-form ends in -sion; for example, provide → provision, collide → collision. When the root verb ends in -t, the noun form is -tion. The only exception is mit: the noun form will not be mition, it will be mission.
+
+opt	option
+quest	question
+omit	ommission
+commit	commission
+permit	permission
+submit	submission
+
+Vernacular and colloquial: Vernacular means "the undeveloped language of local uncultured people or backward people". So it is a somewhat derogatory word.
+
+Colloquial means "spoken". Colloquial language means "spoken language". Those whose natural tongue or "kitchen language" is not English, do not usually learn colloquial English, which does not come within the framework of written English. For example, we write will not, but in colloquial English we say won't. Again, in written English we write do not, but in colloquial English, we say don't.
+
+Doldrums and pell-mell: Doldrums means a "state where not a single object is functioning properly". Suppose three persons are producing music to different tunes simultaneously. That is the state of the doldrums. Pell-mell means "a state where things are not in proper order".
+
+While inspecting the office, I found the records and registers in pell-mell order.
+
+Old, antique, ancient: Old means "time-honoured". Antique means "time-honoured, but not desirable". Its noun form is antiquity. Ancient means "time-honoured, and also desirable and respectable".
+
+Old man, old system, old English.
+Antique habits.
+Sanskrit is an ancient language.
+
+Little progress, a little progress, the little progress: Little progress means "no progress", for example, "The patient has made little progress," meaning "the patient has made no progress." A little progress means "some progress". The little progress means "the progress" particularized, but negative.1
+
+Many and many a: Many means (1) "more than two", (2) "not easy to count" (just like the word score, which has two meanings: "twenty" and "many"). Many a is plural in use, but the [associated] verb is used in the singular.
+
+Many boys are going to school.
+
+There's many a slip betwixt the cup and the lip.
+
+Many a youth and many a maid,
+Dancing 'neath the greenwood shade.
+
+Corporal and corporeal: Corporal is the Latin adjective for "body". In English the adjective is "bodily." Corporeal is also an adjective for "body", but it denotes something not within physical inference.
+
+The difficulty is one of corporal nature.
+The cuckoo is not a corporeal bird, it is a heavenly entity.2
+
+Aquatic and aqueous: Aquatic is a Latin adjective for aqua ("water"). Aqueous is also a Latin adjective for aqua ("water"), used in the sense of "having the characteristics of aqua".
+
+A fish is an aquatic animal.
+A thorough laboratory test should be done through aqueous experiment.
+
+Marine and maritime: Marine is a Latin adjective for "sea". Maritime is also a Latin adjective for "sea", but it is used when the sea does not come within the scope of inference.
+
+He is a student of the Marine Engineering College.
+South Bengal has a maritime climate.
+
+Financial, economic, pecuniary, fiscal, monetary, exchequer: Financial: "concerning money matters". Economic: "concerning money matters so far as receipt and expenditure are concerned". Pecuniary: "concerning money matters so far as the capacity to spend is concerned". Fiscal: "concerning money matters so far as the financial matters of government are concerned". Monetary: "concerning money matters" (t́ákápaysá, টাকাপয়সা3). Exchequer: "concerning the government treasury".
+
+Native: Its etymological meaning is "indigenous". But the British colonizers disdainfully called the local Indians and Africans "natives", and thus it acquired a derogatory meaning.
+
+Use and usage: Use means "utilization in vogue". Usage: When a system is followed for a long period, it is called usage.
+
+The chewing of betel is not in use in Iran now.
+
+The usage of applying vermilion dates from the Austric period.
+
+One another and each other: When something regarding more than two parties is concerned, we are to use one another.When the same concerns two parties, we are to use each other.
+
+Ram, Shyam and Jadu are fighting with one another.
+Ram and Shyam are feeding each other.
+
+Punishment, atonement and disciplinary action: Punishment: When someone does something wrong or commits a crime, he or she gets punishment from the court of law. Atonement: When someone does something wrong from a moral or ethical viewpoint, he or she receives self-punishment. One word for "self-punishment", of Latin derivation, is atonement. Disciplinary action: When someone gets punishment for unsatisfactory organizational outturn, it is called disciplinary action.
+
+Childish and childlike: Childish means "like a child" in a derogatory (negative) sense, for example, childish behaviour. Childlike means "like a child" in the positive sense, for example, childlike simplicity.
+
+Rural and rustic: Rural means "pertaining to the countryside or village". It is used in a positive sense. Rustic is used in a negative sense. For instance, we say rural banks, but rustic persons. The Bengali term for rural is grámya (গ্রাম্য), and for rustic, geṋyo (গেঁয়ো).
+
+Appreciation and depreciation: Appreciation [taking the word in its original sense] means "giving recognition or the proper price or the announced price". [It came to mean "an increase in price" as well.] Depreciation: When a negative [movement in ] price is announced, it is depreciation. Depreciation is the opposite of appreciation.
+
+Irregular account/balance and inefficient account/balance: Irregular account/balance: When an amount is spent in an irregular way and recorded on an irregular form, it is called an irregular account. Suppose Rs. 100 is to be spent, but the amount spent is Rs. 120. Then the amount of Rs. 20 is an irregular balance. This expenditure should not have been made, since one had no authority to do so.
+
+Expenditure which should not have taken place is called irregular expenditure.
+
+Inefficient account/balance: A balance in the account which cannot be closed in a recognized way with the sanction of competent authorities is called an inefficient account/balance. For a proper closure of such a balance an order for write-off is to be obtained from the higher authorities.
+
+Abound with and abound in: Regarding a container, abound in and abound with may both be used; whereas regarding the contained, only abound in may be used.
+
+Snakes abound in Thailand.
+Thailand abounds in / abounds with snakes.
+
+Historical truth and universal truth: Historical truth means a fact recorded in history, either in black and white or as a part of common people's parley, for example, " Bengal is famous for mulberry silk." This fact is recorded in history, but in future Bengal may or may not remain famous for mulberry silk. Universal truth means a truth that remains unassailed by historical changes, for example, "Honesty is the best policy."
+
+Bring and fetch: There is a basic difference in use between bring and fetch. Suppose someone is standing at a distance. If one asks that person to bring water, the verb bring should be used. But when someone is standing nearby and one asks that person to go and bring water, then the verb fetch should be used. As such, the verb fetch means to "go and bring". In India, in many cases, there is confusion between bring and fetch. Students hardly learn the correct use of fetch. Teachers should pay a little more attention to the proper use of fetch.
+
+Compare with and compare to: When the comparison shows similarity amongst different objects, the preposition with is used after compare. When dissimilarity is shown amongst different entities, that is, when contrast is shown, the preposition to is used after compare.
+
+A human may be compared with a tailless ape.
+The Vindhya Mountains cannot be compared to Lake Sharashanka.
+
+Here the Vindhya Mountains have been contrasted with Lake Sharashanka.
+
+Tumbler and glass: Is it correct to say, "Bring me a glass of water"? The answer is no: tumbler is the proper word for a "glass". When a tumbler is made of glass, it is called a glass tumbler. Thus when we say, "Bring me a glass of water," it is wrong. We should say, "Bring me a tumbler of water." In old English, tumbler was always used in this sense, but in modern English, glass is fast replacing the word tumbler.
+
+You and thou: About six hundred years ago the word thou was used in place of you (singular) in English. But it is no longer used. Now the word you (coming from the French word vous) is used in place of thou (coming from the French word tu). As in French tu is fast being replaced by vous, in modern English, thou has become almost obsolete, and now it is restricted to addressing God only.
+
+The second-person singular verbal form (thou hast) was made by adding one -t after the verb concerned[, in old English]. The -th added after the verb [to form the third-person singular] was [also] the usage of old English: for example, seeth, goeth.
+
+Quarter and quarters: Quarter means one-fourth. Quarters means a specified locality. Nowadays the word quarter is also used to denote a specified abode in a singular sense. It is used in the sense of "residential quarters".
+
+Author and writer: Author means "one who writes books". We should not use the word writer in the sense of "author". Writer means "clerk". Writers' Building4 means "a building of clerks".
+
+Marketing and shopping: When someone goes to a market for the purpose of selling, he or she goes for marketing. When someone goes to place for the purpose of purchasing, he or she goes for shopping.
+
+Taught and touched: In old English, there were two verbs: touch and toutch. Touch was used where tactuality was involved, and toutch was used in the sense of imparting knowledge (its past-tense form was toutched). As the words were very similar in pronunciation, and there was a great possibility of confusion [between] their present-tense forms [on the one hand, and their past-tense forms on the other], the verb toutch was changed into teach in the present, and taught in the past.
+
+No other alternative: correct or incorrect? "There is no other alternative": This is grammatically incorrect, as alternative means "other way"; so other alternative means "other other way", which suffers from the defect of duality. The correct sentence should be, "There is no alternative" or "There is no other way."
+
+Put on and put off: To put on means "to start the work". To put off means to "end the work" or "to extinguish".
+
+Put on your shoes.
+Put off your shirt.
+Put off the light.
+
+Spare and spareable: Spare means "extra, additional". Some people wrongly use the word spareable for spare. Spare is both an adjective and a verb. One should say "a spare pencil" and not "a spareable pencil".
+
+Similar and identical: Similar means "almost the same", whereas identical means "exactly the same".
+
+Trinity and trio: Trio means "a collection of three different entities or objects" whereas trinity means "one entity expressed in three forms".
+
+Popular and populous: Popular means "liked very much by people". Populous means "thickly peopled", that is, "inhabited by a large number of people".
+
+C.R. Das was a popular leader.
+Tokyo is a populous city. (It means Tokyo is a thickly-peopled city – here peopled is a rare verbal use of the word "people".)
+
+Industrious and industrial: Industrious means "hard-working". Industrial means "of or belonging to industry".
+
+Tom is a very industrious student.
+The country's industrial production increased by 18% this year.
+
+Farm and firm: Farm is a place of agricultural activity, whereas firm is a place of industrial or commercial activity.
+
+Cannibal and carnivorous: Cannibal means a "human eating a human's flesh"; carnivorous means "any living being living on flesh or meat".
+
+Wood and woods: Wood means "any firewood". Woods means "forest".
+
+Effect and effects: Effect means "result". Effects means "personal bag and baggage".
+
+Enquire and inquire: Both have the same meaning, but inquire was formerly used more than enquire; the latter has acquired greater popularity in recent times.
+
+Unsatisfactory and dissatisfactory: Unsatisfactory means "not satisfactory"; dissatisfactory means "that which was satisfactory but is now removed from the sphere of satisfaction".5
+
+Contiguity and continuity: Both words mean "extension". Contiguity is used in the case of land and continuity is used in the case of ideas.
+
+Calcutta is in territorial contiguity with Diamond Harbour.
+While concluding his speech on microvitum, he added a few sentiences in continuity to his original speech.
+
+Rudimental and fundamental: Rudimental is the adjective form of root, and fundamental is the adjective form of fundament and of fundamentum. Fundament means "base"; fundamental means "basic".
+
+There is a fundamental difference between Prout and Marxism.
+He has no rudimental knowledge of spirituality.
+
+The three R's:
+Q. What is the meaning of the three R's?
+A. Reading, 'riting and 'rithmetic.
+
+(1) For example, "The little progress you have made is of no practical value." Here progress refers to particular achievements, but in a derogatory way. –Eds.
+
+(2) An allusion to a Wordsworth poem. –Eds.
+
+(3)) Meaning currency notes and coins. –Eds.
+
+(4)An important state-government building in Calcutta. –Eds.
+
+(5) This meaning stems from the nature of the prefix dis-. (Just as disconnect implies that previously something was connected.) –Eds.
+
+CHAPTER 16
+
+SOME LATIN ADJECTIVES1
+
+NOUN	ADJECTIVE
+youth	juvenile
+sugar	saccharine
+rosy	rosy
+brick	laterite
+iron	ferrous, ferric
+copper	cuprous, cupric
+rotary	rotarian
+beauty	cosmetic
+village (good sense)	rural
+village (bad sense)	rustic
+snake, serpent	serpentine (zigzag is the English adjective)
+sound	acoustic
+world, earth	mundane
+ether	ethereal
+air	aerial
+light	luminous
+space	spatial
+touch	tactual
+vision	visual
+voice	vocal
+time	temporal
+lion	leonine
+elephant	elephantitis2
+nose	nasal
+five [elements]	quinquelemental
+oil	lubricant
+husband/wife (pair)	conjugal
+king	royal
+salt	saline (salty is the English adjective)
+flower	floral
+egg	oval
+fish	piscal (fishy is the English adjective)
+flesh	carnal
+heat	thermal
+life	vital
+nerve [system]	neurological
+shelter	sanctual
+help	auxilary
+boat	naval
+God	divine
+hair	capillary
+head	capital
+star	astral, asteric
+gas	pneumatic (e.g., pneumatic power; gaseous is the English adjective)
+fire	igneous (e.g., igneous rock)
+pad3	pedal, pedestrial (pedestrian – noun)
+side	lateral
+day	diurnal
+night	nocturnal
+milk, lactose	lactic, lactorial
+cat	feline
+dog	canine
+gold4	auric
+lead	plumbic
+natrum	natric
+blood	sanguine, sanguinary
+hope	sanguine
+sea	marine
+river	riverine
+sediment	sedimentary, residual
+father	paternal
+mother	maternal
+brother	fraternal
+town, city	urban
+cow	vaccine
+ox, bull	bovine
+sheep	quarantine5
+ear (in the sense of physicality)	auricular
+ear (in the sense of faculty)	audible
+ear (in the sense of inference)	acoustic
+eye (in the sense of physicality)	optical (e.g., "He is suffering from optical trouble."
+eye (in the sense of faculty)	ocular (e.g., ocular proof
+eye (in the sense of inference)	visible
+N.B.: The English adjective of Wales is Welsh; the adjective of lathi is lethal, which is Indian English; and the adjective of white is wheat, which is old English.
+ 	 
+ADJECTIVE	LATIN ADJECTIVE
+all-round	radical
+all-knowing	omniscient
+all-powerful	omnipotent
+moving everywhere	omnibus
+old	ancient
+underground	subterranean
+equal in side	equilateral
+equal in balance	equivalent
+equal in weight, mass	equipoised
+equal in number	equinumeral
+two	double
+grass-eating	graminivorous
+insect-eating	insectivorous, pestivorous
+meat-eating	carnivorous
+fish-eating	piscivorous
+long-lasting	chronic
+date-wise	chronological
+
+(1) Many of the entries here represent instances where the adjective form of a classical word has entered the English language, but the noun form has not entered the English language or has not remained in it. For example, the Latinate adjective mundane remains in the English language, but the noun mundus either has not entered the language or does not remain.
+
+(2) -itis is an old adjectival suffix. –Eds.
+
+(3) Originally meaning "foot", as it still does in the case of animals. –Eds.
+
+(4) Golden [in the sense of "made of gold"] is bad English. A gold ring means a ring made of gold. A golden ring means a ring whose colour is like that of gold.
+
+(5) In ancient times some towns took special steps to check the [spread] of disease coming from sheep. That is why even nowadays we use the term quarantine period for post-disease care.
+
+CHAPTER 17
+
+DIMINUTIVES
+
+In order to create diminutives in English, suffixes such as the following (-let, -kin, -et, -ock, -ling, -ule, etc.) are used.
+
+NOUN	DIMINUTIVE
+hill	hillock
+book	booklet
+duck	duckling
+river	rivulet
+goose	gosling
+arm	armlet1
+leaf	leaflet
+ankle	anklet1
+cut	cutlet
+man	mankin
+helm	helmet
+globe	globule
+grain	granule
+
+(1) Small objects related to the arm or ankle. –Eds.
+
+CHAPTER 18
+
+SOME CONDENSED WORDS1
+
+unitary/unitarian	concerning one
+collective/cumulative	concerning more than one/concerning a collection
+singular	concerning a single entity
+plural	concerning more than one entity
+Papal	concerning the holy Pope
+microcosmic	concerning something little
+macrocosmic	concerning something great
+matrimonial	concerning marriage
+bridal	concerning bride
+human	concerning people in general (humanly – adv.)
+ecclesiastical	concerning church or heavenly affairs
+inimical	concerning enemy
+amiable	concerning friend (ami [in French] means "friend", and mon ami means "my friend")
+amicable	concerning peace
+tranquil	concerning calmness
+aquarian	concerning reservior or water-pot
+aquarium	concerning the place of reservoir or water-pot
+rotarian	concerning movement in a round way
+herbal/herborial	concerning herbs (herbarium – noun)
+fiscal	concerning royal money
+piscal	concerning fish
+zoological, zodiac, veterinary	concerning animals
+terranian	concerning earth (as soil)
+global	concerning earth (as a planet)
+pecuniary, monetary, mercenary	concerning money
+economic, economical	concerning condition of money
+guardian	one who guards at different strata of life
+universal	concerning the universe
+Cosmological/Cosmic	concerning everything
+puritan	concerning purity
+sensual	concerning feeling of organs
+angular	concerning angle
+circular	concerning circle
+muscular	concerning muscle
+respiratory	concerning inhalation and/or exhalation
+perspiratory	concerning sweat
+confectionary	concerning sweets
+condimental	concerning drinks
+laterite	concerning bricks
+sexual	concerning male body / female body
+mobile	concerning movement
+curricular/curriculal	concerning course of studies (curriculum – noun; curricula – plural noun)
+particular	demonstrated or pointed out definitely
+cimmerian	concerning darkness
+odorous	concerning smell
+military, martial	concerning fight
+alpine	concerning Alps
+nordic	concerning north
+arterial	concerning artery
+lithoshperical, lithographical	concerning outer crust of the earth
+slumberous	concerning sleep
+antique	concerning old style (not in a good sense; antiquity – noun)
+ancient	concerning old happening
+numeral	concerning number
+quantitative	concerning amount
+qualitative/attributional	concerning wont
+extensive	expanding externally
+intensive	expanding internally
+innate/intrinsic	belonging to inner side
+heredity	coming from ancestors
+solar	concerning sun
+lunar	concerning moon
+annual	concerning year
+superannuation	crossing the limited number of years
+venomous, venomal, venomic	concerning poison
+biannual	half-yearly
+protagonist	one being in favor of
+antagonist	one being against
+prognosis	knowing beforehand
+diagnosis	knowing after
+premonition	expressing the happening beforehand
+SOS	"save our souls"
+participant	one joining a party or taking part in (participate – verb; participation – noun)
+partial	concerning part
+dental	concerning tooth
+legal	concerning law
+Gangetic, Gangelitis	concerning Ganga (Ganges)
+delta	mouth of river
+melancholy	feeling of loneliness (melancholic person; melancholia – disease)
+mania (বাতিক)	doing a particular thing repeatedly without reason
+junction	concerning joint (junctional – adj.)
+partition	dividing into parts
+auto-science	knowing the self
+mono-science	knowing the One
+cannon	weapon of powder (canon means "rules")
+auto-suggestion	advising the self
+outer-suggestion	advising others
+hypnosis (মোহনিদ্রা)	healing in slumber
+mesmerism	science of Mesmer
+hibernation	long sleep
+capital punishment	punishment of detaching the head
+normal	as per norms
+abnormal	not as per norms
+social propriety	[behaving] as per the rules of society (proper adj.; propriety – noun)
+vocabulary	[range of] words
+vocal	expressed through words
+verbose	full of words
+ostentatious	full of shows having no inner value
+grandeur	[something] full of big shows having little inner value
+pomp	[something] full of monetary shows
+ultra vires	being fundamentally against
+ambiguous	having more than one meaning (ambiguity – noun)
+proforma	having fixed forms
+palace	big house divided into departmental quarters
+mansion	big house of rectangular shape
+castle	residential quarter in a fort
+haunted house	big house where nobody resides for fear of ghosts (ভূতুড়ে বাড়ী) or robbers (হানা বাড়ী)
+piscivorous	fish-eating
+luxurious (বিলাস বহুল)	concerning luxury (luxuriant – প্রাচুর্য়পূর্ণ – means "bountiful")
+lactometer	instrument measuring the specific gravity of milk
+usurper	[one] occupying the throne physically by force
+guest capital	capital of a country situated in another country
+dike	embankment where land-level is lower than water-level
+Y-machine	machine for the purpose of welding
+indoctrination	to make one well-acquainted with one's ideas
+insurmountable	that cannot be jumped over
+inexplicable	that cannot be explained
+inaudible	that cannot be heard
+unintelligible	that cannot be understood
+infallible (অপৌরুষেয়)	that cannot be scolded or condemned
+illegible	that cannot be read
+impenetrable/unpenetrable	that cannot be crossed through
+irrelevant	that does not come within the course, out of context
+super-science/super-consciouisness	that which is beyond the periphery of knowledge of consciousness
+supreme	whose status is above all strata
+[for] old acquaintance's sake	for the sake of old friendship
+surrounded	rounded up on all sides
+known countenance	known person or known face
+namesake (in Bengali and other eastern Indian languages মিতা; in Urdu, হম্নামা)	something having the same name
+[ambi]dextrous (সবাসাচী)	working with both hands with equal efficiency ([ambi]dexterity – noun)
+politbureau	higher authorities working as political heads
+illegitimate	not as per law (illegitimate son – জারজ সন্তান)
+floor-crossing	leaving one ideology and accepting another
+infiltration	crossing through pores
+percolation	crossing though minute pores
+leakage	passing through holes or loopholes
+embankment	creating an artificial bank to check inundation
+interim	for the intermittent period
+prima facie	not going through details but as it outwardly looks
+informal	not as per forms or prescribed rule but done for the time being
+incredible	which cannot be believed (not to be paid credence to)
+credentials	record concerning credibility
+testimonials	papers concerning proper recognition
+encircled	approached from all angles
+city father/sherriff	head of city surrounded by wall
+logbook	papers concerning movement
+livestock	stock concerning living beings (animals, birds, etc.)
+deadstock	stock concerning furniture
+rolling stock	stock concerning vehicles
+O.I. register	records dealing with objectionable items
+wicket gate	small gate within a big gate
+logical fallacy	logical rules based on incorrect mode of thinking
+pleader's dilemma	[situation] where to lawyers vary on a particular point
+doctor's dilemma	[situation] where who physicans vary on a particular point
+cobweb	net of a spider
+insolvency/bankruptcy	[condition] where expenditure has surpassed income
+censor[ship]	control over expression
+census	total number after counting
+caution money	cash deposited as a check against loss, fraud or embezzlement
+extremity (প্রতান্ত)	extreme end
+aurora polaris	light of the poles
+aurora borealis	light of the North Pole
+halo	light of greatness or divinity
+reptile	[creature] moving with the strength of chest
+ointment/balm	medicine used externally
+hardware	goods made of iron
+glassware	goods made of glass
+jewellery	goods made of jewels
+floral nectar	honey of flower
+bee honey	honey of beehive
+paraffin	artificial wax
+artsilk, rayon	artificial silk
+petticoat language	language spoken in the house
+biochemistry	chemistry concerning biology
+astrophysics	physics concerning astronomy
+pneumatic shop	workshop dealing with gases
+welding shop	workshop dealing wtih addition of metallic layers [as] liquid
+permanent	for all times
+temporary	for a particular time
+perennial	never-ending, for all seasons
+seasonal	for a particular season
+correlate	find the relation between two entities
+regular	happening again and again
+occasional	happening irregularly
+ceremonial	happening during certain functions
+infantry	soldiers fighting on foot
+cavaly	soldiers fighting on horseback (from the French word cheval)
+vehicular	concerning a cart or carriage
+mammal	drinking its mother's milk
+mortal	undergoing death
+nudist	wanting to remain naked
+cloakroom	room for changing dress
+green-room	room for putting on one's costume before going on-stage
+restaurant	place for having a light refreshment
+cafe	place for having a drink
+bar	place for having wine (In ancient times, pleaders used to sit together in their leisure period to have a parley and a few drinks. That is why the pleader's union was also known as the bar. The word is still in use although it has lost its actual import.)
+voracious	eating much (voracity – noun)
+veracious	adhering to truth (veracity – noun)
+brittle	liable to break
+monolith	one continuous entity
+polygamy	having more than one husband or wife
+monogamy	having only one husband or wife
+espousal	[something] concerning husband or wife (spousal is incorrect)
+multivocal	speaking in many ways
+univocal	speaking in one way
+artisan	one having dexterity in handiwork and handicraft
+carpenter	one having dexterity in wookwork
+goldsmith	one having dexterity in goldwork
+blacksmith	one having dexterity in iron or steel work
+smithy	place for metallic smelting or melting
+anonymous	[whose] name [is] not known
+vampire	sucking blood
+plumbic	concerning lead
+urinal	concerning urine
+pubic	concerning the area of sex organs or pubum
+Xaverian	blessed my St. Xavier
+Calcasian	belonging to Calcutta
+subterranean	under the ground
+submarine	under the sea
+sub-aquatic	under water
+aqua margosa	juice of margosa plant
+Indica	belonging to India
+Banjalitis	belonging to Bengal
+arson	to set on fire
+posthumous	[having] died before the result was achieved (e.g., posthumous child)
+postgraduate	after graduation
+post-mortem	after death
+pre-sanctioned	sanctioned before the action was done
+post-sanctioned	sanctioned after the action was done
+de jour	concerning today
+prediction	announcing before the happening
+post-diction	announcing after the happening
+transmuted	taking the form of another
+transparent (স্বচ্ছ)	[conducive to] one reappearing as it was
+translucent (অল্প স্বচ্ছ)	[conducive to] one reappearing a bit different from what it was
+opaque (অস্বচ্ছ)	[conducive to] one not appearing as it is
+fissiparous	[of] one being many (fissipare) – noun
+metamorphic	that underwent changes (e.g., metamorphic rock)
+contemporary	existing at the same time
+multifacial/multifarious	having many faces
+multilateral/multidimensional	having many sides
+octogenarian	eighty years old
+equigenarian	of the same age
+trans-Jamuna	on the other side of Jamuna
+Transvaal	on the other side of the Vaal
+trans-Jordan	on the other bank of the Jordan
+translation	one language situated on the other side of the River of Difference
+transliteration	one literature [letters] situated on the other side of the River of Difference
+transmigration	migration in[to] another structure on the other side of difference
+trans-bank (পারঘাটা)	on the other side of the bank
+N.B.: The rail line connecting Moscova and Vladivostok – the two towns being at the east and the west [ends] of the land of Siberia – is the Trans-Siberian Railway
+archipelago	a cluster of islands
+peninsula	a strip of land surrounded by water on three sides
+alumni	[former] students of an educational institution
+phallic	concerning the male organ, or phallus
+coniferous	having a pointed shape (plant)
+deciduous	shedding leave (plant)
+Scottish dinner	dinner without feasting
+French leave	being absent without leave
+teetotaler	[one] not drinking wine
+wine	wet ration
+solar year	year calculated according to the relative movement of the sun
+lunar year	year calculated according to the relative movement of the moon
+sidereal year	year calculated according to the relative movement of the stars
+monopoly (একচেটিয়া)	authority of one
+germicide	killing germs
+pesticide	killing pests
+insecticide	killing insects
+transvision	seeing the other side
+bon voyage	wishing you a good voyage
+partition	breaking into parts
+bfurcation	breaking into two parts
+trifurcation	breaking into three parts
+parity/equity	same[ness] in number
+pork	meat of big
+beef	meat of cow
+mutton	meat of sheep
+N.B.: Flesh is a general term, but where the question of eating is concerned, we are not to use the word flesh, we are to use the word meat.
+omnipotent	all-powerful
+omnibus	moving everywhere
+homogenous	[of a] collection of similar entities (homogeneity – noun)
+heterogeneous	[of a] collection of dissimilar entities (heterogeneity noun)
+horticulture	culture of fruits
+floriculture	culture of flowers
+pisciculture	culture of fish
+sericulture	culture of insect products
+autonomous	ruling the self
+autocratic	ruling as per one's whims
+bureaucracy	ruling as per the whims of government officials
+oligarchy	ruling by a small party
+kingdom	state having king as the ruler
+emperor	king ruling over other countries along with his own
+feudalism2	power and properties in the hands of landlords, earls and barons
+feudal chief/local chieftain3	a king under a big king
+democracy4	where a government is elected by people through restricted or general franchise
+republic	where the head of a state is elected by people directly or indirectly
+subsidiary	where one works in subordinated cooperation with others
+N.B.: Cooperation is of two kinds: coordinated cooperation and subordinated cooperation. A king and another king have an amiable relationship: it is coordinated cooperation. A king and an emperor maintain a relationship: the king maintains subordinated cooperation. His is a subsidiary alliance.
+moral (pronunc. মোরেল)	concerning morality (নৈতিকতা – e.g., "It is his moral defeat – নৈতিক পরাজয়)."
+morale (pronunc. মর্-য়াল)	mental strength (মানসিক শক্তি – e.g.: "He lost his morale and was defeated – সে মানসিক শক্তি হারিয়েছিল ও পরাজিত হয়েছিল." "A breakdown in morale has taken place – মনোবল ভেঙ্গে গেছে.")
+
+(1) Many of the entries here represent instances where a certain relationship of one word to other words has been expressed in a condensed way through the use of a suffix. For example, concerning bride, expressing a certain relationship of bride to other words, has been condensed into bridal. –Eds.
+
+(2) Feudalism may exist both in a republic and a kingdom.
+
+(3) In Bengali, sámantarájá (সামন্তরাজা → সাঁওত্তরাআ → সাঁতরা).
+
+(4) A democratic country having a democratic head is a republic. A democratic country having a non-democratic head is not a republic. It is either a kingdom (monarchy), or an oligarchy, or a restricted republic. India is both a democracy and a republic; the USA is also a democracy and a republic; but Great Britain is a democracy and a kingdom. Australia is a democracy but not a republic, as it recognizes the British Crown at the helm of affairs. [A comment on the former Soviet Union omitted here.] republic where the head of a state is elected by people directly or indirectly.
+
+CHAPTER 19
+
+STRUCTURAL FORMULA:
+SUFFIX AND PREFIX
+
+There are certain ideas which activize verbs, and there are also certain faculties which modify verbs. The first one is called the activating idea, and the second one is called the activated faculty. In the case of the first, the verb remains separate ( the verb is separate from the activating idea), and in the case of the second the verb is joined (the activated faculty is joined to the verb).1 Now the activating idea is called the prefix ("that which is fixed before" – pre means "before"), and the activated faculty is called the suffix ("that which is fixed afterwards").
+
+In all the classical and organized languages of the world there is a universal system of creating new words with the help of prefix, root verb and suffix, sometimes with only the root verb and the suffix.
+
+Suffix
+
+The word suffix is derived sub + fix. Sub means "below" or "following" or "under":
+
+inspector	sub-inspector
+judge	sub-judge
+terranean	subterranean
+marine	submarine
+
+Suffix means "that which comes after" – after the root verb. For instance, -ion, -al, -ty, etc.
+
+donation, option, reception
+withdrawal, renewal, revival, survival
+purity, honesty, safety, security
+
+In Sanskrit a suffix is called pratyaya (প্রত্যয়), which [literally] means "faith". (A synonymous Sanskrit term is vishvása, (বিশ্বাস)2 There are approximately 722 suffixes in Sanskrit. Some instances: tvác (ত্বচ্), lyap (ল্যপ্), lyút (ল্যুট্ ), ghaiṋ (ঘঞ্), kta (ক্ত), etc.
+
+A list of noun-words thus formed is given below:
+
+ROOT VERB + SUFFIX	WORD FORMED
+act + ion	= action
+opt + ion	= option
+except + ion	= exception
+quest + ion	= question
+deviate + ion	= deviation
+dismiss + al	= dismissal
+remove + al	= removal
+withdraw + al	= withdrawl
+propose + al	= proposal
+deny + al	= denial
+betray + al	= betrayal
+state + ment	= statement
+punish + ment	= punishment
+postpone + ment	= postponement
+govern + ment	= government
+advertise + ment	= advertisement
+ship + ment	= shipment
+judge + ment	= judgement
+pay + ment	= payment
+desctibe + tion	= description
+prescribe + tion	= prescription
+rectify + tion	= rectification
+qualify + tion	= qualification
+intend + tion	= intention
+extend + tion	= extension
+go + ing	= going
+come + ing	= coming
+run + ing	= running
+read + ing	= reading
+write + ing	= writing
+
+In Sanskrit, sic or siṋc (সিচ্ or সিঞ্চ্) means to water, to irrigate, to sprinkle. Now if the noun-suffix -lyut́ is added to the verb sic, we get the word secana (সেচন – sic + lyut́). Similarly if another noun-suffix, -ghaiṋ, is added to sic, we get seka (সেক) or seca (সেচ) (as in abhiśeka, অভিষেক, or jalaseca, জলষেচ). If the suffix -kta (ক্ত) is added to the verb sic we get sikta (সিক্ত – "irrigated", "watered", "sprinkled").
+
+Ni (নি) – sic + kta = niśikta (নিষিক্ত), nisikta (নিসিক্ত). (This means "infused".) Upa (উপ) – sic + lyut́ = upasecana (উপসেচন). This has two meanings: "sprinkling" and "clarified butter". Pari (পরি) – sic + kta = parisikta (পরিসিক্ত). This means "well-irrigated".
+
+Every object in this creation has vibration, form and colour. Now a particular colour, say, white, emanating from an object produces a kind of vibration in the mind somewhat like dhav-dhav-dhav, and thus the Sanskrit verb dhav (ধব) is created. Now with the addition of suffixes, we get new words: dhav + ac (অচ্) + lá (লা) + d́a (ড) = dhavala ("white"). Similarly, the red colour produces in the mind a kind of vibration somewhat like t́ak-t́ak-t́ak (টক-টক-টক), and thus we get the word t́akt́ake lál (টকটকে লাল). The verbal perception becomes a word.
+
+The moon creates a soothing feeling in the mind, and its verbal perception is called cand (চন্দ), and the verbal form concerned is candati (চন্দতি – "soothing"). Similarly, the verbal perception [associated with] moving at higher altitudes is called ind (ইন্দ্) and the verbal form concerned is indati (ইন্দতি), indatah (ইন্দতঃ), indanti (ইন্দন্তি).3 Thus we get the words candra (cand + rak, রক), indra (ind + rak). Indra means "lofty", indra means "great", indra means "very tall and high", and hence it also means the shal tree, indra also means a chief or a king. That is why in mythology, the king of the gods is called "Devara'ja Indra". Ind + un (উন) = Indu; Indu means the moon, "the one that moves at higher altitudes".
+
+Prefix The word prefix is derived pre + fix. Pre means "before". Prefix means "the idea which comes before the root [word]". In Sanskrit a prefix is called an upasarga (উপসর্গ).4 In Sanskrit there is a fixed number of twenty prefixes: pra, pará, apa, sam, anu, ava, nir, dur, abhi, vi, adhi, su, ut, ati, ni, prati, pari, upa, áun. English also has a good number of prefixes.
+
+Now, many words can be formed adding prefixes to root verbs. Some instances [in the case of the Latin ceive]:
+
+Receive: Ceive is a Latin root verb. Ceive means "to exchange, to get something in return". Now if the verb ceive is preceded by the prefix re-, we get the word receive which means to "get" (e.g., "I received your letter dated . . .") Its noun form is receipt.
+
+Deceive: Similarly, if ceive is preceded by the prefix de-, we get the word deceive which means to "take away by cheating". Its noun form is deceit (opposite form of receipt).
+
+Conceive: Conceive means to "accept something in the mind, form an idea in the mind". Its noun form is concept. It has another meaning also: to [come to] be in a family way [conceive a child]. Its noun form is conception.
+
+Perceive: The verb perceive means to "subjectivize something objective". This process of subjectivization of something objective is done with the help of five sensory organs as also the afferent or sensory nerves. Its noun form is perception.
+
+In this connection one should pay particular attention to the spelling of words having the vowels i and e. The general usage of spelling in such cases is that i precedes e, that is, e comes after i, because the pronunciation of i is more emphatic than that of e.5 For instance: chief, thief, brief, friend, tied, tried, fried. But there are a few exceptions also in this regard, such as the verb ceive and its noun form ceipt: receive, deceive, perceive, conceive, and their noun forms; and also some words such as seizure, leisure,6 counterfeit.7
+
+[An instance with another English root verb:]
+
+Infuse: To fuse means "to mix together, to blend". When the verb fuse is prefixed by in-, we get the word infuse. Likewise, refuse, confuse, profuse, suffuse, defuse, etc.
+
+[An instance in Sanskrit:]
+
+The root verb bha (ভ) means "to illumine", "to enlighten". Bhá + kta = bháta, which means "enlightened, illumined". If the Sanskrit prefix pra (প্র) comes before bháta (ভাত), we get the word prabháta, which means "enlightened in a proper way or in a progressive way".
+
+Further Use of Suffixes and Prefixes
+
+Dislocate: In English [through the use of suffixes and prefixes] we get a large number of verbs from noun-words. For instance, there is a Latin root word locus. Locus means "place". When someone or something is removed or transferred from one place to another, we say "He/she/it has been dislocated," that is, the location arrangement has been deranged. Local train means a train which has been plying within a fixed or restricted periphery.
+
+Embodiment: In the Anglo-Saxon tongue, there was a word board [meaning "border"]. It was pronounced "boad" (r remained mute). Board was finally transmuted [as it was pronounced] into boad (in Latin, corpor8); and "the object concerning boad" is body. Body means "something having borders or boundary lines". When something abstract in relation to the physical is concerned, the prefix em- or en- is added, and the result is embodiment. It means "assuming the characteristics of something".
+
+In the case of an abstract idea, we sometimes use the word personified. For instance, when we want to explain the glamour of purity, we say, "He is purity personified." That is, the purity has the status of a person. Likewise we say, "He is honesty personified," "He is knowledge personified," "He is bliss personified." In all such cases we can also say, "He is an embodiment of honesty," "He is an embodiment of knowledge," "He is an embodiment of bliss," etc.9
+
+Enriched: When someone becomes the owner of something or becomes rich by possessing something we say enriched. For instance, "The literary works of Rabindranath Tagore enriched the Bengali language." Likewise:
+
+enlarge	make things large
+enice	make things as cold as ice
+enact	make a bill into an act
+enable	make one able
+encage	confine one in a cage
+enclose	close on all sides
+engolden	make something look like gold ("engoldened by the elixer of human touch")
+envelop	enclose something with a covering
+
+The prefixes a- and o- before causatives: In the case of [root words, especially] causatives, prefixed by a or o, the succeeding consonant is doubled.* For instance:
+
+grand	aggrandize (to make something grand)
+count	account (to make or render reckoning, as of funds received and paid out)
+[credit]	accredit (to ascribe or attribute credit)
+cult	occult [that which is earned though cult]
+
+But if it is not a light vowel (a or o), the succeeding consonant is not doubled. For example, semble after a- becomes assemble; semble after re- becomes resemble (one s).
+
+assume, but resume
+acquire, but require
+acquisition, but requisition
+
+(1) Three sentences from "Upasarga-Pratyaya Nutaner Abhyudaya" ("The Role of Prefixes and Suffixes in the Emergence of New Words") in Vyákárańa Vijiṋána ("The Science of Grammar") Part 2, 1989. Retr. by the editors for this edition. In some languages the verb-roots become functional words only with the addition of a suffix; but can function with or without a prefix. –Eds.
+
+(2) Words originate in acoustic roots, primordial sounds. A suffix added to the acoustic root creates the conviction, or "faith", that what was just a sound is now a word with a grammatical function. –Eds.
+
+(3) The third-person singular, third-person dual, and third-person plural present indicative forms of ind. –Eds.
+
+(4) An upasarga is defined as coming before a root verb, specifically, because in the acoustic science of the Indo-Aryan culture, it was understood that all parts of speech originate as verbs. –Eds.
+
+(5) See also Chapter 14. –Eds.
+
+(6) "Short rest": "Teachers are engaged in conversation in their leisure period."
+
+(7) Counterfeit coin or base coin: in ordinary English base, in good English counterfeit.
+
+(8) [Of which the adjective is] corporal.
+
+(9) In such cases in Sanskrit, the suffix -mayat́ (ময়ট) is used. For instance, dayámaya (দয়াময় - dayá + mayat́ – "kindness personified" – "Lord Buddha was kindness personified"), guńamaya (গুণময় – "quality personified"), shubhamaya (শুভময় – "righteousness personified"), kalyáńamaya (কল্যাণময় – "welfare personified").
+
+(*) See also the examples at the end of Chapter 14. –Eds.
+
+CHAPTER 20
+
+THE ORIGIN OF A FEW WORDS1
+
+God: God is a combination of three letters: g, o, and d. G stands for "generator", o for "operator" and d for "destructor" 2
+
+Jeep: Originally this vehicle was called a general-purpose car (G.P. car for short). Later on it became a G.P., and finally became known as a jeep.
+
+OK: Once there was a major battle on American soil. Most of the soldiers were Spanish-speaking. Not being well-acquainted with English, in expressing that they were in good condition they wrote oll korrect instead of all correct. OK is the shortened form of oll korrect.
+
+News: News is a combination of four letters: n,e,w, and s: signifying "that which comes from four directions – north, east, west and south".
+
+Lichi and peach: The lichi and the peach were originally Chinese wild fruits. More palatable varieties were developed by the Chinese horticulturalists, Mr. Li Chi and Mr. Pee Si, after whom the fruits were named.
+
+Owl and mango: A certain English gentleman called Mr. Ricecurry came to India as an employee of the East India Company. He and his wife were responsible for the adoption of a number of words into the English vocabulary.
+
+It is said that one night Mrs. Ricecurry heard the hooting of owls for the first time. Somewhat distressed, she exclaimed, "How horrible! How horrible!" a number of times and then asked her maidservant, "Was that the growl of a Royal Bengal tiger?" "No, madame," she replied, "that was the hooting of an ullu." [Ullu is the Urdu word for "owl".] This word was mispronounced by Mrs. Ricecurry and found its way into the English language as owl.
+
+One day a mango seller passed by the Ricecurry residence. Mrs. Ricecurry could not resist the temptation of buying the juicy fruit. She immediately called her [servant] and said, "Man, go! Go and call the fruit-seller!" The [servant] thought that his mistress was calling the fruit itself mango, and whenever the fruit-seller would come by would himself shout, "Mango! Mango!" Since then mango has been the recognized English [term for] the juicy Indian fruit.3
+
+(1) In some cases, the illustrative origin. –Eds.
+
+(2) The Supreme Entity is composed of three forces: the force that creates, or generates, the expressed universe out of the unexpressed Supreme Consciousness; the force that preserves and operates the universe; and the force that "destroys" the finite entities of the universe, i.e., that dissolves them back into formless consciousness. These three forces are often personified for figurative purposes. –Eds.
+
+(3) The above passages on owl and mango are taken from "Pravacan 6" ("Speech 6") of the author's Varńa Vijiṋána ("The Science of Letters"), 1984. In that book the author prefaced these accounts with the remark, "Many people think that the English word mango came from the Tamil mángá. But that is not the case. In the Tagalog language of the Philippines a mango is also called mángá, but that does not mean that the English mango came from that word. The Philippines had no influence on the English language." –Eds.
+
+CHAPTER 21
+
+GENERAL KNOWLEDGE ON COMPOSITION1
+
+Passage: Burdwan is an ancient city of Bengal. It is a district headquarters and university city. It is on the River Damodara. There is a road-bridge over the river named Krśak Setu (কৃষক সেতু). (Krśaka [farmer] is grammatically incorrect. It should be karśaka, কর্ষক)
+
+There are five sub-divisions in Burdwan District. Many great persons were born in this district.
+
+General Knowledge: Burdwan comes from the Sanskrit word Vardhamána (বর্ধমান). It is a prehistoric town, in fact, the oldest town in the world, and at the same time the capital of the oldest land of civilization – Ráŕh.
+
+Capital: Capital means "concerning the capita, or head". Burdwan is as important as the head for the land of Ráŕh.
+
+Ráŕh: The land was known as Ráŕh (রাঢ়) because of its laterite, or red, soil.2
+
+Burdwan: Burdwan is a city, as its population is more than one hundred thousand. Its original name was Ástikanagar (আস্তিকনগর), which means "a town that pays respect to God and credence to Providence". Later on the name became Atthinagara in the Prákrta language. Vardhamána Maháviira, the propounder of the Jainistic cult, came to Burdwan and preached his gospels for a period of seven years. Thereafter the name of the city was changed to Vardhamána.
+
+The land of Ráŕh is a part of Bengal. "Bengal" is also a time-honoured name.
+
+Burdwan is a district [as well as a city within the district]. In the pre-Pathan period, a district was known as a bhukti (a bhukti is just like a county in Britain). In the Pathan and Mughal periods, the word zilla was substituted for the word bhukti. In the British period, a zilla became known in English as a "district". There are five sub-divisions in Burdwan District.3
+
+Burdwan is situated on the north bank of the River Damodara. The Damodara is the biggest river in Ráŕh. It comes from the Ramgarh Hills, and its confluence with the Ganga [Ganges] is on the border between Howrah and 24 Parganas Districts. (Dáma (দাম) means "fire". Udara (উদর) means "belly". Dámodara means "where fire is burning in belly"). The bed of the Damodara is rich in coal deposits. That is why such a name has been given to the river.
+
+Krśaka: The word krśaka is grammatically incorrect because, if the suffix -ńak (ণক্) or the suffix -kan (কন্) is added to the root verb krś (কৃষ্), the derivatory word should be karśaka, as in ákarśaka (আকর্ষক), vikarśaka (বিকর্ষক), saḿkarśaka (সংকর্ষক), etc.
+
+As the land is an ancient one, many great personalities were born there. The names of some of those personalities are given below:
+
+Maharshi Patanjali, the propounder of Yoga Darshana [Yoga Philosophy], was born in the village Patun in Burdwan District.
+Jimutabahana Bhattacarya was the propounder of the Bengal school of the law of inheritance (Dáyabhága).
+Raghunath Shiromani was the propounder of the Navyanyaya school of logic.
+Kavikankana Mukundaram Chakravarti, poet, was the author of Chandimangal, born in the village Damunya.
+Krishnadas Kaviraja was the author of Caetanya Caritámrta, born in the village of Jhamotpur.
+Kashirama Das, author of the Bengali Mahábhárata, was born in the village Singhi.
+The renowned poet Kumudranjan Mallik was born in the village Kogram.
+The well-known poet Kalidas Roy was born in the village Karui.
+The wizard of rhythm, poet Satyendranath Datta – his ancestral home was in the Purbasthali area.
+The renowned poet of modern poetry, Kazi Nazrul Islam, was born in the village Churulia.
+Maladhar Basu, author of the Bengali Bhágavata (Shrii Krśńavijaya), was born in the village Kulingram. He was the forefather of the apostle of the juvenile heart of modern Bengal: Netaji Subhas Chandra Bose.
+Rashbehari Basu, the first president of the Azad Hind Government in Japan, was also a son of this soil.
+Rev. Lalbihari Dey, author of the Folktales of Bengal, and
+the eminent lawyer Rashbehari Ghosh were also children of this land.
+The well-known literatteur and distinguished dictionarian, Rajashekhar Basu ("Parashurama"), was born in the village Brahmanpara.
+The village Dattadereton was the ancestral abode of Swami Vivekananda.
+The first Bengali daily newspaper, the Bengal Gazette, was published from the village Baharha of Burdwan District. It was published a few days before the publication of the Samachar Darpan from Serampore.
+
+Burdwan is the richest district both in agriculture and minerals in Bengalee Land.4
+
+In this year, 1989, the District of Burdwan has three cities. No other district of Bengal has so many cities.
+
+The neighbour-districts of Burdwan are Birbhum, Santhal Parganas, Dhanbad, Purulia, Bankura, Hooghly, Nadia, and Murshidabad. Burdwan has territorial contiguity with those districts.
+
+(1) This chapter constitutes a model of developing a topic through English composition. –Eds.
+
+(2) Ráŕh = "land of laterite soil". –Eds.
+
+(3) [The British word] "sub-divisions" [became popular] in the Bengal Presidency [the British headquarters], but in the rest of [northern] India, they are called tahsils or talukas.
+
+(4) An English rendering of Bangalistan, a concept of a united Bengal. –Eds.
+
+CHAPTER 22
+
+SOME MODELS OF COMPOSITION
+
+Maqbul1
+
+Maqbul is a very well-behaved boy. His qualities have not got any comparison. He prepares his lessons attentively. No student stands on a par with him in studies. His father cultivates paddy and jute. He assists his father in farming. Once he came to Calcutta from Chandpur with his maternal uncle. Coming to Calcutta he ate jackfruit pickle and rasamálái [a sweet]. He was very happy to see Calcutta Zoo. There he drew pictures of many birds and animals. All admired his behaviour. All the people of the town felt proud of him. Everyone expects that he will render service to the world when he grows up.
+
+The Perils of Intoxication2
+
+A person who loses his or her senses due to excessive drink and starts shouting, or talking incoherently; or starts imagining that his or her cot is flying in the air; or starts thinking that, seated on a throne, he or she is eating pát́isápt́á,3 [meanwhile] wallowing in the filth of a drain; is called koshátakin [or "drunkard"]. There are many popular tales about this type of drunkard.
+
+***************
+
+Once a few drunkards were sauntering along the road towards Krishnanagar railway station from Gori at midnight. Some policemen appeared all of a sudden. The drunkards, after deliberating how to escape, stood in a line along the drain beside the road.
+The policemen came up and shook them, asking, "Why are you loitering here so late at night?" They replied, "Why are you disturbing us, young men? We are innocent creatures. Are you blind? Can't you see, we are lampposts! We never meddle in anyone's affairs. Can't you see the lights shining above our heads?" ( The drunkards were holding torches over their heads.)
+
+***************
+
+Once several drunkards were ambling along the road, mumbling all the while. A few policemen appeared. The drunkards muttered among themselves, "If we talk here the police will think we are drunkards . . . if we discuss nuchi, puri, rasagollá and sandesha [sweets], they will think that we are returning from a feast. If we keep silent, they will conclude that we're going to practise meditation in the cave of a hill. So we'd better keep quiet. If we discuss nuchi, puri, and so on, the police may ask, 'Where was the feast you attended?' It'll be rather difficult for us to reply to this question. So it's advisable to keep silent. If we say we're going to meditate in the cave, the police, out of reverence for us, may spare us undisturbed."
+
+So all of them remained silent. After a short while however, Rambabu, drunkard number one, said loudly, "Hey, hush! Keep quiet."
+
+Then drunkard number two said more loudly, "Hey, shhh! No talk."
+
+Then drunkard number three raised his voice and shouted still more loudly, "Hey, hush! No shouting."
+
+Drunkard number four raised his voice still higher and bellowed in a gruff voice, "Hey, hush! Don't talk."
+
+And finally with the sound of "Keep quiet," "No talk", "No shouting", the noise was almost like that of a fish market. Hearing this commotion the police came running to the spot. What happened thereafter we don't know – that only the drunkards can say!
+
+***************
+
+I heard that once a few drunkards were returning home at midnight after enjoying a nocturnal drink. One of them fell into a well. The rest of them got quite worried. They became inwardly restless to render some social service, following the noble example of Occidental people. They held one round of deliberation among themselves.
+
+"Here is indeed a golden opportunity for social service," they said. "Last year we had a slight opportunity to do some social service at Svarup-ganjaghat on the occasion of Churamani Yoga. While availing the opportunity we suffered from a severe lumbar pain which is still persisting."
+
+How it happened was that once [these] five drunkards went to attend the relief camp at Svarupganjaghat. But as ill luck would have it, not a single person was drown[ing] in the river whom they could rescue. There was not the least scope for social service. Not a single child was missing, so they did not get any scope to announce over the microphone, "Gobar (Cow-Dung) Babu, your son, Bhondar (Sea Lion) is now in our camp. Please come and take him."
+
+Now they were desperate to do something. They noticed a seven-year-old girl facing the ghat and eating a potato chop.4 They went to the girl and asked her, "Little girl, why are you standing here alone, staring at the ghat? Are you lost?"
+
+"Lost! I'm not lost," she replied.
+
+The drunkards said, "Oh yes, you are certainly lost."
+
+"Look sirs, I am eating a freshly-fried potato chop. If you want to eat some, give me money and I will purchase a few pieces for you also," said the little girl.
+
+They said, "No, no, we don't eat potato chops by themselves. We eat potato chops as an appetizer before and after a drink. We wouldn't relish a plain chop brought by you."
+
+"My little girl, where are your golden bangles? Are they lost? Have they been stolen?" one of them asked her.
+
+The girl replied, "I never had any bangles on my wrists."
+
+"Then where is your nosering?" they asked.
+
+"My nose was never pierced. How can I wear a nosering?" replied the girl.
+
+They said, "Then we are convinced that you are really lost."
+
+The girl looked towards the ghat and started shrieking, "Auntie dear, auntie dear, come quick. These strangers are speaking all sorts of nonsense to me."
+
+Her paternal aunt had just finished her bath, and, having placed a folded wet towel on her head, was bargaining for a feather duster in front of a broom shop. The shouting of her niece caught her attention. She immediately picked up a coconut broom and started rushing to where her niece was standing, shouting all the while, "Who are you wretches, trying to kidnap my dear niece? I am Jagadamba the Bamni,5 of Amghata Village. Who in the world . . . in India . . . in Nadia District does not know me! All the sinners, all the wretches, and all the cunning fellows prostrate before me when they see me in public, but in private they call me all kinds of names – louse, shark, and so on. Today either you will be finished or I'll be finished. I'll give you such a thorough thrashing that you will forget the names of fourteen times two equal to fifty-two generations of your ancestors. I'll clean all the poison from your brains."
+
+Then the aunt began to thrash them mercilessly with the broom – sapásap-jhapájhap-damádam came the sound. After receiving a good drubbing they took to their heels.
+
+These same people, after a long time, became overjoyed to see [the] drunkard falling into a well at night. Finally, they thought, they had been given an opportunity to do some social service. They felt inwardly restless to utilize the opportunity for a humanitarian cause.
+
+"Let's hold a press conference today," one of them suggested.
+
+"No, let's first issue a press release today," another said. "Let's first rescue him from the well and then we can conveniently hold a big press conference."
+
+The third one proposed, "First ascertain whether he is dead or still alive. It'll be better if he is dead."
+
+All of them agreed. "That's right, that's right. It is the best proposal. Even a learned judge would admit that," they said.
+
+Then all of them gathered around the well and announced, "Hello, Bhonda, we are here to rescue you. First tell us whether you are alive or dead. If you are dead, we'll immediately go to your house and convey the news to your family, and we will hoist you up with the help of the ropes and carry your dead body to the cremation ground. If you say that you are still alive we'll inform the hospital authorities. They will send an ambulance within a short span of two or three days and take you to the hospital."
+
+In this way the drunkards continued their clamour. In the freezing night they made the heavy air warm and roared, "Tell us, you wretch, if you are dead or alive. We'll utilize this opportunity for social service."
+
+I Love This Tiny Green Island6
+
+I love this tiny green island
+Surrounded by the sea
+Touched by the sea
+Decorated by sea
+I love this tiny green island
+Surrounded by the sea
+Am I a secluded figure
+In the vast, a little, a meagre
+No, no, no, no, I'm not alone
+Great is with me
+The Great is with me
+
+(1) From Nútan Varńa Paricay ("New First Reader") Part 1, 1989. –Eds.
+
+(2) From the section on "Koshátakin" ("Drunkard") in Shabda Cayaniká ("A Collection of Words") Part 8, 1989.
+
+(3) A kind of delicious cake. –Eds.
+
+(4) Known in India in English as "potato chop", an álur cap (আলুর চপ) is a slice of potato coated with a paste of gram (chick-pea) flour and spices, then fried. –Eds.
+
+(5) A Bamni is a Brahman woman, particularly a widow. –Eds.
+
+(6) Song number 68 in Prabháta Saḿgiita: The Songs and Their English Renderings, Vol. 1, 1995. –Eds.
+
+CHAPTER 23
+
+LETTER-WRITING
+
+Letters are of three types:
+
+private or personal
+organizational, commercial, official, gubernatorial (or "governmental")
+demi-official (D.O.)
+Private Letters: In the case of private or personal letters, Mr. is generally not written before the name or surname of a person, although it can be written in the case of a less-known addressee. If Mr. Basu is a close friend or a relative of yours, you may write My dear Basu. If you do not know him well you may address him as Dear Mr. Basu. The letter ends with Yours sincerely, or Yours affectionately, or Yours lovingly, etc., according to the relationship.
+
+Official Letters: In the case of governmental or official letters, the letter should start with Sir or Madame as the case may be, and should end with Yours faithfully.
+
+Demi-Official Letters: Demi-official letters and/or official letters written in a personal capacity should be written like private or personal letters. The salutation should be written according to the personal relationship, and the letter should end with Yours sincerely. However, no personal or private matters should be included in such a letter.
+
+CHAPTER 24
+
+PRЙCIS-WRITING
+
+A prйcis is the shortened form of an idea. Generally prйcis are of two types: para-prйcis and letter-prйcis.
+
+Para-prйcis: A para-prйcis is the condensed substantial form of many paragraphs and cantos. The entire Rámáyańa, with seven cantos, may be written like this in a single paragraph:
+
+Raja Dasharatha was the king of Ayodhya in North India. He had three queens – Kaushalya, Kaikeyi and Sumitra – and four sons – Rama, Bharata, Lakshmana and Shatrughna. Dasharatha, being goaded by the evil advice of the second queen Kaikeyi, sent Rama into exile in the forest for fourteen years. Rama's devoted wife, Sita, and his affectionate brother, Lakshmana, accompanied him. One day during the short absence of Rama and Lakshmana, Ravana, the King of Lanka, kidnapped Sita from their cottage in the forest. After a long fight between Rama and Ravana, Ravana was defeated and killed by Rama. Rama came back to Ayodhya with Sita and Lakshmana. Dasharatha had died during the absence of Rama. Thus, just after Rama's return to Ayodhya, he was coronated.
+
+Letter-prйcis: A letter-prйcis is the gist form of a long correspondence. For instance, in letter No. 1, Praviira wrote to Suviira that he would be going to Calcutta and not Lucknow during the summer vacation. In letter No.2, Suviira requested [that Praviira, instead of] going to Lucknow, come to Digha, where the sea beach is of a super-excellent standard. In response to Suviira's letter, Praviira wrote in letter No. 3 that he wanted to visit Bakkhali. Finally, Suviira wrote in letter No. 4 that yes, he [Praviira] might come to Bakkhali, and said that he (Suviira) would also remain present there. The letter-prйcis should be as follows:
+
+After a long correspondence between Praviira and Suviira, they finally decided to visit Bakkhali together during the summer vacation.
+
+AFTERWORD
+
+The Latinic group of languages has three branches: Continental Latin, Occido-Demi-Latin and Oriento-Demi-Latin. From Continental Latin evolved German, Czech, Hungarian, Polish and Flemish. From Occido-Demi-Latin evolved two languages, Spanish and Portuguese, and a demi-language, Basque. (Basque can be called a half-language, or demi-language, because Basque is a mixture of the Spanish and the French languages.1) From Oriento-Demi-Latin evolved two languages: French and Italian.
+
+In the Occido-Demi-Latin group, all the prefixes of the Latin language have been retained.
+
+There are two pairs of languages in the world which can be said to be the closest to one another: Spanish and Portuguese, and Bengali and Oriya. The first two [sub-]branches of the [Occido-Demi-]Latin language are prevalent in South America; that is why South America is also known as Latin America.
+
+The modern English language evolved about 1100 years ago. 2000 years ago old English2 was a mixture of the Britons' and Angles' tongues. But modern English is a mixture of Anglo-Saxon and Norman. Saxon is of Scandinavian origin, and Norman is of French origin. There are two styles of pronunciation side by side – the Anglo-Saxon style and the Norman style.
+
+About 2000 years ago English did not have its own script. The present script is Roman script with a little modification. The origin of Roman script is Greek script, and the origin of Greek script is Old Hebrew (Semitic) script. Semitic script is written from right to left, but Roman script is written from left to right.
+
+(1) Though many consider it to be unrelated to other languages. –Eds.
+
+(2) This is not the "Old English" of scholarly terminology. "Old English" as used by scholars would include the first centuries of what the author calls "modern English" (i.e., would include two centuries of Norman influence before the Norman conquest). –Eds.
+
+1987

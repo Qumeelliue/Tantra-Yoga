@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Galaxica</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🌌 Galaxica</h1>
+    <p class="subtitle">Экосистема ИИ-агентов с одним кошельком</p>
+  </header>
+
+  <section id="wallet" class="card wallet hidden">
+    <div class="wallet-row">
+      <span>💰 Баланс</span>
+      <span id="balance" class="balance">…</span>
+    </div>
+    <div id="topup" class="topup hidden">
+      <p class="hint">Пополнение — 1 ⭐ = 1 монета; большие пакеты — с бонусом</p>
+      <div class="topup-row">
+        <button class="btn" data-package="p50">50 💰 · 50 ⭐</button>
+        <button class="btn" data-package="p100">100 💰 · 100 ⭐</button>
+        <button class="btn" data-package="p368">368 💰 · 350 ⭐ (+5%)</button>
+        <button class="btn" data-package="p825">825 💰 · 750 ⭐ (+10%)</button>
+        <button class="btn" data-package="p2300">2300 💰 · 2000 ⭐ (+15%)</button>
+        <button class="btn" data-package="p6000">6000 💰 · 5000 ⭐ (+20%)</button>
+        <button class="btn" data-package="p12500">12500 💰 · 10000 ⭐ (+25%)</button>
+        <button class="btn" data-package="p26000">26000 💰 · 20000 ⭐ (+30%)</button>
+      </div>
+    </div>
+  </section>
+
+  <h2 class="section-title">🎁 Пригласи друга</h2>
+  <section id="referral" class="card">
+    <p class="hint">Твой друг получит 50 💰 на старт, а ты — 10% с его трат.</p>
+    <a id="referral-link" class="btn" href="#" target="_blank" rel="noopener">Поделиться ссылкой</a>
+    <button id="referral-share" class="btn" type="button">🤝 Позвать друга</button>
+    <div id="referral-partner" class="referral-partner hidden">⭐ Партнёр Galaxica</div>
+    <div id="referral-progress" class="referral-progress hidden">
+      <div id="referral-progress-text" class="referral-progress-text"></div>
+      <div class="referral-progress-track"><div id="referral-progress-bar" class="referral-progress-bar"></div></div>
+    </div>
+    <div id="referral-stats" class="referral-stats"></div>
+  </section>
+
+  <h2 class="section-title">Агенты</h2>
+  <section id="catalog" class="catalog"></section>
+
+  <h2 class="section-title">🏆 Мировой рейтинг</h2>
+  <section id="leaderboard" class="card">
+    <div class="lb-tabs">
+      <button class="btn lb-tab active" data-metric="words">Слова</button>
+      <button class="btn lb-tab" data-metric="growth">Рост за 7 дней</button>
+      <button class="btn lb-tab" data-metric="streak">Серия</button>
+    </div>
+    <div id="lb-list" class="lb-list"></div>
+    <div id="lb-me" class="lb-me hidden"></div>
+  </section>
+
+  <h2 class="section-title">🔍 Нашёл баг?</h2>
+  <section class="card">
+    <p class="hint">Напиши в любого агента (жалоба/отзыв) — команда проверит на живой системе. Подтверждённый приоритетный баг — до 500 💰 на кошелёк.</p>
+  </section>
+
+  <h2 class="section-title">История</h2>
+  <section id="history" class="history"></section>
+
+  <h2 class="section-title" id="dev-title" hidden>🛠 Кабинет разработчика</h2>
+  <section id="dev-cabinet" class="card hidden">
+    <p class="hint">Твоя доля — 50% от оборота твоих агентов; начисляется при каждой трате.</p>
+    <div id="dev-agents"></div>
+    <div id="dev-payout" class="hidden">
+      <h3>💸 Вывести заработок</h3>
+      <p class="hint">Выплата — в Gram, вручную владельцем платформы (обычно несколько дней). Gram-сумма — ориентир (≈), финальную платит владелец.</p>
+      <div id="payout-form" class="hidden">
+        <label for="payout-agent">Агент:</label>
+        <select id="payout-agent"></select>
+        <label for="payout-amount">Сумма (минимум <span id="payout-min-label">1000</span> 💰):</label>
+        <input type="number" id="payout-amount" min="1000" step="1">
+        <label for="payout-wallet">Gram-кошелёк:</label>
+        <input type="text" id="payout-wallet" placeholder="UQ…">
+        <label for="payout-contact" id="payout-contact-row" class="hidden">Контакт (KYC):</label>
+        <input type="text" id="payout-contact" class="hidden" placeholder="@username или e-mail">
+        <button id="payout-submit" class="btn">Отправить заявку</button>
+        <p id="payout-msg" class="hint"></p>
+      </div>
+      <div id="payout-history"></div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="hint">Монетки — внутренняя валюта экосистемы. Условия — /terms в боте.</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
