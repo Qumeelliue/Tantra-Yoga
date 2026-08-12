@@ -305,6 +305,63 @@ body {
 .gauge .lbl { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 
 /* ─────────────────────────────────────────────────────────────
+   Стрики (§15) и ежедневный вызов (§16.2)
+   ───────────────────────────────────────────────────────────── */
+
+.streak-card {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--line-gold-soft);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.streak-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.streak-num { font-size: 22px; font-weight: 800; color: var(--gold-soft); font-variant-numeric: tabular-nums; }
+.streak-label { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.streak-dots {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  margin-top: 8px;
+}
+.streak-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--line-gold-soft);
+  background: rgba(0, 0, 0, 0.2);
+  display: grid;
+  place-items: center;
+  font-size: 8px;
+  color: var(--muted-2);
+}
+.streak-dot.on {
+  color: #1a1207;
+  background: radial-gradient(circle at 38% 30%, #ffe9b3, var(--gold) 70%);
+  border-color: rgba(255, 233, 179, 0.6);
+}
+.streak-freeze { font-size: 11px; color: var(--muted); }
+
+.challenge-card {
+  background: rgba(0, 0, 0, 0.22);
+  border: 1px solid var(--line-gold-soft);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.challenge-term { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.challenge-name { font-size: 16px; font-weight: 800; margin-top: 2px; }
+.challenge-desc { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+.challenge-progress { font-size: 13px; margin-top: 8px; color: var(--gold-soft); font-weight: 800; }
+.challenge-done { color: var(--sat); font-weight: 800; margin-top: 8px; }
+
+/* ─────────────────────────────────────────────────────────────
    Карта пути (чакры)
    ───────────────────────────────────────────────────────────── */
 

@@ -63,6 +63,7 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
     outcome: null,
     kills: 0,
     pacified: 0,
+    kiirtanaPlayed: 0,
     bossPacified: false,
     log: [],
     anchors: [],
@@ -215,6 +216,7 @@ export function playCard(state, handIndex, targetEnemy = 0) {
   recomputeGunas(state)
 
   // Кииртан-якорь и доп. эффекты реликвий
+  if (card.type === 'kiirtana') state.kiirtanaPlayed += 1
   if (card.type === 'kiirtana' && state.relicMods.kiirtanaDraw > 0) {
     drawCards(state, state.relicMods.kiirtanaDraw, events)
   }

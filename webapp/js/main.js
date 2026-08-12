@@ -4,7 +4,7 @@ import { initFx, sfx, setTint } from './ui/fx.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS } from './core/data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS, CHALLENGES } from './core/data.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
   takeCardReward, gainRelic,
@@ -14,6 +14,7 @@ import {
 } from './core/run.js'
 import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById, cloudSync,
+  markVisit, progressDaily,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -30,11 +31,19 @@ function boot() {
     window.Telegram?.WebApp?.expand()
   } catch {}
   app = { meta: loadMeta(), run: null, combat: null }
+  const { event } = markVisit(app.meta)
+  saveMeta(app.meta)
+  if (event && (event.kind === 'increase' || event.kind === 'break')) {
+    app.bootEvent = event
+  }
   showTitle()
   // фаза 2 (§17.1): синк через Telegram CloudStorage — побеждает свежее сохранение
   cloudSync(app.meta).then((fresh) => {
     if (fresh) {
       app.meta = fresh
+      const { event: e2 } = markVisit(app.meta)
+      if (e2 && e2.kind !== 'none') app.bootEvent = e2
+      saveMeta(app.meta)
       showTitle()
     }
   })
@@ -92,6 +101,15 @@ function showTitle() {
     Array.from({ length: 5 }, (_, i) =>
       h('div', { class: `stage-dot ${i <= cityStage ? 'on' : ''}` }, h('span', {}, `✦ ${i + 1}`))))
 
+  const streakBlock = streakCard(meta)
+  const challengeBlock = challengeCard(meta)
+
+  const bootEvent = app.bootEvent
+  app.bootEvent = null
+  if (bootEvent && bootEvent.kind === 'increase') {
+    sfx.med()
+  }
+
   const best = meta.bestRun
     ? h('div', { class: 'hint mt', style: 'text-align:center' },
         best.awakened
@@ -109,6 +127,9 @@ function showTitle() {
     h('p', { class: 'hint', style: 'max-width:300px' }, cityText),
     cityDots,
 
+    streakBlock,
+    challengeBlock,
+
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
         h('span', {}, 'путь города'),
@@ -120,11 +141,21 @@ function showTitle() {
       h('div', { class: 'btn-row' },
         h('button', { class: 'btn primary', onclick: startNewRun }, 'Начать забег'),
         h('button', { class: 'btn', onclick: () => showCompendium() }, `Грантха (${compCount})`)),
-      h('div', { class: 'btn-row mt' },
-        h('button', { class: 'btn ghost', onclick: () => showDiary() }, 'Дневник практики'),
-        h('button', { class: 'btn ghost small', style: 'width:auto', onclick: () => showHowto() }, '?')),
+    h('div', { class: 'btn-row mt' },
+      h('button', { class: 'btn ghost', onclick: () => showDiary() }, 'Дневник практики'),
+      h('button', { class: 'btn ghost small', style: 'width:auto', onclick: () => showHowto() }, '?')),
     )
   ))
+
+  if (bootEvent) {
+    const messages = {
+      increase: `Серия дней: ${meta.streak.current}. Ум укрепляется.`,
+      start: 'Начата серия дней. Завтра возвращайтесь — серия растёт.',
+      freeze_used: 'Фриз спас серию — день пропущен без потери.',
+      break: 'Серия оборвалась. Не расстраивайтесь — каждый день начинается заново.',
+    }
+    toast(messages[bootEvent.kind], bootEvent.kind === 'break' ? 'danger' : '')
+  }
 }
 
 function showHowto() {
@@ -143,6 +174,44 @@ function showHowto() {
     ),
     h('button', { class: 'btn primary mt', onclick: startNewRun }, 'Понятно, начнём'),
   ))
+}
+
+// ─────────────────────────────────────────────────────────────
+// Стрики (§15) и ежедневный вызов (§16.2) на титуле
+// ─────────────────────────────────────────────────────────────
+
+function streakCard(meta) {
+  const s = meta.streak || { current: 0, best: 0, freeze: 0 }
+  // последние 7 дней: серия идёт назад от сегодня
+  const dots = []
+  for (let i = 0; i < 7; i++) {
+    const day = new Date(Date.now() - i * 86400000)
+    const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`
+    const on = s.lastDay === key || (s.current > 0 && i < s.current)
+    dots.push(h('div', { class: `streak-dot ${on ? 'on' : ''}` }, i === 0 ? 'сегодня' : `${i + 1}`))
+  }
+  return h('div', { class: 'streak-card' },
+    h('div', { class: 'streak-head' },
+      h('div', {},
+        h('div', { class: 'streak-label' }, 'серия дней'),
+        h('div', { class: 'streak-num' }, `${s.current}${s.best > s.current ? ` · рекорд ${s.best}` : ''}`)),
+      h('div', { class: 'streak-freeze' }, `🛡 фриз: ${s.freeze}`)),
+    h('div', { class: 'streak-dots' }, dots))
+}
+
+function challengeCard(meta) {
+  const d = meta.daily || {}
+  const ch = d.challengeId ? CHALLENGES[d.challengeId] : null
+  if (!ch) return null
+  const pct = Math.min(100, (d.progress / ch.target) * 100)
+  const prog = d.done
+    ? h('div', { class: 'challenge-done' }, '✓ вызов выполнен · +1 фриз серии')
+    : h('div', { class: 'challenge-progress' }, `${d.progress} / ${ch.target}`)
+  return h('div', { class: 'challenge-card' },
+    h('div', { class: 'challenge-term' }, `вызов дня · ${ch.term}`),
+    h('div', { class: 'challenge-name' }, `${ch.name} · ${ch.sanskrit}`),
+    h('div', { class: 'challenge-desc' }, ch.desc),
+    prog)
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -250,6 +319,9 @@ function onCombatEnd(combat) {
   // якоря
   for (const a of combat.anchors) addAnchor(app.meta, a)
 
+  // ежедневный вызов (§16.2): прогресс по метрикам боя
+  trackDaily(combat, node.type === 'boss')
+
   if (result.dead) {
     recordRunEnd(app.meta, 'death')
     app.meta.stats.kills += combat.kills
@@ -274,6 +346,15 @@ function onCombatEnd(combat) {
 
   saveMeta(app.meta)
   showRewards(result)
+}
+
+// Ежедневный вызов: прогресс по итогам боя. isBoss — бой с владыкой чакры.
+function trackDaily(combat, isBoss) {
+  if (combat.pacified > 0) progressDaily(app.meta, 'pacify', combat.pacified)
+  if (combat.player.inSamadhi) progressDaily(app.meta, 'samadhi', 1)
+  if (combat.player.prama) progressDaily(app.meta, 'prama', 1)
+  if (combat.kiirtanaPlayed > 0) progressDaily(app.meta, 'kiirtana', combat.kiirtanaPlayed)
+  if (isBoss && combat.bossPacified) progressDaily(app.meta, 'boss_pacify', 1)
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -322,7 +403,12 @@ function pickRewardCard(id) {
 // ─────────────────────────────────────────────────────────────
 
 function showMeditation() {
-  show(meditationScreen(app, { onDone: () => { markNodeDone(app.run); afterNode() } }))
+  show(meditationScreen(app, { onDone: (res) => {
+    if (res && res.quality >= 3) progressDaily(app.meta, 'meditate_q3', 1)
+    saveMeta(app.meta)
+    markNodeDone(app.run)
+    afterNode()
+  } }))
 }
 
 // ─────────────────────────────────────────────────────────────

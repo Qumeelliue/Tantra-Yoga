@@ -4,12 +4,16 @@ import enemiesData from '@content/enemies.json'
 import relicsData from '@content/relics.json'
 import eventsData from '@content/events.json'
 import quotesData from '@content/quotes.json'
+import challengesData from '@content/challenges.json'
 
 export const CARDS = cardsData
 export const ENEMIES = enemiesData
 export const RELICS = relicsData
 export const EVENTS = eventsData
 export const QUOTES = quotesData
+export const CHALLENGES = Object.fromEntries(
+  Object.entries(challengesData).filter(([k]) => !k.startsWith('_'))
+)
 
 export function starterDeck() {
   const deck = []

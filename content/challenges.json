@@ -1,0 +1,63 @@
+{
+  "_comment": "Ежедневные вызовы (фаза 2, §16.2). Выбираются детерминированно от даты. kind — тип метрики, target — цель, reward — награда (фриз серии). Термины сверены с skill-index.md.",
+  "pacify_2": {
+    "id": "pacify_2",
+    "name": "Мирный путь",
+    "sanskrit": "अहिंसा",
+    "desc": "Успокойте 2 врагов ахимсой — освободите, а не убейте.",
+    "kind": "pacify",
+    "target": 2,
+    "term": "ахимса",
+    "source": "«A Guide to Human Conduct», гл. «Ахимса»"
+  },
+  "samadhi_1": {
+    "id": "samadhi_1",
+    "name": "Проблеск Самадхи",
+    "sanskrit": "समाधि",
+    "desc": "Достигните самадхи в бою — 12+ саттвы за один бой.",
+    "kind": "samadhi",
+    "target": 1,
+    "term": "самадхи",
+    "source": "SPEC §8.4"
+  },
+  "prama_1": {
+    "id": "prama_1",
+    "name": "Равновесие",
+    "sanskrit": "प्रमा",
+    "desc": "Завершите бой, удерживая праму — равновесие трёх гун.",
+    "kind": "prama",
+    "target": 1,
+    "term": "прама",
+    "source": "SPEC §8.2"
+  },
+  "kiirtana_3": {
+    "id": "kiirtana_3",
+    "name": "Имя в уме",
+    "sanskrit": "कीर्तन",
+    "desc": "Сыграйте 3 кииртаны — пойте Имя, когда ум темнеет.",
+    "kind": "kiirtana",
+    "target": 3,
+    "term": "кииртан",
+    "source": "SPEC §7.3"
+  },
+  "meditate_q3": {
+    "id": "meditate_q3",
+    "name": "Глубокое дыхание",
+    "sanskrit": "ध्यान",
+    "desc": "Проведите медитацию с дыханием на глубину 3 — поймайте все три пика вдоха.",
+    "kind": "meditate_q3",
+    "target": 1,
+    "term": "дхьяна",
+    "source": "SPEC §16.2, идея №11"
+  },
+  "boss_pacify_1": {
+    "id": "boss_pacify_1",
+    "name": "Владыка освобождён",
+    "sanskrit": "शान्ति",
+    "desc": "Успокойте владыку чакры — силой владыки не берутся.",
+    "kind": "boss_pacify",
+    "target": 1,
+    "term": "шанти",
+    "source": "SPEC §9.4"
+  }
+}
