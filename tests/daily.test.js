@@ -60,6 +60,17 @@ describe('Стрики (§15)', () => {
   it('yesterdayKey возвращает вчерашний ключ', () => {
     expect(yesterdayKey(T0)).toBe(dayKey(T0 - DAY))
   })
+
+  it('воскресенье покоя сохраняет серию без фриза', () => {
+    const meta = EMPTY_META()
+    markVisit(meta, T0)           // среда
+    markVisit(meta, T0 + DAY)     // четверг
+    markVisit(meta, T0 + 2 * DAY) // пятница → current 3
+    const { event } = markVisit(meta, T0 + 4 * DAY) // воскресенье
+    expect(event.kind).toBe('grace')
+    expect(meta.streak.current).toBe(3)
+    expect(meta.streak.freeze).toBe(0)
+  })
 })
 
 describe('Ежедневные вызовы (§16.2)', () => {

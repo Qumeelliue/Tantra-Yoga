@@ -9,6 +9,7 @@ import {
   effectiveCost,
   recomputeGunas,
   kiirtanaRhythmBonus,
+  samadhiPacify,
   mulberry32,
 } from '@webapp/js/core/engine.js'
 import cards from '@content/cards.json'
@@ -114,6 +115,261 @@ describe('ахимса и успокоение', () => {
     expect(s.enemies[0].dead).toBe(true)
     expect(s.kills).toBe(1)
     expect(s.outcome).toBe('victory')
+  })
+})
+
+describe('восемь паш (§9.5): оковы извне, им «сопротивляются»', () => {
+  it('паша успокаивается картой-противоядием (страх → Тапах)', () => {
+    const s = createCombat({
+      deck: makeDeck(['tapah'], { tapah: 4 }),
+      enemies: [enemies.bhaya_pasha],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    const e = s.enemies[0]
+    e.hp = Math.floor(e.maxHp / 2)
+    // выключить праму: иначе +1 урон убивает врага раньше, чем успокоение наберётся
+    s.player.guna = { s: 2, r: 3, t: 3 }
+    recomputeGunas(s)
+    playCard(s, s.piles.hand.indexOf('tapah'), 0)
+    playCard(s, s.piles.hand.indexOf('tapah'), 0)
+    expect(e.calm).toBe(2)
+    expect(e.pacified).toBe(true)
+    expect(s.pacified).toBe(1)
+  })
+
+  it('гхрна (ненависть) успокаивается ахимсой вдвое быстрее (противоядие = ахимса)', () => {
+    const s = createCombat({
+      deck: makeDeck(['ahimsa'], { ahimsa: 4 }),
+      enemies: [enemies.ghrna],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    const e = s.enemies[0]
+    e.hp = Math.floor(e.maxHp / 2)
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    expect(e.calm).toBe(2) // +1 за ахимсу-эффект +1 за calmCard
+    expect(e.pacified).toBe(true)
+  })
+
+  it('чужое противоядие не успокаивает пашу (только своя карта)', () => {
+    const s = createCombat({
+      deck: makeDeck(['seva'], { seva: 4 }),
+      enemies: [enemies.bhaya_pasha], // bhaya → tapah, не seva
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    const e = s.enemies[0]
+    e.hp = Math.floor(e.maxHp / 2)
+    playCard(s, 0, 0)
+    expect(e.calm).toBe(0) // seva не даёт ни pacify, ни calmCard-бонуса
+    expect(e.pacified).toBe(false)
+  })
+
+  it('у обычного врага (рипу) карта-противоядие не работает (нет calmCard)', () => {
+    const s = combatWith(['tapah'])
+    s.enemies[0].hp = 10
+    playCard(s, s.piles.hand.indexOf('tapah'), 0)
+    expect(s.enemies[0].calm).toBe(0)
+  })
+})
+
+describe('пантеон врагов: играбельность и противоядия', () => {
+  it('все враги контента создают бой без ошибок', () => {
+    for (const id of Object.keys(enemies).filter((k) => !k.startsWith('_'))) {
+      expect(() => createCombat({
+        deck: makeDeck(['first_effort'], { first_effort: 6 }),
+        enemies: [enemies[id]],
+        relics: [],
+        cards,
+        enemyDefs: enemies,
+        rng: seeded(),
+        opts: { autoResolve: true },
+      })).not.toThrow()
+    }
+  })
+
+  it.each(Object.values(enemies).filter((e) => e.calmCard))('паша $id успокаивается своим противоядием ($calmCard)', (e) => {
+    const s = createCombat({
+      deck: makeDeck([e.calmCard], { [e.calmCard]: 8 }),
+      enemies: [e],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    s.enemies[0].hp = Math.floor(e.maxHp / 2)
+    // без прамы, чтобы урон противоядия не убил раньше успокоения
+    s.player.guna = { s: 2, r: 3, t: 3 }
+    recomputeGunas(s)
+    playCard(s, s.piles.hand.indexOf(e.calmCard), 0)
+    playCard(s, s.piles.hand.indexOf(e.calmCard), 0)
+    expect(s.enemies[0].pacified).toBe(true)
+    expect(s.outcome).toBe('victory')
+  })
+})
+
+describe('синергии-«потоки» (§8.5)', () => {
+  it('поток ахимсы (3+): одна ахимса даёт +2 успокоения', () => {
+    const s = createCombat({
+      deck: makeDeck(['ahimsa'], { ahimsa: 4 }),
+      enemies: [enemies.krodha],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    s.enemies[0].hp = 10
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    expect(s.enemies[0].calm).toBe(2) // 1 база + 1 поток
+  })
+
+  it('без потока ахимса даёт только 1 успокоение', () => {
+    const s = combatWith(['ahimsa'])
+    s.enemies[0].hp = 10
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    expect(s.enemies[0].calm).toBe(1)
+  })
+
+  it('поток кииртана (3+): кииртана даёт +1 саттву дополнительно', () => {
+    const s = createCombat({
+      deck: makeDeck(['nama_kevalam'], { nama_kevalam: 4 }),
+      enemies: [enemies.krodha],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    const before = s.player.guna.s
+    playCard(s, s.piles.hand.indexOf('nama_kevalam'), 0)
+    expect(s.player.guna.s).toBe(before + 3) // +2 карта +1 поток
+  })
+
+  it('поток ямы (4+ практик): практики дешевле на 1', () => {
+    const deck = makeDeck(['satya', 'ahimsa', 'shaoca', 'santosa'], { satya: 2, ahimsa: 2, shaoca: 2, santosa: 2 })
+    const s = createCombat({ deck, enemies: [enemies.krodha], relics: [], cards, enemyDefs: enemies, rng: seeded(), opts: { autoResolve: true } })
+    expect(s.synergies.yama).toBe(true)
+    expect(effectiveCost(s, cards.santosa)).toBe(0) // 1 − 1 поток
+  })
+
+  it('поток служения (3+ севы): лечение +1', () => {
+    const s = createCombat({
+      deck: makeDeck(['seva'], { seva: 4 }),
+      enemies: [enemies.krodha],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    s.player.hp = 40
+    playCard(s, s.piles.hand.indexOf('seva'), 0)
+    expect(s.player.hp).toBe(45) // 40 + 4 + 1 поток
+  })
+})
+
+describe('прама для ахимсы босса (§18)', () => {
+  function bossFight() {
+    return createCombat({
+      deck: makeDeck(['ahimsa'], { ahimsa: 6 }),
+      enemies: [enemies.moha],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+  }
+
+  it('босс не успокаивается без прамы', () => {
+    const s = bossFight()
+    const e = s.enemies[0]
+    e.hp = 10
+    s.player.guna = { s: 3, r: 6, t: 3 } // перекос → прама выключена
+    recomputeGunas(s)
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    expect(e.calm).toBeGreaterThanOrEqual(e.calmMax)
+    expect(e.pacified).toBe(false)
+  })
+
+  it('босс успокаивается при праме', () => {
+    const s = bossFight()
+    const e = s.enemies[0]
+    e.hp = 10
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    expect(e.pacified).toBe(true)
+    expect(s.outcome).toBe('victory')
+  })
+})
+
+describe('самадхи-успокоение (§8.4)', () => {
+  it('в самадхи можно отпустить обычного врага', () => {
+    const s = combatWith(['first_effort'])
+    s.player.inSamadhi = true
+    s.player.samadhiTurns = 3
+    const ev = samadhiPacify(s, 0)
+    expect(ev.some((e) => e.type === 'pacified')).toBe(true)
+    expect(s.enemies[0].pacified).toBe(true)
+    expect(s.outcome).toBe('victory')
+  })
+
+  it('в самадхи нельзя отпустить босса — только по правилу §9', () => {
+    const s = createCombat({
+      deck: makeDeck(['first_effort']),
+      enemies: [enemies.moha],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    s.player.inSamadhi = true
+    samadhiPacify(s, 0)
+    expect(s.enemies[0].pacified).toBe(false)
+  })
+
+  it('вне самадхи успокоить нельзя', () => {
+    const s = combatWith(['first_effort'])
+    samadhiPacify(s, 0)
+    expect(s.enemies[0].pacified).toBe(false)
+  })
+})
+
+describe('статусы ума игрока (§9.1)', () => {
+  it('слабость (weak) снижает атаку игрока и тикает в конце хода', () => {
+    const s = combatWith(['first_effort'])
+    s.enemies[0].hp = 50
+    s.player.statuses.weak = 2
+    const before = s.enemies[0].hp
+    playCard(s, 0, 0)
+    const dealt = before - s.enemies[0].hp
+    expect(dealt).toBe(0) // 3 + 1 прама − 4 слабость = 0
+    endTurn(s)
+    expect(s.player.statuses.weak).toBe(1)
+  })
+
+  it('дремота (drowsy) уменьшает руку на 1 карту', () => {
+    const s = combatWith(['first_effort'], 'krodha', { counts: { first_effort: 10 } })
+    s.player.statuses.drowsy = 1
+    const handBefore = s.piles.hand.length
+    startPlayerTurn(s) // новый ход: добор 5 − 1 дремота = 4
+    expect(s.piles.hand.length).toBe(handBefore + 4)
   })
 })
 
@@ -253,6 +509,66 @@ describe('эффективная стоимость', () => {
     s.player.guna = { s: 5, r: 3, t: 3 }
     s.player.imbalance = 's'
     expect(effectiveCost(s, cards.first_effort)).toBe(0)
+  })
+})
+
+describe('«живые цитаты»: сыгранные карты (§исследование)', () => {
+  it('розыгрыш карты добавляет её в playedCards (для метки «прожито»)', () => {
+    const s = combatWith(['first_effort', 'ahimsa'])
+    playCard(s, s.piles.hand.indexOf('ahimsa'), 0)
+    expect(s.playedCards).toContain('ahimsa')
+    expect(s.playedCards).not.toContain('first_effort')
+  })
+})
+
+describe('новые реликвии «память» (§исследование)', () => {
+  it('дхрувасмрити показывает верхнюю карту колоды', () => {
+    const s = createCombat({
+      deck: makeDeck(['first_effort', 'tapah', 'om'], { first_effort: 8 }),
+      enemies: [enemies.krodha],
+      relics: ['dhruvasmriti'],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+    })
+    expect(s.peek.length).toBe(1)
+    expect(s.piles.draw).toContain(s.peek[0])
+  })
+
+  it('джатисмара даёт +1 силу в начале боя', () => {
+    const s = createCombat({
+      deck: makeDeck(['first_effort']),
+      enemies: [enemies.krodha],
+      relics: ['jatismara'],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+    })
+    expect(s.player.strength).toBe(1)
+  })
+
+  it('шаоча-майнджуса даёт +3 блока', () => {
+    const s = createCombat({
+      deck: makeDeck(['first_effort']),
+      enemies: [enemies.krodha],
+      relics: ['shaoca_mainjusa'],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+    })
+    expect(s.player.block).toBe(3)
+  })
+
+  it('каопина даёт +2 саттвы на старте', () => {
+    const s = createCombat({
+      deck: makeDeck(['first_effort']),
+      enemies: [enemies.krodha],
+      relics: ['kaopiina'],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+    })
+    expect(s.player.guna.s).toBe(5)
   })
 })
 

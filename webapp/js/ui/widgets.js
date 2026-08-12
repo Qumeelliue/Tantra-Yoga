@@ -1,6 +1,7 @@
 // Переиспользуемые виджеты: карты, орбы гун, бейджи, цитаты, враги.
 import { h } from './dom.js'
 import { CARDS, QUOTES } from '../core/data.js'
+import { CHAKRAS } from '../core/run.js'
 
 export function cardEl(card, { cost, compact = false, onPlay } = {}) {
   const c = typeof card === 'string' ? CARDS[card] : card
@@ -98,6 +99,9 @@ export function enemyCard(e, { calmHint = true } = {}) {
     { class: 'enemy-card' },
     h('div', { class: 'enemy-name display' }, e.name),
     h('div', { class: 'enemy-epithet' }, e.epithet),
+    e.def.isBoss && e.def.chakra != null && CHAKRAS[e.def.chakra]
+      ? h('div', { class: 'enemy-chakra' }, `владыка чакры ${CHAKRAS[e.def.chakra]}`)
+      : null,
     h('div', { class: 'enemy-sanscr sanscr' }, e.def.sanskrit),
     h('div', { class: `enemy-art glyph-${e.glyph}` }),
     h(
@@ -116,7 +120,10 @@ export function enemyCard(e, { calmHint = true } = {}) {
       { class: 'calm-bar' },
       calmDots
     ),
-    calmHint ? h('div', { class: 'calm-hint' }, 'успокоение ахимсой') : null
+    calmHint ? h('div', { class: 'calm-hint' },
+      e.def.calmCard
+        ? `освобождается: ${CARDS[e.def.calmCard]?.name || ''} · ахимса`
+        : 'успокоение ахимсой') : null
   )
 }
 

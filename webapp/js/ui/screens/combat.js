@@ -1,9 +1,10 @@
 // Экран боя: HUD, гуны, враг, рука, анимации.
 import { h, mount, clear } from '../dom.js'
 import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter } from '../widgets.js'
-import { burst, floatNum, setTint, sfx, kiirtanaWave } from '../fx.js'
+import { burst, floatNum, setTint, setGunaAudio, sfx, kiirtanaWave } from '../fx.js'
+import { haptics } from '../haptics.js'
 import { CARDS } from '../../core/data.js'
-import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome, kiirtanaRhythmBonus } from '../../core/engine.js'
+import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome, kiirtanaRhythmBonus, samadhiPacify } from '../../core/engine.js'
 import { kirtanRhythmOverlay } from '../minigames.js'
 
 export function combatScreen(app) {
@@ -16,6 +17,7 @@ export function combatScreen(app) {
   const badgeEl = h('div', {})
   const meterEl = h('div', {})
   const enemyZone = h('div', { class: 'enemy-zone' })
+  const samadhiBtn = h('button', { class: 'btn ghost small', style: 'width:auto;margin:6px auto;display:none', onclick: doSamadhiPacify }, '◉ Успокоить (самадхи)')
   const pilesEl = h('div', { class: 'piles-row' })
   const handEl = h('div', { class: 'hand' })
   const endBtn = h('button', { class: 'btn ghost end-turn-btn', onclick: () => doEndTurn() }, 'Завершить ход ✦')
@@ -27,6 +29,7 @@ export function combatScreen(app) {
     hudEl,
     h('div', { class: 'panel', style: 'padding:10px 12px' }, gunaEl, badgeEl, meterEl),
     enemyZone,
+    samadhiBtn,
     peekEl,
     h('div', { class: 'hand-wrap' }, handEl, pilesEl),
     endBtn,
@@ -34,6 +37,22 @@ export function combatScreen(app) {
   )
 
   let busy = false
+
+  // Синергии-«потоки» (§8.5): собранные школы ума видны как пассивные бейджи,
+  // а незакрытые — как прогресс к активации (учит «собирать состояние ума»).
+  function synergyBadges(s) {
+    if (!s) return []
+    const out = []
+    if (s.ahimsa) out.push('☯ поток ахимсы')
+    else if (s.n && s.n.ahimsa >= 2) out.push(`☯ ахимса ${s.n.ahimsa}/3`)
+    if (s.kiirtana) out.push('◉ поток кииртана')
+    else if (s.n && s.n.kiirtana >= 2) out.push(`◉ кииртан ${s.n.kiirtana}/3`)
+    if (s.yama) out.push('🕉 поток ямы')
+    else if (s.n && s.n.practice >= 3) out.push(`🕉 яма ${s.n.practice}/4`)
+    if (s.seva) out.push('✋ поток служения')
+    else if (s.n && s.n.seva >= 2) out.push(`✋ сева ${s.n.seva}/3`)
+    return out
+  }
 
   function render() {
     const p = combat.player
@@ -52,17 +71,23 @@ export function combatScreen(app) {
     )
 
     mount(gunaEl, gunaOrbs(p.guna, { lead: p.imbalance, prama: p.prama }))
-    mount(badgeEl, badges({ prama: p.prama, imbalance: p.imbalance, samadhi: p.inSamadhi }))
+    mount(badgeEl, badges({ prama: p.prama, imbalance: p.imbalance, samadhi: p.inSamadhi, passive: synergyBadges(combat.synergies) }))
     mount(meterEl, samadhiMeter(p.samadhiGain, combat.o.samadhiThreshold))
 
     // враг
     if (e && !e.dead && !e.pacified) {
+      const enc = app.meta && app.meta.encounters && app.meta.encounters[e.id]
       mount(enemyZone,
         enemyCard(e),
-        h('div', { class: 'row', style: 'gap:6px' }, intentChip(e)))
+        h('div', { class: 'row', style: 'gap:6px' }, intentChip(e)),
+        enc > 1 ? h('div', { class: 'hint center', style: 'font-size:10px;margin-top:4px' },
+          `встреч в прошлых жизнях: ${enc}`) : null)
     } else {
       mount(enemyZone)
     }
+
+    // самадхи-действие (§8.4): «видеть истину» → отпустить одного обычного врага
+    samadhiBtn.style.display = p.inSamadhi && e && !e.dead && !e.pacified && !e.def.isBoss ? 'block' : 'none'
 
     // колоды
     mount(pilesEl,
@@ -74,17 +99,21 @@ export function combatScreen(app) {
       cardEl(CARDS[id], { cost: effectiveCost(combat, CARDS[id]), onPlay: () => doPlay(i) })
     ))
 
-    // самадхи: предвидение
-    if (p.inSamadhi && combat.piles.draw.length > 0) {
-      const next = combat.piles.draw.slice(-2).reverse()
+    // предвидение/память: самадхи показывает следующие карты, Дхрувасмрити — верхнюю колоды
+    const memoryPeek = combat.relicMods.peekStart && combat.peek && combat.peek.length > 0
+    if ((p.inSamadhi || memoryPeek) && combat.piles.draw.length > 0) {
+      const next = p.inSamadhi
+        ? combat.piles.draw.slice(-2).reverse()
+        : (combat.peek || []).slice(-2)
       mount(peekEl,
-        h('span', { style: 'color:var(--gold-soft)' }, 'предвидение: '),
+        h('span', { style: 'color:var(--gold-soft)' }, p.inSamadhi ? 'предвидение: ' : 'память: '),
         next.map((id) => h('span', { class: 'sanscr', style: 'margin:0 4px;color:var(--gold)' }, CARDS[id].name)))
     } else {
       mount(peekEl)
     }
 
     setTint(p.imbalance === 't' ? 't' : p.imbalance === 'r' ? 'r' : p.imbalance === 's' ? 's' : null)
+    setGunaAudio(p.inSamadhi ? null : p.imbalance === 't' ? 't' : p.imbalance === 'r' ? 'r' : p.imbalance === 's' ? 's' : null)
 
     if (combat.pending && combat.pending.type === 'removal') {
       showBurnOverlay()
@@ -155,6 +184,20 @@ export function combatScreen(app) {
     }
   }
 
+  function doSamadhiPacify() {
+    if (busy || combat.pending || combat.outcome) return
+    busy = true
+    sfx.peace()
+    const events = samadhiPacify(combat, 0)
+    applyEvents(events, posOf(enemyZone))
+    if (combat.outcome) {
+      finish()
+    } else {
+      render()
+      busy = false
+    }
+  }
+
   function applyEvents(events, from) {
     for (const ev of events) {
       if (ev.type === 'damage') {
@@ -163,8 +206,10 @@ export function combatScreen(app) {
         const pos = posOf(t) || from
         floatNum(pos.x + (Math.random() * 40 - 20), pos.y, `-${ev.amount}`, ev.target === 'player' ? 'dmg' : 'block')
         if (ev.target === 'enemy') burst(pos.x, pos.y, '#ff8a4a', 8)
+        if (ev.target === 'player') haptics.impact('medium')
       } else if (ev.type === 'heal') {
         sfx.heal()
+        haptics.impact('soft')
         const pos = posOf(hudEl)
         floatNum(pos.x, pos.y, `+${ev.amount}`, 'heal')
       } else if (ev.type === 'block') {
@@ -174,11 +219,13 @@ export function combatScreen(app) {
         if (key) floatNum(innerWidth / 2, innerHeight / 2 + 40, `+${ev.delta[key]}`, key === 's' ? 'sat' : key === 'r' ? 'raj' : 'tam')
       } else if (ev.type === 'pacified') {
         sfx.peace()
+        haptics.notify('success')
         const pos = posOf(enemyZone)
         burst(pos.x, pos.y, '#ffe9b3', 26)
         toast(ev.message, 'good')
       } else if (ev.type === 'samadhi') {
         sfx.samadhi()
+        haptics.notify('success')
         toast(ev.message, 'hl')
       } else if (ev.type === 'kiirtana_rhythm') {
         const parts = []
@@ -200,6 +247,7 @@ export function combatScreen(app) {
         burst(pos.x, pos.y, '#e06a5a', 20)
       } else if (ev.type === 'error') {
         toast(ev.message, 'danger')
+        haptics.notify('error')
       }
     }
   }
@@ -247,6 +295,7 @@ export function combatScreen(app) {
 
   function finish() {
     busy = true
+    setGunaAudio(null)
     if (combat.outcome === 'defeat') {
       sfx.death()
       setTint('t')

@@ -34,12 +34,14 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
   shuffle(draw, rand)
 
   const relicMods = aggregateRelics(relics)
+  const synergies = computeSynergies(deck, cards)
 
   const state = {
     rand,
     cards,
     enemyDefs,
     relicMods,
+    synergies,
     player: {
       hp: o.playerHp,
       maxHp: o.playerHp,
@@ -64,6 +66,8 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
     kills: 0,
     pacified: 0,
     kiirtanaPlayed: 0,
+    vrittiPlayed: false,
+    playedCards: [],
     bossPacified: false,
     log: [],
     anchors: [],
@@ -74,6 +78,7 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
 
   // модификаторы реликвий: стартовые гуны, стартовая сила врага, стартовый хил
   if (relicMods.gunaStartS) state.player.guna.s += relicMods.gunaStartS
+  if (relicMods.playerStartStrength) state.player.strength += relicMods.playerStartStrength
   if (relicMods.enemyStartStrength) {
     for (const e of state.enemies) e.strength += relicMods.enemyStartStrength
   }
@@ -86,6 +91,12 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
   rollIntents(state)
   gentleOpen(state)
   startPlayerTurn(state)
+  // Стартовый блок (Шаоча-майнджуса) и память (Дхрувасмрити) — после startPlayerTurn,
+  // иначе он их обнулит (блок) или сотрёт (peek)
+  if (relicMods.combatStartBlock) state.player.block += relicMods.combatStartBlock
+  if (relicMods.peekStart && state.piles.draw.length > 0) {
+    state.peek = state.piles.draw.slice(-1)
+  }
   return state
 }
 
@@ -134,6 +145,9 @@ function aggregateRelics(relics) {
     gunaStartS: 0,
     enemyStartStrength: 0,
     combatStartHeal: 0,
+    peekStart: false,
+    playerStartStrength: 0,
+    combatStartBlock: 0,
   }
   for (const id of relics || []) {
     if (id === 'pratik') m.pacifyBonus += 1
@@ -146,8 +160,36 @@ function aggregateRelics(relics) {
     if (id === 'tulasi') m.tamasImmune = true
     if (id === 'prana_drop') m.combatStartHeal += 3
     if (id === 'guru_darshana') m.practiceCostMod -= 1
+    if (id === 'dhruvasmriti') m.peekStart = true
+    if (id === 'jatismara') m.playerStartStrength += 1
+    if (id === 'shaoca_mainjusa') m.combatStartBlock += 3
+    if (id === 'kaopiina') m.gunaStartS += 2
   }
   return m
+}
+
+// Синергии-«потоки» (§8.5): 3+ карты одной «школы» в колоде открывают пассивный
+// бонус на забег. Колода = ум: собирая практики, игрок «становится» ими.
+export function computeSynergies(deck, cards) {
+  let ahimsa = 0
+  let kiirtana = 0
+  let practice = 0
+  let seva = 0
+  for (const id of deck) {
+    const c = cards[id]
+    if (!c) continue
+    if (c.id === 'ahimsa' || (c.tags && c.tags.includes('pacify'))) ahimsa++
+    if (c.type === 'kiirtana') kiirtana++
+    if (c.type === 'practice') practice++
+    if (c.type === 'seva') seva++
+  }
+  return {
+    ahimsa: ahimsa >= 3,
+    kiirtana: kiirtana >= 3,
+    yama: practice >= 4,
+    seva: seva >= 3,
+    n: { ahimsa, kiirtana, practice, seva },
+  }
 }
 
 function shuffle(arr, rand) {
@@ -177,10 +219,10 @@ export function startPlayerTurn(state) {
   }
 
   p.energy = p.maxEnergy + (p.inSamadhi ? 1 : 0)
-  if (p.statuses.drowsy > 0) p.statuses.drowsy = 0
 
   const tamasPenalty = p.imbalance === 't' && !state.relicMods.tamasImmune
-  let drawCount = state.o.drawPerTurn + (tamasPenalty ? -1 : 0)
+  // Дремота (drowsy): ум «спит» — рука на 1 карту меньше (тикает в конце хода, §9.1)
+  let drawCount = state.o.drawPerTurn + (tamasPenalty ? -1 : 0) - (p.statuses.drowsy > 0 ? 1 : 0)
   if (drawCount < 0) drawCount = 0
   drawCards(state, drawCount)
 
@@ -217,8 +259,17 @@ export function playCard(state, handIndex, targetEnemy = 0) {
 
   // Кииртан-якорь и доп. эффекты реликвий
   if (card.type === 'kiirtana') state.kiirtanaPlayed += 1
+  // Испытание Ямы (§исследование): сыгранная оковка нарушает правило «не кормить вихри»
+  if (card.type === 'vritti') state.vrittiPlayed = true
+  // «Живые цитаты» (§исследование): применённая карта = прожитый термин
+  if (!state.playedCards.includes(card.id)) state.playedCards.push(card.id)
   if (card.type === 'kiirtana' && state.relicMods.kiirtanaDraw > 0) {
     drawCards(state, state.relicMods.kiirtanaDraw, events)
+  }
+  // Поток Кииртана (§8.5): 3+ кииртаны в колоде — пение несёт больше саттвы
+  if (card.type === 'kiirtana' && state.synergies.kiirtana) {
+    applyGuna(state, { s: 1 }, 'player', events)
+    recomputeGunas(state)
   }
   if (card.id === 'nama_kevalam') {
     maybeAnchor(state, 'despondency', events)
@@ -228,6 +279,25 @@ export function playCard(state, handIndex, targetEnemy = 0) {
     state.piles.exhaust.push(cardId)
   } else {
     state.piles.discard.push(cardId)
+  }
+
+  // Паши (§9.5): карта-противоядие (calmCard) успокаивает окову — не только ахимса.
+  // Рипу «контролируются», пашам «сопротивляются» (PiaN 12/2): против страха — Тапах,
+  // против стыда — Сева, против ненависти — Ахимса (двойной calm), и т.д.
+  const pasha = state.enemies[ctx.targetEnemy]
+  if (pasha && !pasha.dead && !pasha.pacified && pasha.def.calmCard && pasha.def.calmCard === card.id) {
+    pasha.calm += 1
+    events.push({ type: 'pacify_gain', enemy: ctx.targetEnemy, calm: pasha.calm })
+    if (pacifyReady(state, pasha)) {
+      pacifyEnemy(state, ctx.targetEnemy, events)
+      // Якорь в жизнь (§11): пашу освободила правильная практика-противоядие.
+      // «Страх → Тапах», «Стыд → Сева» — игрок уносит это в реальную жизнь.
+      const a = { situation: pasha.name.toUpperCase(), practice: card.name.toUpperCase() }
+      if (!state.anchors.some((x) => x.situation === a.situation && x.practice === a.practice)) {
+        state.anchors.push(a)
+        events.push({ type: 'anchor', ...a })
+      }
+    }
   }
 
   checkEnemies(state, events)
@@ -259,6 +329,11 @@ export function endTurn(state) {
   state.piles.discard.push(...state.piles.hand)
   state.piles.hand = []
   state.phase = 'enemy'
+
+  // Статусы ума игрока (§9.1): weak/drowsy отработали свой ход — тикают вниз,
+  // пока враги действуют (как в Slay the Spire). Вновь наложенное останется на ход.
+  if (state.player.statuses.weak > 0) state.player.statuses.weak -= 1
+  if (state.player.statuses.drowsy > 0) state.player.statuses.drowsy -= 1
 
   for (let i = 0; i < state.enemies.length; i++) {
     const e = state.enemies[i]
@@ -312,7 +387,10 @@ const EFFECTS = {
       const e = state.enemies[target]
       e.hp = Math.min(e.maxHp, e.hp + fx.amount)
     } else {
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + fx.amount)
+      // Поток Служения (§8.5): лечение игрока сильнее, когда в колоде 3+ севы
+      const amount = fx.amount + (state.synergies.seva ? 1 : 0)
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + amount)
+      ctx.events.push({ type: 'heal', target: 'player', amount })
     }
     ctx.events.push({ type: 'heal', target: target != null ? 'enemy' : 'player', amount: fx.amount })
   },
@@ -358,11 +436,12 @@ const EFFECTS = {
     const i = ctx.targetEnemy
     const e = state.enemies[i]
     if (!e || e.dead || e.pacified) return
-    const bonus = state.relicMods.pacifyBonus
+    // Поток Ахимсы (§8.5): успокоение эффективнее, когда в колоде 3+ ахимсы
+    const bonus = state.relicMods.pacifyBonus + (state.synergies.ahimsa ? 1 : 0)
     e.calm += fx.amount + bonus
     ctx.events.push({ type: 'pacify_gain', enemy: i, calm: e.calm })
-    // успокоение по правилу: полный счётчик + HP ≤ 50%
-    if (e.calm >= e.calmMax && e.hp <= e.maxHp / 2) {
+    // успокоение по правилу: полный счётчик + HP ≤ 50% (для босса — ещё и прама, §18)
+    if (pacifyReady(state, e)) {
       pacifyEnemy(state, i, ctx.events)
     }
   },
@@ -464,6 +543,8 @@ function effectiveDamageEnemy(state, base) {
   if (p.prama) dmg += state.o.pramaBonus
   if (p.imbalance === 's') dmg -= 1
   if (p.imbalance === 'r') dmg += Math.floor(state.rand() * 2)
+  // слабость ума (weak): атаки садхаки притупляются
+  if (p.statuses.weak > 0) dmg -= 2 * p.statuses.weak
   return Math.max(0, dmg)
 }
 
@@ -513,6 +594,15 @@ function triggerThreshold(state, e, events) {
   }
 }
 
+// Успокоение готово? Полный счётчик Ахимсы + HP ≤ 50%. Босс чакры требует
+// ещё и праму (§18): мирный путь против владыки — это равновесие ума, а не случай.
+function pacifyReady(state, e) {
+  if (e.calm < e.calmMax) return false
+  if (e.hp > e.maxHp / 2) return false
+  if (e.def.isBoss && !state.player.prama) return false
+  return true
+}
+
 function pacifyEnemy(state, i, events) {
   const e = state.enemies[i]
   e.pacified = true
@@ -523,6 +613,18 @@ function pacifyEnemy(state, i, events) {
   applyGuna(state, { s: 3 + bonus }, 'player', events)
   recomputeGunas(state)
   events.push({ type: 'pacified', enemy: i, message: `${e.name} освобождён(а). +${3 + bonus} саттвы.` })
+}
+
+// Самадхи-действие (§8.4): в режиме ясности можно «отпустить» одного обычного врага.
+// Боссов так нельзя — владык освобождают только по правилу §9 (Ахимса + прама).
+export function samadhiPacify(state, i = 0) {
+  const events = []
+  const e = state.enemies[i]
+  if (!state.player.inSamadhi) return events
+  if (!e || e.dead || e.pacified || e.def.isBoss) return events
+  pacifyEnemy(state, i, events)
+  checkOutcome(state, events)
+  return events
 }
 
 function checkEnemies(state, events) {
@@ -625,6 +727,8 @@ export function effectiveCost(state, card) {
     if (p.imbalance === 'r') cost += 1
     if (p.imbalance === 's') cost -= 1
     cost += state.relicMods.practiceCostMod
+    // Поток Ямы (§8.5): 4+ практик в колоде — дисциплина удешевляет практики
+    if (state.synergies.yama && card.type === 'practice') cost -= 1
   }
   return Math.max(0, cost)
 }

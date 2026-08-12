@@ -307,14 +307,385 @@
         "intent": "special",
         "damage": 0,
         "effects": [
-          {
-            "kind": "addCurseToDeck",
-            "cardId": "cinta",
-            "amount": 1
-          }
+      {
+        "kind": "addCurseToDeck",
+        "cardId": "cinta",
+        "amount": 1
+      }
         ]
       }
     ]
+  },
+  "bhaya_pasha": {
+    "id": "bhaya_pasha",
+    "name": "Бхая",
+    "epithet": "Сковывающий",
+    "sanskrit": "भय",
+    "glyph": "ghost",
+    "maxHp": 26,
+    "calmMax": 2,
+    "calmCard": "tapah",
+    "quoteId": "bhaya",
+    "moves": [
+      {
+        "name": "Оцепенение",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          { "kind": "status", "status": "weak", "amount": 1, "target": "player" }
+        ]
+      },
+      {
+        "name": "Дрожь",
+        "intent": "attack",
+        "damage": 4,
+        "effects": [
+          { "kind": "damage", "amount": 4, "target": "player" }
+        ]
+      },
+      {
+        "name": "Ужас",
+        "intent": "attack",
+        "damage": 7,
+        "effects": [
+          { "kind": "damage", "amount": 7, "target": "player" },
+          { "kind": "guna", "amount": 1, "which": "t", "target": "player" }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        { "kind": "status", "status": "weak", "amount": 1, "target": "player" }
+      ],
+      "log": "Бхая сжимает сердце: страх ослабляет вашу волю."
+    }
+  },
+  "lajja": {
+    "id": "lajja",
+    "name": "Лайя",
+    "epithet": "Прячущаяся",
+    "sanskrit": "लज्जा",
+    "glyph": "veil",
+    "maxHp": 24,
+    "calmMax": 2,
+    "calmCard": "seva",
+    "quoteId": "lajja",
+    "moves": [
+      {
+        "name": "Прятаться",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          { "kind": "block", "amount": 6, "target": "self" }
+        ]
+      },
+      {
+        "name": "Опустить взгляд",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          { "kind": "discardRandomFromHand", "amount": 1 }
+        ]
+      },
+      {
+        "name": "Сгореть от стыда",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          { "kind": "damage", "amount": 5, "target": "player" },
+          { "kind": "discardRandomFromHand", "amount": 1 }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        { "kind": "discardRandomFromHand", "amount": 1 }
+      ],
+      "log": "Лайя прячет ваши карты: стыд утаивает силы ума."
+    }
+  },
+  "ghrna": {
+    "id": "ghrna",
+    "name": "Гхрна",
+    "epithet": "Жгущая",
+    "sanskrit": "घृणा",
+    "glyph": "viper",
+    "maxHp": 28,
+    "calmMax": 2,
+    "calmCard": "ahimsa",
+    "quoteId": "ghrna",
+    "moves": [
+      {
+        "name": "Жёлчь",
+        "intent": "attack",
+        "damage": 6,
+        "effects": [
+          { "kind": "damage", "amount": 6, "target": "player" }
+        ]
+      },
+      {
+        "name": "Презрение",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          { "kind": "status", "status": "weak", "amount": 1, "target": "player" },
+          { "kind": "guna", "amount": 1, "which": "r", "target": "player" }
+        ]
+      },
+      {
+        "name": "Яд ненависти",
+        "intent": "attack",
+        "damage": 8,
+        "effects": [
+          { "kind": "damage", "amount": 8, "target": "player" }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        { "kind": "strength", "amount": 1, "target": "self" },
+        { "kind": "addCurseToDeck", "cardId": "krodha", "amount": 1 }
+      ],
+      "log": "Гхрна вскипает ненавистью: гнев просачивается в ваш ум."
+    }
+  },
+  "samshaya_pasha": {
+    "id": "samshaya_pasha",
+    "name": "Самшая",
+    "epithet": "Подтачивающий",
+    "sanskrit": "शङ्का",
+    "glyph": "ques",
+    "maxHp": 25,
+    "calmMax": 2,
+    "calmCard": "svadhyaya",
+    "quoteId": "samshaya",
+    "moves": [
+      {
+        "name": "Тенета сомнений",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          { "kind": "discardRandomFromHand", "amount": 1 }
+        ]
+      },
+      {
+        "name": "Шаткость",
+        "intent": "attack",
+        "damage": 4,
+        "effects": [
+          { "kind": "damage", "amount": 4, "target": "player" }
+        ]
+      },
+      {
+        "name": "Подрыв веры",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          { "kind": "strength", "amount": 1, "target": "self" },
+          { "kind": "discardRandomFromHand", "amount": 1 }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        { "kind": "discardRandomFromHand", "amount": 1 }
+      ],
+      "log": "Самшая колеблет ум: сомнение отбирает одну из ваших карт."
+    }
+  },
+  "kula": {
+    "id": "kula",
+    "name": "Кула",
+    "epithet": "Родовитый",
+    "sanskrit": "कुल",
+    "glyph": "crown",
+    "maxHp": 30,
+    "calmMax": 2,
+    "calmCard": "aparigraha",
+    "quoteId": "kula",
+    "moves": [
+      {
+        "name": "Наследство",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          { "kind": "block", "amount": 7, "target": "self" }
+        ]
+      },
+      {
+        "name": "Превосходство",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          { "kind": "strength", "amount": 1, "target": "self" }
+        ]
+      },
+      {
+        "name": "Удар родовитости",
+        "intent": "attack",
+        "damage": 7,
+        "effects": [
+          { "kind": "damage", "amount": 7, "target": "player" },
+          { "kind": "guna", "amount": 1, "which": "r", "target": "player" }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        { "kind": "block", "amount": 5, "target": "self" },
+        { "kind": "strength", "amount": 1, "target": "self" }
+      ],
+      "log": "Кула опирается на род: знатность прикрывает и крепнет."
+    }
+  },
+  "sila": {
+    "id": "sila",
+    "name": "Шила",
+    "epithet": "Холодная",
+    "sanskrit": "शील",
+    "glyph": "eye",
+    "maxHp": 27,
+    "calmMax": 2,
+    "calmCard": "satsaunga",
+    "quoteId": "sila",
+    "moves": [
+      {
+        "name": "Каста вкуса",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          { "kind": "block", "amount": 8, "target": "self" }
+        ]
+      },
+      {
+        "name": "Холодный взгляд",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          { "kind": "status", "status": "weak", "amount": 1, "target": "player" }
+        ]
+      },
+      {
+        "name": "Насмешка",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          { "kind": "damage", "amount": 5, "target": "player" },
+          { "kind": "discardRandomFromHand", "amount": 1 }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        { "kind": "block", "amount": 4, "target": "self" }
+      ],
+      "log": "Шила замыкается в своей культуре: высокомерие становится щитом."
+    }
+  },
+  "mana_pasha": {
+    "id": "mana_pasha",
+    "name": "Мана",
+    "epithet": "Напыщенный",
+    "sanskrit": "मान",
+    "glyph": "feather",
+    "maxHp": 28,
+    "calmMax": 2,
+    "calmCard": "santosa",
+    "quoteId": "mana",
+    "moves": [
+      {
+        "name": "Самолюбование",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          { "kind": "strength", "amount": 1, "target": "self" }
+        ]
+      },
+      {
+        "name": "Напыщенный",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          { "kind": "block", "amount": 5, "target": "self" },
+          { "kind": "strength", "amount": 1, "target": "self" }
+        ]
+      },
+      {
+        "name": "Удар эго",
+        "intent": "attack",
+        "damage": 7,
+        "effects": [
+          { "kind": "damage", "amount": 7, "target": "player" }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        { "kind": "strength", "amount": 2, "target": "self" }
+      ],
+      "log": "Мана раздувается тщеславием: +2 силы."
+    }
+  },
+  "jugupsa": {
+    "id": "jugupsa",
+    "name": "Джугупса",
+    "epithet": "Шепчущая",
+    "sanskrit": "जुगुप्सा",
+    "glyph": "whisper",
+    "maxHp": 24,
+    "calmMax": 2,
+    "calmCard": "satya",
+    "quoteId": "jugupsa",
+    "moves": [
+      {
+        "name": "Шёпот за спиной",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          { "kind": "discardRandomFromHand", "amount": 1 },
+          { "kind": "guna", "amount": 1, "which": "t", "target": "player" }
+        ]
+      },
+      {
+        "name": "Клевета",
+        "intent": "attack",
+        "damage": 5,
+        "effects": [
+          { "kind": "damage", "amount": 5, "target": "player" },
+          { "kind": "discardRandomFromHand", "amount": 1 }
+        ]
+      },
+      {
+        "name": "Проклятие",
+        "intent": "special",
+        "damage": 0,
+        "effects": [
+          { "kind": "addCurseToDeck", "cardId": "cinta", "amount": 1 }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        { "kind": "addCurseToDeck", "cardId": "cinta", "amount": 1 }
+      ],
+      "log": "Джугупса распускает слухи: беспокойство проникает в ум."
+    }
   },
   "moha": {
     "id": "moha",

@@ -1,15 +1,17 @@
 // Точка входа: маршрутизация экранов, забег, узлы, Грантха, дневник.
 import { h, mount } from './ui/dom.js'
 import { initFx, sfx, setTint } from './ui/fx.js'
+import { setHaptics, haptics } from './ui/haptics.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
 import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS, CHALLENGES, VARNA_ORDER } from './core/data.js'
+import { computeSynergies } from './core/engine.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
   takeCardReward, gainRelic,
   eventOptions, resolveEventChoice, isNodeDone, markNodeDone,
-  floorComplete, advanceFloor, CHAKRAS,
+  floorComplete, advanceFloor, CHAKRAS, LEPESTKI,
   rollShop, buyShopCard, buyShopRemove, buyShopRelic, SHOP_COSTS,
 } from './core/run.js'
 import {
@@ -31,9 +33,10 @@ function boot() {
     window.Telegram?.WebApp?.expand()
   } catch {}
   app = { meta: loadMeta(), run: null, combat: null }
+  setHaptics(app.meta.settings?.haptics !== false)
   const { event } = markVisit(app.meta)
   saveMeta(app.meta)
-  if (event && (event.kind === 'increase' || event.kind === 'break')) {
+  if (event && (event.kind === 'increase' || event.kind === 'break' || event.kind === 'grace')) {
     app.bootEvent = event
   }
   showTitle()
@@ -88,6 +91,10 @@ function showTitle() {
     'Город светится. Цикл неведения разомкнут.',
   ]
   const cityText = CITY_TEXT[cityStage]
+  const teachers = meta.pacifiedBosses && meta.pacifiedBosses.length > 0
+    ? h('div', { class: 'hint center mt', style: 'color:var(--gold-soft)' },
+        `Учителя города: ${meta.pacifiedBosses.join(' · ')}`)
+    : null
 
   const gauges = [
     h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.runs), h('div', { class: 'lbl' }, 'забеги')),
@@ -127,6 +134,7 @@ function showTitle() {
     h('div', { class: 'game-sub' }, 'игра-учение · колода — это ум'),
     h('p', { class: 'hint', style: 'max-width:300px' }, cityText),
     cityDots,
+    teachers,
 
     streakBlock,
     challengeBlock,
@@ -145,7 +153,9 @@ function showTitle() {
         h('button', { class: 'btn', onclick: () => showCompendium() }, `Грантха (${compCount})`)),
     h('div', { class: 'btn-row mt' },
       h('button', { class: 'btn ghost', onclick: () => showDiary() }, 'Дневник практики'),
-      h('button', { class: 'btn ghost small', style: 'width:auto', onclick: () => showHowto() }, '?')),
+      h('button', { class: 'btn ghost small', style: 'width:auto', onclick: () => showHowto() }, '?'),
+      h('button', { class: 'btn ghost small', style: 'width:auto', onclick: toggleHaptics },
+        app.meta.settings?.haptics === false ? '🔕' : '📳')),
     )
   ))
 
@@ -155,6 +165,7 @@ function showTitle() {
       start: 'Начата серия дней. Завтра возвращайтесь — серия растёт.',
       freeze_used: 'Фриз спас серию — день пропущен без потери.',
       break: 'Серия оборвалась. Не расстраивайтесь — каждый день начинается заново.',
+      grace: 'Воскресенье покоя: серия сохранена. Отдых — тоже практика.',
     }
     toast(messages[bootEvent.kind], bootEvent.kind === 'break' ? 'danger' : '')
   }
@@ -172,6 +183,10 @@ function showHowto() {
       h('div', { class: 'hint mt' },
         'Каждого врага можно победить силой… или успокоить ахимсой (сыграть N карт «Ахимса» при его ХП ≤ 50%). Мирный путь — истинный финал.'),
       h('div', { class: 'hint mt' },
+        'На высоких этажах встречаются восемь оков-паш (страх, стыд, ненависть, сомнение…). Им сопротивляются правильной практикой: страх успокаивается Тапасом, стыд — Севой.'),
+      h('div', { class: 'hint mt' },
+        'Узлы «Испытание» просят победить, не сыграв ни одной оковки; узлы «Воспоминание» — вспомнить открытые термины. Дисциплина и память дают бонус.'),
+      h('div', { class: 'hint mt' },
         'Каждая карта и враг — подлинный термин Шастры. Первая встреча открывает карточку в Грантхе. Знание переживает смерть.'),
     ),
     h('button', { class: 'btn primary mt', onclick: startNewRun }, 'Понятно, начнём'),
@@ -183,7 +198,7 @@ function showHowto() {
 // ─────────────────────────────────────────────────────────────
 
 function streakCard(meta) {
-  const s = meta.streak || { current: 0, best: 0, freeze: 0 }
+  const s = meta.streak || { current: 0, best: 0, freeze: 0, total: 0 }
   // последние 7 дней: серия идёт назад от сегодня
   const dots = []
   for (let i = 0; i < 7; i++) {
@@ -194,12 +209,18 @@ function streakCard(meta) {
   }
   return h('div', { class: 'streak-card' },
     h('div', { class: 'streak-head' },
+      h('div', { class: 'streak-lotus' }, LOTUS[Math.min(LOTUS.length - 1, Math.floor(s.current / 2))]),
       h('div', {},
         h('div', { class: 'streak-label' }, 'серия дней'),
         h('div', { class: 'streak-num' }, `${s.current}${s.best > s.current ? ` · рекорд ${s.best}` : ''}`)),
       h('div', { class: 'streak-freeze' }, `🛡 фриз: ${s.freeze}`)),
-    h('div', { class: 'streak-dots' }, dots))
+    h('div', { class: 'streak-dots' }, dots),
+    s.total > 0 ? h('div', { class: 'hint center', style: 'font-size:10px' },
+      `всего дней практики: ${s.total} · срывы — часть пути, возвращение — сама практика`) : null)
 }
+
+// Лотос практики растёт с серией (метафора Forest/Finch: видимый живой прогресс).
+const LOTUS = ['🌱', '🌿', '🍃', '🌸', '🪷']
 
 function challengeCard(meta) {
   const d = meta.daily || {}
@@ -268,13 +289,28 @@ function showJanna() {
 
 function beginRun(jannaId) {
   app.run = createRun({ meta: app.meta, options: { janna: jannaId } })
+  // Самскара прошлой жизни (§5/§10): смерть конструирует следующего тебя
+  const nl = app.meta.nextLife
+  if (nl) {
+    const g = app.run.gunaStart
+    if (nl === 'sattva') app.run.gunaStart = { ...g, s: g.s + 1 }
+    else if (nl === 'prana') app.run.prana += 5
+    else if (nl === 'knowledge') unlockRandomQuote()
+    app.meta.nextLife = null
+  }
   markSeenMany('cards', app.run.deck)
   // открываем врагов заранее в этом забеге нельзя — откроются при встрече
+  // Сострадательный дизайн (§исследование): после трёх смертей подряд Путь мягче
+  if ((app.meta.deathsInRow || 0) >= 3) {
+    const g = app.run.gunaStart
+    app.run.gunaStart = { ...g, s: g.s + 1 }
+    toast('Ум устал — Путь стал мягче: +1 саттва (перерождение после трёх смертей)')
+  }
   showMap()
 }
 
-const NODE_GLYPH = { combat: '⚔', elite: '⚔', meditate: 'ॐ', event: '✧', relic: '❖', boss: '◉' }
-const NODE_LABEL = { combat: 'бой', elite: 'элита', meditate: 'медитация', event: 'событие', relic: 'реликвия', boss: 'владыка' }
+const NODE_GLYPH = { combat: '⚔', elite: '⚔', meditate: 'ॐ', event: '✧', relic: '❖', memory: '◈', trial: '✊', boss: '◉' }
+const NODE_LABEL = { combat: 'бой', elite: 'элита', meditate: 'медитация', event: 'событие', relic: 'реликвия', memory: 'воспоминание', trial: 'испытание', boss: 'владыка' }
 
 function showMap() {
   const run = app.run
@@ -301,14 +337,56 @@ function showMap() {
     h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
     h('div', { class: 'display chakra-title mt' }, chakra),
     h('div', { class: 'chakra-sub' }, 'восхождение'),
+    petalsBlock(run),
+    sageTrace(run),
     h('div', { class: 'run-bar' },
       h('div', { class: 'chip' }, `ХП <span class="gold">${run.hp}</span>`),
       h('div', { class: 'chip' }, `Прана <span class="gold">${run.prana}</span>`),
       h('div', { class: 'chip' }, `колода <span class="gold">${run.deck.length}</span>`),
       h('div', { class: 'chip' }, `реликвии <span class="gold">${run.relics.length}</span>`)),
     h('div', { class: 'path' }, nodes),
+    runSynergiesLine(run),
     run.relics.length > 0 ? h('div', { class: 'hint center mt' }, 'реликвии: ' + run.relics.map((r) => RELICS[r].name).join(' · ')) : null,
   ))
+}
+
+// «След мудреца» на пути: знание не умирает — оно передаётся дальше. Показываем
+// открытую цитату (детерминированно от этажа) как наставление, аналог «призраков».
+function sageTrace(run) {
+  const unlocked = Object.keys(app.meta.quotesUnlocked || {}).filter((id) => QUOTES[id])
+  if (unlocked.length === 0) return null
+  const id = unlocked[run.floor % unlocked.length]
+  const q = QUOTES[id]
+  if (!q) return null
+  return h('div', { class: 'hint center mt', style: 'font-style:italic;color:var(--muted)' }, `«${q.quote}»`)
+}
+
+// Потоки-«школы ума» (§8.5) на карте забега: видно, какие синергии уже собраны.
+function runSynergiesLine(run) {
+  const s = computeSynergies(run.deck, CARDS)
+  const names = []
+  if (s.ahimsa) names.push('☯ ахимса')
+  if (s.kiirtana) names.push('◉ кииртан')
+  if (s.yama) names.push('🕉 яма')
+  if (s.seva) names.push('✋ сева')
+  if (names.length === 0) return null
+  return h('div', { class: 'hint center mt' }, 'потоки: ' + names.join(' · '))
+}
+
+// Четыре лепестка чакры (§5.3): Кама → Артха → Дхарма → Мокша. Проходя узлы этажа,
+// садхака «проходит лепестки», но не оседает — идёт вверх. Лепестки зажигаются
+// пройденными узлами; Мокша — после освобождения владыки.
+function petalsBlock(run) {
+  const doneCount = run.done[run.floor] ? run.done[run.floor].filter(Boolean).length : 0
+  const petals = LEPESTKI.map((name, i) => {
+    const on = i < LEPESTKI.length - 1 ? doneCount >= i + 1 : floorComplete(run)
+    return h('div', { class: `petal ${on ? 'on' : ''}` },
+      h('span', { class: 'p-glyph' }, '❀'),
+      h('span', { class: 'p-name' }, name))
+  })
+  return h('div', { class: 'petals-wrap' },
+    h('div', { class: 'petals' }, petals),
+    h('div', { class: 'petals-hint' }, 'не оседай ни в одном лепестке — иди вверх'))
 }
 
 function enterNode(i) {
@@ -323,7 +401,82 @@ function enterNode(i) {
     showEvent()
   } else if (node.type === 'relic') {
     showRelic()
+  } else if (node.type === 'memory') {
+    showMemory()
+  } else if (node.type === 'trial') {
+    toast(node.rule === 'keep_prama'
+      ? 'Испытание: удержите праму до конца боя — равновесие гун.'
+      : 'Испытание: победите, не сыграв ни одной оковки.')
+    enterCombat()
   }
+}
+
+// SRS-узел «Воспоминание» (§исследование): интерливинг — повторяем уже открытые
+// термины из разных семейств (эффект тестирования + кривая забывания). Добровольно:
+// игрок, которому не до повторения, просто идёт мимо. Узел никогда не блокирует путь.
+function showMemory() {
+  const run = app.run
+  const unlocked = Object.keys(app.meta.quotesUnlocked || {}).filter((id) => QUOTES[id])
+  if (unlocked.length === 0) {
+    toast('Откройте цитаты в бою — возвращайтесь «вспоминать» их здесь')
+    markNodeDone(run)
+    afterNode()
+    return
+  }
+  // SRS (§исследование): сначала — самые «забытые» термины (старейший последний recall)
+  const recalled = app.meta.recalled || {}
+  const picked = unlocked.sort((a, b) => (recalled[a] || 0) - (recalled[b] || 0)).slice(0, 2)
+  let qi = 0
+  let score = 0
+
+  const qEl = h('div', { class: 'node-title display' }, 'Воспоминание')
+  const textEl = h('p', { class: 'node-text' })
+  const optsEl = h('div', { class: 'choices' })
+  const scoreEl = h('div', { class: 'hint center mt' })
+  const doneBtn = h('button', { class: 'btn primary mt', style: 'display:none', onclick: reward }, 'Забрать награду')
+
+  function ask() {
+    if (qi >= picked.length) {
+      textEl.textContent = score > 0
+        ? `Память укреплена: ${score} Праны.`
+        : 'Память укрепилась даже без правильных ответов — важно вспоминать.'
+      scoreEl.textContent = `верно: ${score / 4} из ${picked.length}`
+      doneBtn.style.display = 'block'
+      mount(optsEl)
+      return
+    }
+    const q = QUOTES[picked[qi]]
+    const options = recallOptions(q)
+    textEl.textContent = `«${q.term}» — это…`
+    mount(optsEl, options.map((opt) =>
+      h('div', { class: 'choice', onclick: () => answer(opt) },
+        h('div', { class: 'c-main' }, opt.text))))
+  }
+
+  function answer(opt) {
+    if (opt.correct) { score += 4; sfx.unlock(); haptics.notify('success') } else { sfx.play() }
+    qi += 1
+    scoreEl.textContent = `вспомнено: ${qi}/${picked.length}`
+    ask()
+  }
+
+  function reward() {
+    run.prana += score
+    if (score >= 4) unlockRandomQuote() // верно вспомнил хотя бы один — знание растёт
+    saveMeta(app.meta)
+    sfx.peace()
+    markNodeDone(run)
+    afterNode()
+  }
+
+  show(h('div', { class: 'screen active node-screen' },
+    qEl,
+    h('div', { class: 'chakra-sub' }, 'садхана вспоминает'),
+    textEl,
+    optsEl,
+    scoreEl,
+    doneBtn))
+  ask()
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -332,8 +485,13 @@ function enterNode(i) {
 
 function enterCombat() {
   const run = app.run
-  const enemyId = currentEnemyId(run)
-  markSeen('enemies', enemyId)
+  // враг узла фиксируется при входе: markSeen и бой должны совпадать
+  const node = currentNode(run)
+  if (!node.enemyId) node.enemyId = currentEnemyId(run)
+  markSeen('enemies', node.enemyId)
+  // «Мир помнит» (§исследование, Undertale): счётчик встреч в прошлых жизнях
+  app.meta.encounters = app.meta.encounters || {}
+  app.meta.encounters[node.enemyId] = (app.meta.encounters[node.enemyId] || 0) + 1
   saveMeta(app.meta)
   app.combat = startCombatAtNode(run)
   show(combatScreen(app))
@@ -345,8 +503,31 @@ function onCombatEnd(combat) {
   const isFinalBoss = node.type === 'boss' && run.floor === run.floors.length - 1
   const result = finishCombat(run, combat)
 
+  // «Наставник» после боя (образование через инсайт): закрываем момент термином
+  app.lastCombat = {
+    name: combat.enemies[0] ? combat.enemies[0].name : '',
+    isBoss: node.type === 'boss',
+    pacified: combat.pacified > 0,
+    quoteId: (combat.enemies[0] && combat.enemies[0].def && combat.enemies[0].def.quoteId) || 'ahimsa',
+  }
+
+  // «Живые цитаты» (§исследование): сыгранная карта = прожитый термин
+  if (combat.playedCards && combat.playedCards.length > 0) {
+    app.meta.lived = app.meta.lived || {}
+    for (const cid of combat.playedCards) {
+      const qid = CARDS[cid] && CARDS[cid].quoteId
+      if (qid && !app.meta.lived[qid]) app.meta.lived[qid] = true
+    }
+  }
+
   // якоря
   for (const a of combat.anchors) addAnchor(app.meta, a)
+  // «Сильный якорь» (§11): якорь, на котором забег устоял до победы — особая метка
+  if (combat.anchors.length > 0 && !result.dead) {
+    const diary = app.meta.practiceDiary
+    const last = diary[diary.length - 1]
+    if (last) last.strong = true
+  }
 
   // ежедневный вызов (§16.2): прогресс по метрикам боя
   trackDaily(combat, node.type === 'boss')
@@ -358,18 +539,33 @@ function onCombatEnd(combat) {
     if (level.leveled) app.varnaLevel = level
   }
 
+  // «Учителя города» (§14.1, Undertale: враг → друг): успокоенные владыки остаются в Городе
+  if (combat.bossPacified && combat.enemies[0] && combat.enemies[0].def) {
+    const name = combat.enemies[0].def.name
+    const list = app.meta.pacifiedBosses || (app.meta.pacifiedBosses = [])
+    if (!list.includes(name)) list.push(name)
+  }
+
   if (result.dead) {
     recordRunEnd(app.meta, 'death')
     app.meta.stats.kills += combat.kills
     app.meta.stats.pacified += combat.pacified
+    // Сострадательный дизайн (§исследование, God Mode Hades): усталый ум не ломается
+    app.meta.deathsInRow = (app.meta.deathsInRow || 0) + 1
     saveMeta(app.meta)
     showDeath(result)
     return
   }
+  app.meta.deathsInRow = 0
 
   app.meta.stats.pacified += combat.pacified
   app.meta.stats.kills += combat.kills
   if (result.knowledge > 0) unlockRandomQuote()
+  // §9.2: мирное освобождение дарит «память»-реликвию
+  if (result.relic) {
+    gainRelic(run, result.relic)
+    markSeen('relics', result.relic)
+  }
 
   if (isFinalBoss) {
     recordRunEnd(app.meta, run.outcome === 'awakening' ? 'awakening' : 'victory')
@@ -403,21 +599,26 @@ function showRewards(result) {
   show(h('div', { class: 'screen active node-screen' },
     h('div', { class: 'node-icon' }, result.pacified ? '🕊️' : '⚔'),
     h('div', { class: 'node-title display' }, result.pacified ? 'Освобождение' : 'Победа'),
+    trialLine(result),
     h('p', { class: 'node-text' },
       result.pacified
         ? 'Враг распался в свет. Вы не убили — вы освободили. Так оковы становятся учителями.'
         : 'Враг повержен. Но помните: сила порождает силу — самскара вернётся.'),
+    mentorLine(app.lastCombat),
 
     h('div', { class: 'panel' },
       h('div', { class: 'row between' },
         h('span', { class: 'hint' }, 'Прана'),
         h('span', { style: 'color:var(--gold-soft);font-weight:800' }, `+${result.prana}`)),
-      result.pacified ? h('div', { class: 'row between mt' },
-        h('span', { class: 'hint' }, 'Саттва · Знание'),
-        h('span', { style: 'color:var(--sat);font-weight:800' }, '+3 · +1')) : null,
+    result.pacified ? h('div', { class: 'row between mt' },
+      h('span', { class: 'hint' }, 'Саттва · Знание'),
+      h('span', { style: 'color:var(--sat);font-weight:800' }, '+3 · +1')) : null,
+
+    result.relic ? h('div', { class: 'hint mt', style: 'text-align:center' },
+      `Память: <b>${RELICS[result.relic].name}</b> — ${RELICS[result.relic].desc}`) : null,
     ),
 
-    result.pacified ? quoteBox('ahimsa') : null,
+    result.pacified ? quoteBox((app.lastCombat && app.lastCombat.quoteId) || 'ahimsa') : null,
 
     varnaLevelLine(),
 
@@ -425,6 +626,35 @@ function showRewards(result) {
     h('div', { class: 'reward-cards' },
       result.cardChoices.map((id) => cardEl(CARDS[id], { onPlay: () => pickRewardCard(id) }))),
   ))
+}
+
+// Результат испытания Ямы/Ниямы (узел «Испытание»): правило дисциплины соблюдено?
+function trialLine(result) {
+  if (!result || result.trialPassed === undefined) return null
+  const ruleText = result.trialRule === 'keep_prama'
+    ? 'вы удержали праму — равновесие трёх гун.'
+    : 'вы победили, не сыграв ни одной оковки.'
+  return h('div', { class: 'hint center', style: 'color:var(--sat);font-weight:700' },
+    result.trialPassed
+      ? `✓ Испытание пройдено: ${ruleText}`
+      : `✗ Испытание нарушено. Дисциплина — следующая ступень.`)
+}
+
+// Строка наставника после боя: закрываем момент инсайта именем термина (идея §10/§15).
+function mentorLine(info) {
+  if (!info) return null
+  const { name, isBoss, pacified } = info
+  let text
+  if (isBoss) {
+    text = pacified
+      ? `Наставник: «Ты освободил ${name}, а не убил. На санскрите это зовётся ахимсой.»`
+      : `Наставник: «Сила родила силу: ${name} вернётся сильнее. Истинный путь — успокоение.»`
+  } else {
+    text = pacified
+      ? `Наставник: «Освободить — значит понять: ${name} прошёл насквозь и растворился в свете.»`
+      : `Наставник: «Успокоение даёт больше, чем победа: ахимса — не слабость, а стратегия ума.»`
+  }
+  return h('div', { class: 'mentor-line' }, text)
 }
 
 // Строка о подъёме варны (§12.1), если он случился в этом бою.
@@ -440,12 +670,27 @@ function varnaLevelLine() {
 }
 
 function pickRewardCard(id) {
+  const before = computeSynergies(app.run.deck, CARDS)
   takeCardReward(app.run, id)
+  notifySynergy(before, computeSynergies(app.run.deck, CARDS))
   markSeen('cards', id)
   saveMeta(app.meta)
   sfx.unlock()
   markNodeDone(app.run)
   afterNode()
+}
+
+// «Поток открыт!» (§8.5): сбор школы ума — момент эврики, подкреплённый звуком.
+function notifySynergy(before, after) {
+  const NEW = [
+    ['ahimsa', '☯ Поток Ахимсы открыт: успокоение сильнее — ненасилие стало стратегией.'],
+    ['kiirtana', '◉ Поток Кииртана открыт: пение несёт больше саттвы.'],
+    ['yama', '🕉 Поток Ямы открыт: дисциплина удешевляет практики.'],
+    ['seva', '✋ Поток Служения открыт: лечение сильнее.'],
+  ]
+  for (const [key, msg] of NEW) {
+    if (!before[key] && after[key]) { sfx.unlock(); toast(msg, 'hl') }
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -485,6 +730,12 @@ function pickEvent(id, choiceIndex) {
   const run = app.run
   const res = resolveEventChoice(run, id, choiceIndex)
   for (const a of res.anchors) addAnchor(app.meta, a)
+  // саттва из события (напр. «Отказаться») уходит в стартовые гуны следующих боёв —
+  // раньше результат терялся (фикс бага аудита)
+  if (res.sattvaGain > 0) {
+    const base = run.gunaStart || { s: 3, r: 3, t: 3 }
+    run.gunaStart = { ...base, s: base.s + res.sattvaGain }
+  }
   saveMeta(app.meta)
   const quoteToShow = res.knowledge > 0 ? unlockRandomQuote() : null
   sfx.unlock()
@@ -527,6 +778,14 @@ function takeRelic(id) {
 // Смерть и победа
 // ─────────────────────────────────────────────────────────────
 
+// Самскары для следующей жизни (экран смерти = вопрос, идея §5/§10):
+// смерть не стирает ум — она конструирует следующего тебя (как зеркало Hades).
+const SAMSKARA_CHOICES = [
+  { id: 'sattva', title: 'Удерживать равновесие', bonus: '+1 саттва на старте', sanskrit: 'प्रमा' },
+  { id: 'prana', title: 'Отдавать, а не копить', bonus: '+5 Праны на старте', sanskrit: 'अपरिग्रहः' },
+  { id: 'knowledge', title: 'Помнить: знание переживает смерть', bonus: 'открыть цитату', sanskrit: 'ज्ञानम्' },
+]
+
 function showDeath(result) {
   setTint('t')
   show(h('div', { class: 'screen active end-screen' },
@@ -537,12 +796,24 @@ function showDeath(result) {
       h('div', { class: 's-title' }, 'Дневник самскар'),
       h('div', { class: 's-line' }, `Вы пали в битве с <b>${result.killedBy}</b>${result.lastIntent ? ` (${result.lastIntent})` : ''}.`),
       h('div', { class: 's-line' }, 'Что не хватило? Посмотрите в Грантху — карточки открыты, они остаются с вами.')),
+    h('div', { class: 'samskar-q' }, 'Какую самскару вы уносите в следующую жизнь?'),
+    h('div', { class: 'choices' },
+      SAMSKARA_CHOICES.map((c) =>
+        h('div', { class: 'choice', onclick: () => pickSamskara(c.id) },
+          h('div', { class: 'c-main' }, `${c.title} · ${c.sanskrit}`),
+          h('div', { class: 'c-sub' }, c.bonus)))),
     h('div', { class: 'knowledge-kept' },
       h('div', { class: 'k-chip' }, `Грантха: <b>${Object.keys(app.meta.compendium.cards).length}</b>`),
       h('div', { class: 'k-chip' }, `цитат: <b>${Object.keys(app.meta.quotesUnlocked).length}</b>`),
       h('div', { class: 'k-chip' }, `якорей: <b>${app.meta.practiceDiary.length}</b>`)),
-    h('button', { class: 'btn primary', onclick: () => { setTint(null); showTitle() } }, 'Вернуться в Город'),
   ))
+}
+
+function pickSamskara(choiceId) {
+  app.meta.nextLife = choiceId
+  saveMeta(app.meta)
+  setTint(null)
+  showTitle()
 }
 
 function showVictory(outcome) {
@@ -559,6 +830,10 @@ function showVictory(outcome) {
     h('div', { class: 'knowledge-kept' },
       h('div', { class: 'k-chip' }, `владык успокоено: <b>${run.bossesPacified || 0} / 7</b>`),
       h('div', { class: 'k-chip' }, `цитат: <b>${Object.keys(app.meta.quotesUnlocked).length}</b>`)),
+    awakened && run.pacifiedBosses && run.pacifiedBosses.length > 0
+      ? h('div', { class: 'mentor-line mt' },
+          `Освобождённые владыки стали учителями: ${run.pacifiedBosses.map((id) => ENEMIES[id]?.name || id).join(' · ')}`)
+      : null,
     awakened ? quoteBox('samadhi') : quoteBox('moha'),
     h('button', { class: 'btn primary', onclick: () => { setTint(null); showTitle() } }, 'Новый забег'),
   ))
@@ -573,6 +848,27 @@ const COMP_TABS = ['Карты', 'Враги', 'Реликвии', 'Цитаты
 function showCompendium(tab = 'Цитаты') {
   const { meta } = app
   let listEl = h('div', {})
+  let search = ''
+
+  // Коллекционные наборы (§исследование, completionist): собрал весь пантеон врагов —
+  // открывается ключ-цитата. Коллекционирование «пониманий», а не предметов.
+  const RIPU_IDS = ['krodha', 'lobha', 'nidra', 'kama', 'mada', 'matsarya']
+  const PASHA_IDS = ['bhaya_pasha', 'lajja', 'ghrna', 'samshaya_pasha', 'kula', 'sila', 'mana_pasha', 'jugupsa']
+  const BOSS_IDS = ['moha', 'kama_raja', 'krodha_maharaja', 'mada_natha', 'matsarya_kala', 'lobha_pati', 'ahankara']
+
+  function collectionLine() {
+    const has = (arr) => arr.filter((id) => meta.compendium.enemies[id]).length
+    const ripu = has(RIPU_IDS)
+    const pasha = has(PASHA_IDS)
+    const boss = has(BOSS_IDS)
+    let key = null
+    if (ripu === RIPU_IDS.length && !meta.quotesUnlocked.sadripu) { meta.quotesUnlocked.sadripu = true; key = 'sadripu' }
+    if (pasha === PASHA_IDS.length && !meta.quotesUnlocked.pasha) { meta.quotesUnlocked.pasha = true; key = key || 'pasha' }
+    if (key) saveMeta(meta)
+    return h('div', { class: 'hint center mt' },
+      `собрано: рипу ${ripu}/${RIPU_IDS.length} · паши ${pasha}/${PASHA_IDS.length} · владыки ${boss}/${BOSS_IDS.length}`,
+      key ? h('div', { style: 'color:var(--sat);font-weight:700' }, `Открыт ключ-термин: ${QUOTES[key]?.term || key}`) : null)
+  }
 
   function renderTab(t) {
     if (t === 'Карты') {
@@ -582,7 +878,9 @@ function showCompendium(tab = 'Цитаты') {
         : ids.map((id) => entryRow(CARDS[id].name, CARDS[id].sanskrit, typeRu(CARDS[id]), CARDS[id].quoteId)))
     } else if (t === 'Враги') {
       const ids = Object.keys(meta.compendium.enemies)
-      mount(listEl, ids.length === 0
+      mount(listEl,
+        collectionLine(),
+        ids.length === 0
         ? h('p', { class: 'hint center' }, 'Пока пусто — враги откроются при встрече.')
         : ids.map((id) => entryRow(`${ENEMIES[id].name} — ${ENEMIES[id].epithet}`, ENEMIES[id].sanskrit, '', ENEMIES[id].quoteId)))
     } else if (t === 'Реликвии') {
@@ -591,17 +889,23 @@ function showCompendium(tab = 'Цитаты') {
         ? h('p', { class: 'hint center' }, 'Пока пусто — реликвии открываются при получении.')
         : ids.map((id) => entryRow(RELICS[id].name, '', '', RELICS[id].quoteId)))
     } else {
-      const ids = Object.keys(meta.quotesUnlocked)
-      mount(listEl, ids.length === 0
-        ? h('p', { class: 'hint center' }, 'Цитаты открываются по мере игры.')
-        : ids.map((id) => quoteCard(quoteById(id))))
+      const qs = Object.keys(meta.quotesUnlocked).map((id) => quoteById(id)).filter(Boolean)
+      const filtered = search
+        ? qs.filter((q) => `${q.term} ${q.meaning} ${q.quote}`.toLowerCase().includes(search.toLowerCase()))
+        : qs
+      mount(listEl, filtered.length === 0
+        ? h('p', { class: 'hint center' }, search ? 'Ничего не найдено.' : 'Цитаты открываются по мере игры.')
+        : filtered.map((q) => quoteCard(q)))
     }
   }
 
   function quoteCard(q) {
     if (!q) return null
+    const lived = app.meta.lived && app.meta.lived[q.id]
     return h('div', { class: 'quote-card' },
-      h('div', { class: 'qc-term sanscr' }, `${q.term} · ${q.sanskrit}`),
+      h('div', { class: 'qc-term sanscr' },
+        `${q.term} · ${q.sanskrit}`,
+        lived ? h('span', { style: 'color:var(--sat);font-size:11px;margin-left:6px' }, '✓ прожито') : null),
       h('div', { class: 'qc-quote' }, `«${q.quote}»`),
       h('div', { class: 'qc-src' }, q.source),
       h('div', { class: 'qc-life' }, q.life))
@@ -621,6 +925,10 @@ function showCompendium(tab = 'Цитаты') {
     h('div', { class: 'chakra-sub' }, 'знание переживает смерть'),
     h('div', { class: 'comp-tabs' },
       COMP_TABS.map((t) => h('button', { class: `btn ${t === tab ? 'primary' : 'ghost'}`, onclick: () => showCompendium(t) }, t))),
+    tab === 'Цитаты'
+      ? h('input', { class: 'letter-ta', placeholder: 'Поиск по термину или цитате…',
+          oninput: (e) => { search = e.target.value; renderTab('Цитаты') } })
+      : null,
     listEl,
   ))
   renderTab(tab)
@@ -629,8 +937,69 @@ function showCompendium(tab = 'Цитаты') {
 function showQuote(quoteId) {
   const q = quoteById(quoteId)
   if (!q) return
+  // Активное припоминание (§исследование): «сначала спроси, потом покажи» —
+  // эффект тестирования закрепляет память в 2–3 раза лучше пассивного чтения.
+  if (!app.meta.recalled || !app.meta.recalled[quoteId]) {
+    showRecall(quoteId)
+    return
+  }
+  showQuoteCard(quoteId)
+}
+
+// Вопрос «Что означает термин?» — без штрафа за ошибку, только припоминание.
+function showRecall(quoteId) {
+  const q = quoteById(quoteId)
+  if (!q) return
+  const options = recallOptions(q)
+  const optsEl = h('div', { class: 'choices' })
+  let answered = false
+  function answer(opt) {
+    if (answered) return
+    answered = true
+    app.meta.recalled = app.meta.recalled || {}
+    app.meta.recalled[quoteId] = Date.now() // для SRS-спейсинга (интервал повторения)
+    saveMeta(app.meta)
+    if (opt.correct) { sfx.unlock(); haptics.notify('success') } else { sfx.play() }
+    showQuoteCard(quoteId, { wrong: !opt.correct })
+  }
+  mount(optsEl, options.map((opt) =>
+    h('div', { class: 'choice', onclick: () => answer(opt) },
+      h('div', { class: 'c-main' }, opt.text))))
   show(h('div', { class: 'screen active' },
     h('button', { class: 'btn ghost small', onclick: showCompendium }, '← Грантха'),
+    h('div', { class: 'display chakra-title mt' }, 'Память'),
+    h('div', { class: 'chakra-sub' }, 'прежде чем показать — вспомните'),
+    h('p', { class: 'hint mt' }, `Что означает «${q.term}»?`),
+    optsEl,
+  ))
+}
+
+// Варианты ответа: правильное значение + 2 чужих (интерливинг из других терминов).
+function recallOptions(q) {
+  const others = Object.values(QUOTES).filter((x) => x !== q && x.meaning)
+  const wrong = []
+  const seen = new Set([q.meaning])
+  let guard = 0
+  while (wrong.length < 2 && guard < 60 && others.length) {
+    guard++
+    const o = others[Math.floor(Math.random() * others.length)]
+    if (!seen.has(o.meaning)) { seen.add(o.meaning); wrong.push(o.meaning) }
+  }
+  const options = [{ text: q.meaning, correct: true }, ...wrong.map((m) => ({ text: m }))]
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[options[i], options[j]] = [options[j], options[i]]
+  }
+  return options
+}
+
+function showQuoteCard(quoteId, opts = {}) {
+  const q = quoteById(quoteId)
+  if (!q) return
+  show(h('div', { class: 'screen active' },
+    h('button', { class: 'btn ghost small', onclick: showCompendium }, '← Грантха'),
+    opts.wrong ? h('div', { class: 'hint center mt', style: 'color:var(--gold-soft)' },
+      `Правильный ответ — ${q.term}: ${q.meaning}. Запомните — это якорь.`) : null,
     h('div', { class: 'mt' }, quoteBox(quoteId, { onClose: showCompendium })),
     q.original ? h('div', { class: 'panel mt' },
       h('div', { class: 'hint' }, 'Оригинал:'),
@@ -644,16 +1013,50 @@ function showDiary() {
     h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
     h('div', { class: 'display chakra-title' }, 'Дневник практики'),
     h('div', { class: 'chakra-sub' }, 'игра работает на жизнь'),
+    letterBlock(),
     h('p', { class: 'hint mt' }, 'Когда игра совпала с настоящим состоянием ума и вы ответили практикой — рождается якорь. Вот они:'),
     meta.practiceDiary.length === 0
       ? h('p', { class: 'hint center mt' }, 'Пока якорей нет. Сыграйте кииртану при унынии — и связь останется с вами.')
       : meta.practiceDiary.map((a) =>
           h('div', { class: 'anchor-entry' },
-            h('div', { class: 'a-item' }, a.situation),
+            h('div', { class: 'a-item' }, `${a.strong ? '★ ' : ''}${a.situation}`),
             h('div', { class: 'a-arrow' }, '↓'),
             h('div', { class: 'a-item', style: 'color:var(--gold-soft)' }, a.practice),
-            h('div', { class: 'hint center mt' }, 'Попробуйте сегодня: правда работает.'))),
+            a.strong
+              ? h('div', { class: 'hint center mt', style: 'color:var(--sat)' }, 'Сильный якорь: вы устояли через него — и победили.')
+              : h('div', { class: 'hint center mt' }, 'Попробуйте сегодня: правда работает.'))),
   ))
+}
+
+// «Письмо себе» (§исследование, проспективная память): написал «зачем практикую» —
+// через 7 дней письмо возвращается, напоминая о намерении (как time-capsule).
+function letterBlock() {
+  const l = app.meta.letter || {}
+  if (!l.text) {
+    const ta = h('textarea', { class: 'letter-ta', rows: 3, placeholder: 'Зачем я практикую? Напишите письмо себе — оно вернётся через неделю.' })
+    const btn = h('button', { class: 'btn primary mt', onclick: () => {
+      const text = (ta.value || '').trim()
+      if (!text) { toast('Напишите хотя бы пару строк', 'danger'); return }
+      app.meta.letter = { text, at: Date.now(), shownAt: 0 }
+      saveMeta(app.meta)
+      sfx.peace()
+      showDiary()
+    } }, 'Сохранить письмо')
+    return h('div', { class: 'panel mt' },
+      h('div', { class: 'hint' }, 'Письмо себе'),
+      ta,
+      btn)
+  }
+  const DAY = 86400000
+  const daysLeft = Math.max(0, Math.ceil((7 * DAY - (Date.now() - l.at)) / DAY))
+  const matured = daysLeft === 0
+  if (matured && !l.shownAt) { l.shownAt = Date.now(); saveMeta(app.meta) }
+  return h('div', { class: `panel mt letter-${matured ? 'returned' : 'waiting'}` },
+    h('div', { class: 'hint' }, matured ? 'Письмо себе вернулось' : 'Письмо себе · ждёт'),
+    h('div', { class: 'letter-text' }, `«${l.text}»`),
+    matured
+      ? h('div', { class: 'hint center mt' }, 'Семь дней прошли. Вы — тот, кто это написал, и тот, кто стал дальше.')
+      : h('div', { class: 'hint center mt' }, `Вернётся через ${daysLeft} дн.`))
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -695,6 +1098,7 @@ function showShop() {
     h('div', { class: 'node-title display' }, 'Лавка Садхака'),
     h('p', { class: 'node-text' }, 'Между чакрами — привал. Здесь Прана возвращается как жертва: карты в ум, очищение, память.'),
     pranaEl,
+    runSynergiesLine(run),
 
     h('div', { class: 'hint mt' }, 'Карты в колоду (ум)'),
     h('div', { class: 'choices' },
@@ -724,16 +1128,27 @@ function showShop() {
 }
 
 function doBuy(fn, id) {
+  const before = computeSynergies(app.run.deck, CARDS)
   const res = fn()
   if (!res.ok) {
     toast(res.reason, 'danger')
     return
   }
   sfx.buy()
+  notifySynergy(before, computeSynergies(app.run.deck, CARDS))
   markSeen('cards', id)
   markSeen('relics', id)
   saveMeta(app.meta)
   showShop()
+}
+
+// Включение/выключение вибрации (настройка в мете, §исследование: хаптика по флагу)
+function toggleHaptics() {
+  app.meta.settings = app.meta.settings || {}
+  app.meta.settings.haptics = app.meta.settings.haptics === false
+  setHaptics(app.meta.settings.haptics !== false)
+  saveMeta(app.meta)
+  showTitle()
 }
 
 function toast(text, cls) {

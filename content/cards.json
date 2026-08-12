@@ -482,7 +482,7 @@
     "sanskrit": "संयम",
     "type": "mantra",
     "cost": 2,
-    "desc": "Правильное использование: 8 урона и −2 успокоение не нужно — просто 8 урона.",
+    "desc": "Правильное использование: 8 урона.",
     "effects": [{ "kind": "damage", "amount": 8 }],
     "guna": { "s": 1, "r": 0, "t": 0 },
     "rarity": "rare",
@@ -568,5 +568,101 @@
     "rarity": "common",
     "quoteId": "satsaunga",
     "tags": ["kiirtana"]
+  },
+  "dharana": {
+    "id": "dharana",
+    "name": "Дхарана",
+    "sanskrit": "धारणा",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Концентрация: посмотрите 4 верхние карты колоды, возьмите 1.",
+    "effects": [
+      { "kind": "scry", "amount": 4 },
+      { "kind": "draw", "amount": 1 }
+    ],
+    "guna": { "s": 1, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "dhyana",
+    "tags": ["practice"]
+  },
+  "abhidhyana": {
+    "id": "abhidhyana",
+    "name": "Абхидхьяна",
+    "sanskrit": "अभिध्यान",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Неотступная идеация: +2 саттвы и 3 блока.",
+    "effects": [
+      { "kind": "guna", "amount": 2, "which": "s" },
+      { "kind": "block", "amount": 3 }
+    ],
+    "guna": { "s": 0, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "dhyana",
+    "tags": ["practice", "defend"]
+  },
+  "upavasa": {
+    "id": "upavasa",
+    "name": "Упаваса",
+    "sanskrit": "उपवास",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Пост: «быть вблизи Ишвары». Сожгите 1 окову или мусор из руки, +3 блока.",
+    "effects": [
+      { "kind": "exhaustFromHand", "filter": ["vritti", "curse"], "amount": 1 },
+      { "kind": "block", "amount": 3 }
+    ],
+    "guna": { "s": 1, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "upavasa",
+    "tags": ["practice", "defend"]
+  },
+  "tandava": {
+    "id": "tandava",
+    "name": "Тандрава",
+    "sanskrit": "ताण्डव",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Танец-борьба: 5 урона, сожгите 1 мусор из колоды.",
+    "effects": [
+      { "kind": "damage", "amount": 5 },
+      { "kind": "removeFromDeck", "filter": "curse", "amount": 1 }
+    ],
+    "guna": { "s": 0, "r": 1, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "tapah",
+    "tags": ["practice", "attack"]
+  },
+  "sangacchadhvam": {
+    "id": "sangacchadhvam",
+    "name": "Сангаччхадхвам",
+    "sanskrit": "संगच्छध्वम्",
+    "type": "kiirtana",
+    "cost": 1,
+    "desc": "«Идём вместе, умы — один ум»: +2 саттвы и +1 карта.",
+    "effects": [
+      { "kind": "guna", "amount": 2, "which": "s" },
+      { "kind": "draw", "amount": 1 }
+    ],
+    "guna": { "s": 0, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "dharmacakra",
+    "tags": ["kiirtana"]
+  },
+  "kaoshiki": {
+    "id": "kaoshiki",
+    "name": "Каошики",
+    "sanskrit": "काओशिकी",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Танец здоровья: восстановите 3 ХП и +1 саттву.",
+    "effects": [
+      { "kind": "heal", "amount": 3 },
+      { "kind": "guna", "amount": 1, "which": "s" }
+    ],
+    "guna": { "s": 0, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "pranayama",
+    "tags": ["practice"]
   }
 }

@@ -2,6 +2,7 @@
 // Кииртан-ритм: 4 бита, 3 точных тапа дают качество 3 → +2 саттвы и +1 карту.
 import { h, mount } from './dom.js'
 import { sfx, burst } from './fx.js'
+import { haptics } from './haptics.js'
 
 const BEAT = 480
 const TOTAL = 4
@@ -37,6 +38,7 @@ export function kirtanRhythmOverlay({ onDone = () => {} } = {}) {
   beatTimes.forEach((bt) => {
     timers.push(setTimeout(() => {
       if (done) return
+      sfx.beatTick() // тихий метроном: ритм слышен даже без точного тапа
       circle.classList.add('beat')
       setTimeout(() => circle.classList.remove('beat'), 200)
     }, bt - t0))
@@ -60,6 +62,7 @@ export function kirtanRhythmOverlay({ onDone = () => {} } = {}) {
       hitBeat.add(best.i)
       goodTaps += 1
       sfx.beat()
+      haptics.impact('light') // лёгкий «прис» каждого пойманного бита
       const rect = overlay.getBoundingClientRect()
       burst(rect.left + rect.width / 2, rect.top + rect.height / 2, '#ffe9b3', 10)
       circle.classList.add('hit')
@@ -68,6 +71,7 @@ export function kirtanRhythmOverlay({ onDone = () => {} } = {}) {
       if (goodTaps >= MAX_TAPS) finish()
     } else {
       sfx.miss()
+      haptics.impact('rigid') // жёсткий «щелчок» ≠ звуку промаха
     }
   })
 

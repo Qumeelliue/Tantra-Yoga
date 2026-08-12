@@ -59,5 +59,55 @@
     "target": 1,
     "term": "шанти",
     "source": "SPEC §9.4"
+  },
+  "ahimsa_day": {
+    "id": "ahimsa_day",
+    "name": "День ахимсы",
+    "sanskrit": "अहिंसा",
+    "desc": "Успокойте 3 врагов — день без причинения вреда, даже воображаемого.",
+    "kind": "pacify",
+    "target": 3,
+    "term": "ахимса",
+    "source": "«A Guide to Human Conduct», гл. «Ахимса»"
+  },
+  "samadhi_2": {
+    "id": "samadhi_2",
+    "name": "День ясности",
+    "sanskrit": "समाधि",
+    "desc": "Достигните самадхи дважды за день — два проблеска истины.",
+    "kind": "samadhi",
+    "target": 2,
+    "term": "самадхи",
+    "source": "SPEC §8.4"
+  },
+  "prama_2": {
+    "id": "prama_2",
+    "name": "День равновесия",
+    "sanskrit": "प्रमा",
+    "desc": "Удержите праму в двух боях — баланс, а не фанатизм.",
+    "kind": "prama",
+    "target": 2,
+    "term": "прама",
+    "source": "SPEC §8.2"
+  },
+  "kiirtana_5": {
+    "id": "kiirtana_5",
+    "name": "День кииртаны",
+    "sanskrit": "कीर्तन",
+    "desc": "Сыграйте 5 кииртан — пусть Имя звучит весь день.",
+    "kind": "kiirtana",
+    "target": 5,
+    "term": "кииртан",
+    "source": "«Saḿgiita: Song, Dance and Instrumental Music»"
+  },
+  "boss_pacify_2": {
+    "id": "boss_pacify_2",
+    "name": "День мокши",
+    "sanskrit": "मोक्ष",
+    "desc": "Освободите двух владык чакр — путь успокоения, а не силы.",
+    "kind": "boss_pacify",
+    "target": 2,
+    "term": "мокша",
+    "source": "SPEC §9.4"
   }
 }

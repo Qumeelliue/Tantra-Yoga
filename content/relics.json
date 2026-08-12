@@ -79,5 +79,37 @@
     "effects": [{ "kind": "mod_practice_cost", "amount": -1 }],
     "quoteId": "guru",
     "rarity": "rare"
+  },
+  "dhruvasmriti": {
+    "id": "dhruvasmriti",
+    "name": "Дхрувасмрити",
+    "desc": "Постоянная память: в начале каждого боя видна верхняя карта колоды — помни, что у тебя в уме.",
+    "effects": [{ "kind": "mod_peek_start" }],
+    "quoteId": "samskara",
+    "rarity": "uncommon"
+  },
+  "jatismara": {
+    "id": "jatismara",
+    "name": "Джатисмара",
+    "desc": "Память прошлых жизней: в начале каждого боя садхака получает +1 силу.",
+    "effects": [{ "kind": "mod_player_start_strength", "amount": 1 }],
+    "quoteId": "death_rebirth",
+    "rarity": "rare"
+  },
+  "shaoca_mainjusa": {
+    "id": "shaoca_mainjusa",
+    "name": "Шаоча-майнджуса",
+    "desc": "Сосуд чистоты: в начале каждого боя +3 блока — чистый ум защищён.",
+    "effects": [{ "kind": "mod_combat_start_block", "amount": 3 }],
+    "quoteId": "shaoca",
+    "rarity": "common"
+  },
+  "kaopiina": {
+    "id": "kaopiina",
+    "name": "Каопина",
+    "desc": "Набедренная повязка странника: простота рождает ясность — стартовые гуны +2 саттвы.",
+    "effects": [{ "kind": "mod_guna_start", "s": 2 }],
+    "quoteId": "aparigraha",
+    "rarity": "common"
   }
 }

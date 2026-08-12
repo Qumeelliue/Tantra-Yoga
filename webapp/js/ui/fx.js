@@ -120,6 +120,46 @@ export function setTint(gunaKey) {
   tintEl.classList.add('on')
 }
 
+// ── Аудио-тинт гун (§исследование): звук передаёт состояние ума параллельно визуалу.
+// Саттва — светлая синусоида, раджас — резкая пила ниже, тамас — низкий гул.
+// В самадхи/вне боя — тишина (retract, без обрыва).
+let droneNodes = null
+
+export function setGunaAudio(key) {
+  const audio = ensureAc()
+  if (!audio) return
+  stopGunaAudio()
+  if (!key) return
+  try {
+    const osc = audio.createOscillator()
+    const g = audio.createGain()
+    osc.type = key === 'r' ? 'sawtooth' : 'sine'
+    osc.frequency.value = key === 's' ? 220 : key === 'r' ? 185 : 110
+    g.gain.setValueAtTime(0.0, audio.currentTime)
+    g.gain.linearRampToValueAtTime(0.02, audio.currentTime + 0.8)
+    osc.connect(g)
+    g.connect(audio.destination)
+    osc.start()
+    droneNodes = { osc, g }
+  } catch {}
+}
+
+function stopGunaAudio() {
+  if (!droneNodes) return
+  const { osc, g } = droneNodes
+  droneNodes = null
+  try {
+    const audio = ensureAc()
+    if (!audio) return
+    g.gain.linearRampToValueAtTime(0.0, audio.currentTime + 0.4)
+    setTimeout(() => { try { osc.stop() } catch {} }, 600)
+  } catch {}
+}
+
+export function stopAllAudio() {
+  stopGunaAudio()
+}
+
 // ── Звук (WebAudio) ───────────────────────────────────────────
 
 let ac = null
@@ -162,6 +202,7 @@ export const sfx = {
   error() { tone(90, 0.12, 'square', 0.04) },
   turn() { tone(300, 0.1, 'sine', 0.035) },
   beat() { tone(440, 0.09, 'triangle', 0.05) },
+  beatTick() { tone(880, 0.045, 'sine', 0.016) }, // тихий метроном-бит кииртана
   miss() { tone(180, 0.08, 'square', 0.035) },
   med() { tone(392, 0.5, 'sine', 0.04); tone(523, 0.6, 'sine', 0.035, 0.2); tone(659, 0.8, 'sine', 0.03, 0.4) },
   death() { tone(180, 0.6, 'sine', 0.05); tone(120, 0.8, 'sine', 0.05, 0.2); tone(80, 1.0, 'sine', 0.045, 0.4) },

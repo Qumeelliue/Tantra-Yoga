@@ -88,7 +88,7 @@ function runOnce(seed, pacifist = false) {
       run.nodeIndex = i
       if (run.done[run.floor][i]) continue
       const node = currentNode(run)
-      if (node.type === 'combat' || node.type === 'boss' || node.type === 'elite') {
+      if (node.type === 'combat' || node.type === 'boss' || node.type === 'elite' || node.type === 'trial') {
         const combat = simFight(run, pacifist)
         agg.fightPacified += combat.pacified
         agg.fightKills += combat.kills
@@ -125,6 +125,8 @@ function runOnce(seed, pacifist = false) {
         const id = locked[Math.floor(run.rand() * locked.length)] || Object.keys(RELICS)[0]
         run.relics.push(id)
         run.done[run.floor][i] = true
+      } else if (node.type === 'memory') {
+        run.done[run.floor][i] = true
       }
     }
     // Лавка между чакрами: тратим Прану на лучшие карты
@@ -146,6 +148,7 @@ function runOnce(seed, pacifist = false) {
 const N = 50
 let wins = 0, deaths = 0, pacified = 0
 const deathBy = {}
+const bossStats = { total: 0, calm: 0, hpPct: [], pacified: 0, ahimsaInDeck: 0 }
 for (let s = 1; s <= N; s++) {
   const r = runOnce(s * 100 + 7)
   if (r.status === 'victory') wins++
@@ -161,7 +164,6 @@ console.log('Смерти по этажам/врагам:', deathBy)
 
 // Проверяем, достижим ли мирный путь (ахимса): пасифистская стратегия
 let pWins = 0, pPac = 0, pDead = 0, pFightPac = 0, pKills = 0
-const bossStats = { total: 0, calm: 0, hpPct: [], pacified: 0, ahimsaInDeck: 0 }
 for (let s = 1; s <= N; s++) {
   const r = runOnce(s * 100 + 7, true)
   pFightPac += r.fightPacified

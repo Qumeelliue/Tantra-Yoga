@@ -3,6 +3,7 @@
 // Фаза «отпускание»: выберите до maxBurn карт-оков, они навсегда покинут ум.
 import { h, mount } from '../dom.js'
 import { burst, floatNum, sfx } from '../fx.js'
+import { haptics } from '../haptics.js'
 import { CARDS } from '../../core/data.js'
 import { meditatableCards, doMeditate, meditateEffects } from '../../core/run.js'
 
@@ -71,17 +72,20 @@ export function meditationScreen(app, { onDone } = {}) {
     if (pos >= PEAK_LO && pos <= PEAK_HI) {
       quality += 1
       sfx.med()
+      haptics.impact('soft') // максимально нежно — пик вдоха
       burst(x, y, '#ffe9b3', 16)
       renderQuality()
       if (quality >= MAX_Q) {
         phaseEl.textContent = 'покой'
+        haptics.notify('success') // итог, а не каждый тап
         floatNum(innerWidth / 2, innerHeight / 2, 'дыхание установлено', 'heal')
       }
     } else {
       const now = performance.now()
       if (now - lastMiss > 600) {
         lastMiss = now
-        sfx.error()
+        sfx.miss() // мягкий «выдох» вместо резкой ошибки — дзен-экран не должен ругаться
+        haptics.notify('warning')
         hintEl.textContent = 'Не в такт: тапните, когда круг в полном вдохе.'
         circleEl.classList.add('shake')
         setTimeout(() => circleEl.classList.remove('shake'), 400)

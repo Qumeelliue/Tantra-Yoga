@@ -22,6 +22,10 @@ export const CHAKRA_BOSS = {
   6: 'ahankara',
 }
 
+// Четыре лепестка чакры (§5.3): Кама → Артха → Дхарма → Мокша. Правило «не оседать»:
+// каждый лепесток — урок, но застревать в нём нельзя (застревание = перекос гун).
+export const LEPESTKI = ['Кама', 'Артха', 'Дхарма', 'Мокша']
+
 export function createRun({ meta, rng, options = {} }) {
   const rand = typeof rng === 'function' ? rng : mulberry32(rng || (Date.now() >>> 0))
   const janna = options.janna || null
@@ -40,6 +44,7 @@ export function createRun({ meta, rng, options = {} }) {
     outcome: null,
     bossPacified: false,
     bossesPacified: 0,
+    pacifiedBosses: [],
     janna,
     gunaStart: j ? j.gunaStart : { s: 3, r: 3, t: 3 },
     rand,
@@ -51,13 +56,19 @@ export function createRun({ meta, rng, options = {} }) {
 // Карта: 7 чакр (этажей) × [бой/элита, случайный узел] + босс чакры в конце этажа.
 function buildMap(run) {
   const floors = []
-  const pool = ['meditate', 'event', 'relic']
+  // «Воспоминание» (SRS-узел, §исследование) и «Испытание» (дерево Ямы/Ниямы)
+  const pool = ['meditate', 'event', 'relic', 'memory', 'trial']
   for (let f = 0; f < CHAKRAS.length; f++) {
-    const second = pool[Math.floor(run.rand() * pool.length)]
+    const secondType = pool[Math.floor(run.rand() * pool.length)]
+    const second = { type: secondType }
+    if (secondType === 'trial') {
+      // «Испытание» (дерево Ямы/Ниямы): разные правила — без оковок или удержать праму
+      second.rule = run.rand() < 0.5 ? 'no_vritti' : 'keep_prama'
+    }
     const firstType = run.rand() < 0.3 ? 'elite' : 'combat'
     floors.push([
       { type: firstType },
-      { type: second },
+      second,
       { type: 'boss', chakra: f },
     ])
   }
@@ -76,8 +87,18 @@ export function currentEnemyId(run) {
   const node = currentNode(run)
   if (!node) return null
   if (node.type === 'boss') return CHAKRA_BOSS[run.floor] || 'moha'
+  // враг узла фиксируется при входе (чтобы markSeen и бой совпадали)
+  if (node.enemyId) return node.enemyId
+  // Паши (§9.5) — оковы извне, им «сопротивляются»: встречаются на высоких этажах
+  // (Вишуддха, Аджна, Сахасрара). Освобождаются не только ахимсой, но и картой-противоядием.
+  if (run.floor >= 4) {
+    const pashas = ['bhaya_pasha', 'lajja', 'ghrna', 'samshaya_pasha', 'kula', 'sila', 'mana_pasha', 'jugupsa']
+    node.enemyId = pashas[Math.floor(run.rand() * pashas.length)]
+    return node.enemyId
+  }
   const pool = ['krodha', 'lobha', 'nidra', 'kama', 'mada', 'matsarya']
-  return pool[Math.floor(run.rand() * pool.length)]
+  node.enemyId = pool[Math.floor(run.rand() * pool.length)]
+  return node.enemyId
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -115,21 +136,39 @@ export function startCombatAtNode(run) {
 export function finishCombat(run, combat) {
   const node = currentNode(run)
   const isBoss = node.type === 'boss'
+  const isElite = node.type === 'elite'
+  const isTrial = node.type === 'trial'
   const allPacified = combat.pacified > 0 && combat.kills === 0
   const pacifyReward = allPacified && combat.pacified > 0
 
   run.hp = combat.player.hp
   if (run.hp <= 0) return handleDeath(run, combat)
 
-  // награды
+  // Испытание Ямы/Ниямы (§16.2, идея №16, MVP): разные правила дисциплины
+  const trialPassed = isTrial && (
+    node.rule === 'keep_prama' ? combat.player.prama : !combat.vrittiPlayed
+  )
+
+  // награды: элиты (§5.2) дают больше Праны и выбор из 4 карт
   const rewards = {
-    prana: pacifyReward ? (isBoss ? 15 : 8) : isBoss ? 10 : 5,
+    prana: pacifyReward ? (isBoss ? 15 : isElite ? 12 : 8) : isBoss ? 10 : isElite ? 8 : 5,
     pacified: pacifyReward,
     sattvaGain: pacifyReward ? 3 : 0,
     knowledge: pacifyReward ? 1 : 0,
     cardChoices: null,
     relic: null,
     bossHeal: 0,
+    trialPassed,
+    trialRule: isTrial ? node.rule || 'no_vritti' : null,
+  }
+  if (trialPassed) rewards.prana += 5
+  // §9.2: мирное освобождение дарит «память» — реликвию, которой ещё нет.
+  // Это делает ахимсу экономически выгодной, а не просто «добрым» путём.
+  if (pacifyReward) {
+    const lockedRelics = Object.keys(RELICS).filter((id) => !run.relics.includes(id))
+    if (lockedRelics.length > 0) {
+      rewards.relic = lockedRelics[Math.floor(run.rand() * lockedRelics.length)]
+    }
   }
   if (isBoss) {
     const finalFloor = run.floor === run.floors.length - 1
@@ -139,16 +178,19 @@ export function finishCombat(run, combat) {
     if (combat.bossPacified) {
       run.bossPacified = true
       run.bossesPacified += 1
+      // бывшие оковы становятся учителями (§14.1): помним их имена
+      const bossId = CHAKRA_BOSS[run.floor]
+      if (bossId && !run.pacifiedBosses.includes(bossId)) run.pacifiedBosses.push(bossId)
     }
     if (finalFloor) {
       run.status = 'victory'
       // истинный финал «Пробуждение»: успокоены все 7 владык чакр
       run.outcome = run.bossesPacified >= CHAKRAS.length ? 'awakening' : 'strength'
     } else {
-      rewards.cardChoices = pickCardChoices(run, 3)
+      rewards.cardChoices = pickCardChoices(run, isElite ? 4 : 3)
     }
   } else {
-    rewards.cardChoices = pickCardChoices(run, 3)
+    rewards.cardChoices = pickCardChoices(run, isElite || trialPassed ? 4 : 3)
   }
   run.prana += rewards.prana
   if (rewards.sattvaGain > 0) {

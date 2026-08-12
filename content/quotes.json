@@ -297,6 +297,69 @@
     "original": "Shauṋká (doubt) ... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
     "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
   },
+  "pasha": {
+    "term": "Аштапаша",
+    "sanskrit": "अष्टपाश",
+    "meaning": "Восемь внешних оков",
+    "life": "Рипу — враги внутри ума (их контролируют), паши — оковы извне (им сопротивляются). Чтобы победить страх, иди к источнику страха быстрыми шагами.",
+    "quote": "Шесть врагов — кама, кродха, лобха, моха, мада, матсарья; восемь оков — бхая (страх), лайя (стыд), гхрна (ненависть), шаунка (сомнение), кула (знатность рода), шила (гордость культурой), мана (тщеславие) и джугупса (злословие).",
+    "original": "Káma (longing for earthly objects), krodha (anger), lobha (avarice), moha (attraction), mada (vanity) and mátsarya (envy) are the six enemies, while bhaya (fear), lajjá (shame), ghrńá (hatred), shauṋká (doubt), kula (high descent), shiila (complex of culture), mána (vanity) and jugupsá (backbiting) are the eight fetters.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "lajja": {
+    "term": "Лайя",
+    "sanskrit": "लज्जा",
+    "meaning": "Стыд, застенчивость",
+    "life": "Стыд — оковы: он прячет ум, не даёт действовать. Противоядие — служение: выходишь из себя к другому.",
+    "quote": "Стыд (лайя) — одна из восьми оков; связанный оковами теряет способность движения к тонкому.",
+    "original": "lajjá (shame) ... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "ghrna": {
+    "term": "Гхрна",
+    "sanskrit": "घृणा",
+    "meaning": "Ненависть, отвращение",
+    "life": "Ненависть — реакция ума против нездорового действия; она держит ум в грубом. Противоядие — ахимса: не питать ответного огня.",
+    "quote": "Ненависть (гхрна) — одна из восьми оков; связанный оковами теряет способность движения к тонкому.",
+    "original": "ghrńá (hatred) ... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "kula": {
+    "term": "Кула",
+    "sanskrit": "कुल",
+    "meaning": "Знатность рода",
+    "life": "Гордость происхождением — оковы: «я из знатного рода» сковывает движение. Противоядие — апариграха: отказ от наследуемых преимуществ.",
+    "quote": "Знатность рода (кула) — одна из восьми оков; связанный оковами теряет способность движения к тонкому.",
+    "original": "kula (high descent) ... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "sila": {
+    "term": "Шила",
+    "sanskrit": "शील",
+    "meaning": "Гордость культурой",
+    "life": "Комплекс культурного превосходства — оковы: он делит людей. Противоядие — сатсанга: благое общество всех, кто идёт к истине.",
+    "quote": "Гордость культурой (шила) — одна из восьми оков; связанный оковами теряет способность движения к тонкому.",
+    "original": "shiila (complex of culture) ... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "mana": {
+    "term": "Мана",
+    "sanskrit": "मान",
+    "meaning": "Тщеславие",
+    "life": "Тщеславие — не то же, что мада (гордость силой). Это жажда казаться. Противоядие — сантоша: довольство тем, что есть.",
+    "quote": "Тщеславие (мана) — одна из восьми оков; связанный оковами теряет способность движения к тонкому.",
+    "original": "mána (vanity) ... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
+  "jugupsa": {
+    "term": "Джугупса",
+    "sanskrit": "जुगुप्सा",
+    "meaning": "Злословие, притворство",
+    "life": "Злословие и притворство — оковы: язык вьёт сети вокруг ума. Противоядие — сатья: говорить правду с духом блага.",
+    "quote": "Злословие и притворство (джугупса) — одна из восьми оков; связанный оковами теряет способность движения к тонкому.",
+    "original": "jugupsá (hypocrisy and backbiting) ... are the eight fetters. Anyone bound by fetters will lose his or her capacity of movement.",
+    "source": "«Ánanda Márga: Elementary Philosophy», гл. 6"
+  },
   "ahankara": {
     "term": "Ахамкара",
     "sanskrit": "अहंकार",
@@ -377,5 +440,32 @@
     "quote": "Всё, что ниспослано, — прасад; принимай с благодарностью, не считая себя заслужившим.",
     "original": "Whatever comes is prasáda; accept it with gratitude, never thinking that you have deserved it.",
     "source": "«Ananda Marga Ideology and Way of Life in a Nutshell», ч. 1"
+  },
+  "mantra": {
+    "term": "Мантра",
+    "sanskrit": "मन्त्र",
+    "meaning": "Звук, ведущий к освобождению",
+    "life": "Мантра — это то, что при повторении ведёт к освобождению. Не всякое слово: нужно повторять осознанно, чтобы оно «пробудилось».",
+    "quote": "«Мананат тарайет ясту сах мантрах парикирттитах» — мантра — то, что при медитативном повторении освобождает ум.",
+    "original": "Mananāt tārayet yastu sah mantrah parikiirttitah",
+    "source": "«Subhásita Saḿgraha», ч. 10, гл. 4 «Mantra Caetanya»"
+  },
+  "upavasa": {
+    "term": "Упаваса",
+    "sanskrit": "उपवास",
+    "meaning": "Пост как пребывание вблизи Ишвары",
+    "life": "Пост — не голодание ради тела, а удержание ума вблизи Высшего. День поста — превосходное время для садханы.",
+    "quote": "Упаваса — «пребывать вблизи Ишвары»: держать ум погружённым в мысль о Нём.",
+    "original": "Upa + vāsa — to remain in proximity to Iishvara; that is to say, to keep one's mind absorbed in the thought of Iishvara.",
+    "source": "«Caryācarya», ч. 3, «Procedure for Fasting»"
+  },
+  "dharmacakra": {
+    "term": "Дхармачакра",
+    "sanskrit": "धर्मचक्र",
+    "meaning": "Колесо дхармы, общая практика",
+    "life": "«Идём вместе, наши умы — один ум» — мантра открытия дхармачакры. Единство мысли рождает силу.",
+    "quote": "«Сангаччхадхвам, самвададхвам» — идём вместе, излучаем одну мысль-волну, умы наши — один ум.",
+    "original": "Sangacchadhvam — let us move together, radiate the same thought-wave, know our minds together; let our minds be one.",
+    "source": "«Caryācarya», ч. 1, гл. «Dharmacakra»"
   }
 }

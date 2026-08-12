@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { createRun, startCombatAtNode, finishCombat, currentNode, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic, doMeditate, meditateEffects } from '@webapp/js/core/run.js'
+import { createRun, startCombatAtNode, finishCombat, currentNode, currentEnemyId, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic, doMeditate, meditateEffects } from '@webapp/js/core/run.js'
+import enemies from '@content/enemies.json'
 import { mulberry32, checkOutcome } from '@webapp/js/core/engine.js'
 import { EMPTY_META } from '@webapp/js/core/save.js'
 
@@ -110,6 +111,7 @@ describe('забег: поток', () => {
     expect(run.status).toBe('victory')
     expect(run.outcome).toBe('awakening')
     expect(run.bossesPacified).toBe(7)
+    expect(run.pacifiedBosses.length).toBe(7)
   })
 
   it('частичное успокоение боссов даёт исход «сила»', () => {
@@ -146,6 +148,45 @@ describe('забег: поток', () => {
     expect(res.dead).toBe(true)
     expect(run.status).toBe('dead')
     expect(run.outcome).toBe('death')
+  })
+})
+
+describe('восемь паш на высоких этажах (§9.5)', () => {
+  const PASHAS = new Set(['bhaya_pasha', 'lajja', 'ghrna', 'samshaya_pasha', 'kula', 'sila', 'mana_pasha', 'jugupsa'])
+
+  it('на этажах 4+ враги-паши появляются', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(9) })
+    run.floor = 4
+    run.nodeIndex = 0
+    const seen = new Set()
+    for (let i = 0; i < 80; i++) {
+      currentNode(run).enemyId = null // новый «узел» — новый выбор
+      seen.add(currentEnemyId(run))
+    }
+    for (const p of PASHAS) expect(seen.has(p)).toBe(true)
+    expect([...seen].every((id) => PASHAS.has(id))).toBe(true)
+  })
+
+  it('на низких этажах (0–3) паши не встречаются', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(9) })
+    run.floor = 0
+    run.nodeIndex = 0
+    for (let i = 0; i < 100; i++) {
+      currentNode(run).enemyId = null
+      expect(PASHAS.has(currentEnemyId(run))).toBe(false)
+    }
+  })
+
+  it('элитный паша получает усиление ХП (×1.4)', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(9) })
+    run.floor = 5
+    run.nodeIndex = 0
+    run.floors[5][0] = { type: 'elite' }
+    const node = currentNode(run)
+    node.enemyId = 'mana_pasha'
+    const combat = startCombatAtNode(run)
+    expect(combat.enemies[0].id).toBe('mana_pasha')
+    expect(combat.enemies[0].maxHp).toBe(Math.round(enemies.mana_pasha.maxHp * 1.4))
   })
 })
 
@@ -233,5 +274,92 @@ describe('лавка садхака', () => {
     const res = buyShopRelic(run, shop.relic)
     expect(res.ok).toBe(true)
     expect(run.relics).toContain(shop.relic)
+  })
+})
+
+describe('награды: реликвия за успокоение и элиты (§5.2/§9.2)', () => {
+  it('мирное освобождение даёт реликвию «память»', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.nodeIndex = 0
+    const combat = forcePacify(run)
+    const res = finishCombat(run, combat)
+    expect(res.relic).toBeTruthy()
+  })
+
+  it('силовой путь не даёт реликвию за обычный бой', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.nodeIndex = 0
+    const combat = forceWin(run)
+    const res = finishCombat(run, combat)
+    expect(res.relic).toBeNull()
+  })
+
+  it('элита даёт больше Праны и выбор из 4 карт', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.nodeIndex = 0
+    run.floors[0][0] = { type: 'elite' }
+    const combat = forceWin(run)
+    const res = finishCombat(run, combat)
+    expect(res.prana).toBe(8) // элита без пацификации (обычный бой — 5)
+    expect(res.cardChoices.length).toBe(4)
+  })
+
+  it('обычный бой даёт выбор из 3 карт и 5 Праны', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.nodeIndex = 0
+    const combat = forceWin(run)
+    const res = finishCombat(run, combat)
+    expect(res.prana).toBe(5)
+    expect(res.cardChoices.length).toBe(3)
+  })
+})
+
+describe('испытание Ямы/Ниямы (узел trial, идея №16 MVP)', () => {
+  it('победа без оковок = испытание пройдено (+Прана)', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.nodeIndex = 0
+    run.floors[0][0] = { type: 'trial' }
+    const combat = forceWin(run)
+    const res = finishCombat(run, combat)
+    expect(res.trialPassed).toBe(true)
+    expect(res.prana).toBe(10) // 5 база + 5 испытание
+    expect(res.cardChoices.length).toBe(4)
+  })
+
+  it('сыгранная оковка = испытание провалено', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.nodeIndex = 0
+    run.floors[0][0] = { type: 'trial', rule: 'no_vritti' }
+    const combat = forceWin(run)
+    combat.vrittiPlayed = true
+    const res = finishCombat(run, combat)
+    expect(res.trialPassed).toBe(false)
+    expect(res.prana).toBe(5)
+    expect(res.cardChoices.length).toBe(3)
+  })
+
+  it('правило «удержать праму»: без прамы в конце — провал', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.nodeIndex = 0
+    run.floors[0][0] = { type: 'trial', rule: 'keep_prama' }
+    const combat = forceWin(run)
+    combat.player.prama = false
+    const res = finishCombat(run, combat)
+    expect(res.trialPassed).toBe(false)
+  })
+
+  it('правило «удержать праму»: с прамой в конце — пройдено', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.nodeIndex = 0
+    run.floors[0][0] = { type: 'trial', rule: 'keep_prama' }
+    const combat = forceWin(run)
+    combat.player.prama = true
+    const res = finishCombat(run, combat)
+    expect(res.trialPassed).toBe(true)
+  })
+
+  it('в движке боя оковка отмечается как сыгранная', () => {
+    const combat = startCombatAtNode(createRun({ meta: EMPTY_META(), rng: mulberry32(5) }))
+    expect(combat.vrittiPlayed).toBe(false)
   })
 })

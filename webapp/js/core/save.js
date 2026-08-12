@@ -12,13 +12,21 @@ const DAY_MS = 24 * 60 * 60 * 1000
 export const EMPTY_META = () => ({
   compendium: { cards: {}, enemies: {}, relics: {}, events: {} },
   quotesUnlocked: {},
+  recalled: {},
+  lived: {},
   practiceDiary: [],
   stats: { runs: 0, deaths: 0, victories: 0, pacified: 0, kills: 0, awakened: 0 },
   bestRun: null,
   seen: { cards: {}, enemies: {}, relics: {}, events: {} },
-  streak: { current: 0, best: 0, lastDay: null, freeze: 0 },
+  encounters: {},
+  streak: { current: 0, best: 0, lastDay: null, freeze: 0, total: 0 },
   daily: { date: null, challengeId: null, progress: 0, done: false, claimed: false },
   varnaPoints: 0,
+  pacifiedBosses: [],
+  nextLife: null,
+  deathsInRow: 0,
+  settings: { haptics: true },
+  letter: { text: '', at: 0, shownAt: 0 },
   savedAt: 0,
 })
 
@@ -172,7 +180,7 @@ export function addAnchor(meta, anchor) {
 }
 
 export function recordRunEnd(meta, result) {
-  meta.stats.runs += 1
+  // runs считает startNewRun — здесь только исходы (иначе двойной счёт)
   if (result === 'death') meta.stats.deaths += 1
   if (result === 'victory') meta.stats.victories += 1
   if (result === 'awakening') meta.stats.awakened += 1
@@ -242,9 +250,14 @@ export function markVisit(meta, ts = Date.now()) {
   const event = { kind: 'none', current: s.current, best: s.best, freeze: s.freeze }
 
   if (s.lastDay === today) return { meta, event }
+  s.total = (s.total || 0) + 1 // все дни практики подряд и вразброс — срывы часть пути
   if (s.lastDay === yesterdayKey(ts)) {
     s.current += 1
     event.kind = 'increase'
+  } else if (s.lastDay === dayKey(ts - 2 * DAY_MS) && new Date(ts).getDay() === 0) {
+    // «воскресенье покоя» (§исследование): пропуск одного дня в воскресенье
+    // не ломает серию и не тратит фриз — отдых тоже часть практики
+    event.kind = 'grace'
   } else if (s.lastDay === null) {
     s.current = 1
     event.kind = 'start'
