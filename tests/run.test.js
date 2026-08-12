@@ -42,24 +42,25 @@ describe('забег: поток', () => {
     expect(run.deck.length).toBe(16)
   })
 
-  it('джанма «Воин» добавляет агрессивные карты и снижает ХП', () => {
-    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'warrior' } })
+  it('варна «Кшатрия» добавляет агрессивные карты и снижает ХП', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'kshatriya' } })
     expect(run.deck.filter((id) => id === 'tapah').length).toBe(1)
     expect(run.maxHp).toBe(55)
-    expect(run.gunaStart).toEqual({ s: 3, r: 3, t: 3 })
+    expect(run.gunaStart).toEqual({ s: 3, r: 5, t: 2 })
   })
 
-  it('джанма «Торговец» даёт перекос раджаса и Прану', () => {
-    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'trader' } })
+  it('варна «Вайшья» даёт перекос раджаса и Прану', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'vaeshya' } })
     expect(run.prana).toBe(10)
     expect(run.gunaStart).toEqual({ s: 3, r: 5, t: 3 })
     expect(run.deck.filter((id) => id === 'lobha').length).toBeGreaterThan(2)
   })
 
-  it('джанма «Садху» даёт саттву и очищение', () => {
-    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'sadhu' } })
-    expect(run.gunaStart).toEqual({ s: 5, r: 3, t: 3 })
+  it('варна «Випра» даёт саттву, очищение и знание', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'vipra' } })
+    expect(run.gunaStart).toEqual({ s: 5, r: 3, t: 2 })
     expect(run.deck.filter((id) => id === 'shaoca').length).toBe(1)
+    expect(run.deck.filter((id) => id === 'svadhyaya').length).toBe(1)
     expect(run.maxHp).toBe(65)
   })
 

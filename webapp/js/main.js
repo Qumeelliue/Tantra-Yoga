@@ -4,7 +4,7 @@ import { initFx, sfx, setTint } from './ui/fx.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS, CHALLENGES } from './core/data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS, CHALLENGES, VARNA_ORDER } from './core/data.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
   takeCardReward, gainRelic,
@@ -14,7 +14,7 @@ import {
 } from './core/run.js'
 import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById, cloudSync,
-  markVisit, progressDaily,
+  markVisit, progressDaily, varnaIndex, varnaProgress, addVarnaPoints,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -103,6 +103,7 @@ function showTitle() {
 
   const streakBlock = streakCard(meta)
   const challengeBlock = challengeCard(meta)
+  const varnaBlock = varnaCard(meta)
 
   const bootEvent = app.bootEvent
   app.bootEvent = null
@@ -129,6 +130,7 @@ function showTitle() {
 
     streakBlock,
     challengeBlock,
+    varnaBlock,
 
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
@@ -214,6 +216,27 @@ function challengeCard(meta) {
     prog)
 }
 
+// Варна — ступень социального цикла (§12.1). Показывает текущую варну и прогресс
+// до следующей. Очки варны растут мирными освобождениями.
+function varnaCard(meta) {
+  const vp = varnaProgress(meta)
+  const cur = JANMAS[VARNA_ORDER[vp.index]]
+  if (!cur) return null
+  const next = vp.nextId ? JANMAS[vp.nextId] : null
+  const pct = Math.max(4, Math.round(vp.progress * 100))
+  return h('div', { class: 'varna-card' },
+    h('div', { class: 'varna-head' },
+      h('div', {},
+        h('div', { class: 'varna-label' }, 'варна · социальный цикл'),
+        h('div', { class: 'varna-name', style: `color:${cur.color}` }, `${cur.name} · ${cur.sanskrit}`)),
+      next ? h('div', { class: 'varna-next' }, `до ${next.name}`) : h('div', { class: 'varna-next done' }, 'цикл пройден')),
+    h('div', { class: 'varna-bar' }, h('div', { class: 'varna-fill', style: `width:${pct}%;background:${cur.color}` })),
+    next
+      ? h('div', { class: 'varna-hint' }, `освобождайте владык ахимсой · ${vp.points}${vp.nextCost != null ? '/' + vp.nextCost : ''} очков`)
+      : h('div', { class: 'varna-hint done' }, 'вы достигли высшей варны'))
+}
+
+
 // ─────────────────────────────────────────────────────────────
 // Забег: карта
 // ─────────────────────────────────────────────────────────────
@@ -225,15 +248,21 @@ function startNewRun() {
 }
 
 function showJanna() {
+  const currentIdx = varnaIndex(app.meta)
   show(h('div', { class: 'screen active node-screen' },
     h('div', { class: 'node-icon' }, 'ॐ'),
     h('div', { class: 'node-title display' }, 'Джанма'),
-    h('p', { class: 'node-text' }, 'Как вы родились в этот раз? Джанма задаёт преднастройку ума — не класс, а склонность.'),
+    h('p', { class: 'node-text' }, 'Как вы родились в этот раз? Варна — это психология ума, а не каста: каждый забег — новая жизнь, и вы растёте по социальному циклу.'),
     h('div', { class: 'choices' },
-      Object.values(JANMAS).map((j) =>
-        h('div', { class: 'choice', onclick: () => beginRun(j.id) },
+      Object.values(JANMAS).map((j) => {
+        const locked = j.varnaIdx > currentIdx
+        return h('div', {
+          class: `choice ${locked ? 'locked' : ''}`,
+          onclick: locked ? null : () => beginRun(j.id),
+        },
           h('div', { class: 'c-main' }, `${j.name} · ${j.sanskrit}`),
-          h('div', { class: 'c-sub' }, j.desc)))),
+          h('div', { class: 'c-sub' }, locked ? '🔒 Освободите владык, чтобы родиться в этой варне' : j.desc))
+      })),
   ))
 }
 
@@ -322,6 +351,13 @@ function onCombatEnd(combat) {
   // ежедневный вызов (§16.2): прогресс по метрикам боя
   trackDaily(combat, node.type === 'boss')
 
+  // варны (§12.1): мирный путь — освобождения питают социальный цикл
+  if (combat.pacified > 0) {
+    const gained = combat.bossPacified ? 2 : 1
+    const level = addVarnaPoints(app.meta, gained)
+    if (level.leveled) app.varnaLevel = level
+  }
+
   if (result.dead) {
     recordRunEnd(app.meta, 'death')
     app.meta.stats.kills += combat.kills
@@ -383,10 +419,24 @@ function showRewards(result) {
 
     result.pacified ? quoteBox('ahimsa') : null,
 
+    varnaLevelLine(),
+
     h('div', { class: 'hint center' }, 'Выберите карту в колоду (ум)'),
     h('div', { class: 'reward-cards' },
       result.cardChoices.map((id) => cardEl(CARDS[id], { onPlay: () => pickRewardCard(id) }))),
   ))
+}
+
+// Строка о подъёме варны (§12.1), если он случился в этом бою.
+function varnaLevelLine() {
+  const lv = app.varnaLevel
+  app.varnaLevel = null
+  if (!lv) return null
+  const from = JANMAS[VARNA_ORDER[lv.from]]
+  const to = JANMAS[VARNA_ORDER[lv.to]]
+  sfx.unlock()
+  return h('div', { class: 'varna-up' },
+    `⬆ Варна: ${from.name} → ${to.name}. Ум вырос по социальному циклу — новая джанма открыта.`)
 }
 
 function pickRewardCard(id) {

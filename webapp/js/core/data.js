@@ -25,39 +25,63 @@ export function starterDeck() {
   return deck
 }
 
-// Джанма — «как вы родились в этот раз»: преднастройка старта (§12.2 спеки).
+// Варны — социальный цикл Саркара (§12.1 спеки, Human Society Part 2):
+// психологические типы ума, а не касты. Прогрессия между забегами:
+// шудра → кшатрия → випра → вайшья. Каждая варна = джанма (стиль рождения).
+// varnaIdx — позиция в цикле (для открытия/прогресса).
 export const JANMAS = {
-  trader: {
-    id: 'trader',
-    name: 'Торговец',
-    sanskrit: 'वैश्य',
-    desc: 'Вайшья-склонность: начинает с перекосом раджаса и лишней Праной.',
-    gunaStart: { s: 3, r: 5, t: 3 },
-    prana: 10,
-    deckAdd: ['lobha'],
-    hp: 0,
+  shudra: {
+    id: 'shudra',
+    name: 'Шудра',
+    sanskrit: 'शूद्र',
+    varnaIdx: 0,
+    color: '#555c66',
+    desc: 'Психология труда и статичности: ум привязан к настоящему и к телу. Выносливость выше — но гуны смещены к тамасу.',
+    gunaStart: { s: 3, r: 2, t: 4 },
+    prana: 0,
+    deckAdd: [],
+    hp: 10,
   },
-  warrior: {
-    id: 'warrior',
-    name: 'Воин',
+  kshatriya: {
+    id: 'kshatriya',
+    name: 'Кшатрия',
     sanskrit: 'क्षत्रिय',
-    desc: 'Кшатрия-склонность: агрессивный старт — Тапах вместо пассивных практик, +сила.',
-    gunaStart: { s: 3, r: 3, t: 3 },
+    varnaIdx: 1,
+    color: '#c0392b',
+    desc: 'Борцовский дух: прошлое и настоящее, «might is right». Агрессивный старт — Тапах и первое усилие вместо пассивных практик.',
+    gunaStart: { s: 3, r: 5, t: 2 },
     prana: 0,
     deckAdd: ['tapah', 'first_effort'],
     hp: -5,
   },
-  sadhu: {
-    id: 'sadhu',
-    name: 'Садху',
-    sanskrit: 'ब्राह्मण',
-    desc: 'Брахмана-склонность: саттвичный запас и стартовая практика очищения.',
-    gunaStart: { s: 5, r: 3, t: 3 },
+  vipra: {
+    id: 'vipra',
+    name: 'Випра',
+    sanskrit: 'विप्र',
+    varnaIdx: 2,
+    color: '#e8e4d8',
+    desc: 'Психология интеллекта: прошлое, настоящее и будущее — видеть структуру. Саттвичный запас и знание на старте.',
+    gunaStart: { s: 5, r: 3, t: 2 },
     prana: 0,
-    deckAdd: ['shaoca'],
+    deckAdd: ['shaoca', 'svadhyaya'],
     hp: 5,
   },
+  vaeshya: {
+    id: 'vaeshya',
+    name: 'Вайшья',
+    sanskrit: 'वैश्य',
+    varnaIdx: 3,
+    color: '#c9a227',
+    desc: 'Мутативность и накопление: деньги как мера всего. Начинает с перекосом раджаса и лишней Праной — но и с оковкой жадности.',
+    gunaStart: { s: 3, r: 5, t: 3 },
+    prana: 10,
+    deckAdd: ['lobha', 'dana'],
+    hp: 0,
+  },
 }
+
+// Порядок варн в социальном цикле (для прогресса мета-игры).
+export const VARNA_ORDER = ['shudra', 'kshatriya', 'vipra', 'vaeshya']
 
 export function starterDeckFor(janna) {
   const deck = starterDeck()

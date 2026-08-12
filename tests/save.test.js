@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta } from '@webapp/js/core/save.js'
+import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, varnaIndex, varnaProgress, addVarnaPoints } from '@webapp/js/core/save.js'
+import { VARNA_ORDER } from '@webapp/js/core/data.js'
 
 // Фейковый Telegram CloudStorage (callback-API) с проверкой чанков.
 function installFakeCloud() {
@@ -88,5 +89,45 @@ describe('CloudStorage-синк (§17.1)', () => {
     meta.stats.runs = 3
     expect(() => saveMeta(meta)).not.toThrow()
     expect(loadMeta().savedAt).toBe(0)
+  })
+})
+
+describe('Варны (§12.1, социальный цикл)', () => {
+  it('с 0 очков игрок — Шудра', () => {
+    const meta = EMPTY_META()
+    expect(varnaIndex(meta)).toBe(0)
+    expect(VARNA_ORDER[varnaIndex(meta)]).toBe('shudra')
+  })
+
+  it('addVarnaPoints открывает следующую варну по порогу', () => {
+    const meta = EMPTY_META()
+    // 4 освобождения → кшатрия (порог 4)
+    const lv = addVarnaPoints(meta, 4)
+    expect(lv.leveled).toBe(true)
+    expect(lv.to).toBe(1)
+    expect(VARNA_ORDER[varnaIndex(meta)]).toBe('kshatriya')
+  })
+
+  it('varnaProgress показывает прогресс до следующей варны', () => {
+    const meta = EMPTY_META()
+    addVarnaPoints(meta, 2) // половина пути до кшатрии (4)
+    const vp = varnaProgress(meta)
+    expect(vp.index).toBe(0)
+    expect(vp.nextId).toBe('kshatriya')
+    expect(vp.progress).toBeCloseTo(0.5)
+    expect(vp.points).toBe(2)
+  })
+
+  it('после набора всех очков цикл пройден', () => {
+    const meta = EMPTY_META()
+    addVarnaPoints(meta, 18) // порог вайшьи
+    const vp = varnaProgress(meta)
+    expect(VARNA_ORDER[vp.index]).toBe('vaeshya')
+    expect(vp.nextId).toBeNull()
+    expect(vp.progress).toBe(1)
+  })
+
+  it('порядок варн соответствует социальному циклу Саркара', () => {
+    expect(VARNA_ORDER).toEqual(['shudra', 'kshatriya', 'vipra', 'vaeshya'])
   })
 })

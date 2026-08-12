@@ -1,6 +1,7 @@
 // Персистентность (localStorage) + синк через Telegram CloudStorage (фаза 2, §17.1).
-// Мета-прогресс: Грантха, дневник практики, статистика, стрики (§15), ежедневные вызовы (§16.2).
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES } from './data.js'
+// Мета-прогресс: Грантха, дневник практики, статистика, стрики (§15), ежедневные вызовы (§16.2),
+// варны (§12.1 — социальный цикл: шудра → кшатрия → випра → вайшья).
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES, VARNA_ORDER } from './data.js'
 
 const KEY = 'tantra-yoga-save-v1'
 const CS_PREFIX = 'ty'
@@ -17,6 +18,7 @@ export const EMPTY_META = () => ({
   seen: { cards: {}, enemies: {}, relics: {}, events: {} },
   streak: { current: 0, best: 0, lastDay: null, freeze: 0 },
   daily: { date: null, challengeId: null, progress: 0, done: false, claimed: false },
+  varnaPoints: 0,
   savedAt: 0,
 })
 
@@ -116,6 +118,7 @@ export function loadMeta() {
     m.stats = { ...EMPTY_META().stats, ...m.stats }
     m.streak = { ...EMPTY_META().streak, ...m.streak }
     m.daily = { ...EMPTY_META().daily, ...m.daily }
+    if (m.varnaPoints == null) m.varnaPoints = 0
     return m
   } catch {
     return EMPTY_META()
@@ -280,4 +283,40 @@ export function progressDaily(meta, kind, amount = 1, ts = Date.now()) {
     d.claimed = true // фриз уже выдан — отметить как забранное
   }
   return { done: d.done, progress: d.progress, challenge: ch }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Варны (§12.1): социальный цикл шудра → кшатрия → випра → вайшья
+// ─────────────────────────────────────────────────────────────
+
+// Сколько очков нужно для каждой варны (кумулятивно по VARNA_ORDER).
+// Очки варны зарабатываются мирными освобождениями (ахимса) и пробуждениями.
+const VARNA_COST = [0, 4, 10, 18]
+
+export function varnaIndex(meta) {
+  const pts = meta.varnaPoints || 0
+  let idx = 0
+  for (let i = 0; i < VARNA_COST.length; i++) {
+    if (pts >= VARNA_COST[i]) idx = i
+  }
+  return idx
+}
+
+export function varnaProgress(meta) {
+  const pts = meta.varnaPoints || 0
+  const idx = varnaIndex(meta)
+  const total = VARNA_COST.length
+  const reached = VARNA_ORDER.slice(0, idx + 1)
+  const nextId = idx < total - 1 ? VARNA_ORDER[idx + 1] : null
+  const nextCost = idx < total - 1 ? VARNA_COST[idx + 1] : null
+  const progress = nextCost != null ? Math.min(1, (pts - VARNA_COST[idx]) / (nextCost - VARNA_COST[idx])) : 1
+  return { index: idx, total, points: pts, reached, nextId, nextCost, progress }
+}
+
+// Начисление очков варны. Источники (§12.1, идея №9): мирный путь.
+export function addVarnaPoints(meta, n) {
+  const before = varnaIndex(meta)
+  meta.varnaPoints = (meta.varnaPoints || 0) + n
+  const after = varnaIndex(meta)
+  return after > before ? { leveled: true, from: before, to: after } : { leveled: false, from: before, to: after }
 }
