@@ -314,34 +314,37 @@ describe('награды: реликвия за успокоение и элит
   })
 })
 
-describe('испытание Ямы/Ниямы (узел trial, идея №16 MVP)', () => {
-  it('победа без оковок = испытание пройдено (+Прана)', () => {
+describe('испытание Ямы/Ниямы (узел trial, дерево челленджей §16.2)', () => {
+  it('победа без оковок (брахмачарья) = испытание пройдено (+Прана, открыта карта)', () => {
     const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
     run.nodeIndex = 0
-    run.floors[0][0] = { type: 'trial' }
+    run.floors[0][0] = { type: 'trial', trialId: 'trial_brahmacarya' }
     const combat = forceWin(run)
     const res = finishCombat(run, combat)
     expect(res.trialPassed).toBe(true)
     expect(res.prana).toBe(10) // 5 база + 5 испытание
     expect(res.cardChoices.length).toBe(4)
+    expect(res.trialReward).toBe('brahmacarya')
+    expect(run.unlocked).toContain('brahmacarya')
   })
 
-  it('сыгранная оковка = испытание провалено', () => {
+  it('сыгранная оковка = испытание нарушено (карта не открывается)', () => {
     const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
     run.nodeIndex = 0
-    run.floors[0][0] = { type: 'trial', rule: 'no_vritti' }
+    run.floors[0][0] = { type: 'trial', trialId: 'trial_brahmacarya' }
     const combat = forceWin(run)
     combat.vrittiPlayed = true
     const res = finishCombat(run, combat)
     expect(res.trialPassed).toBe(false)
     expect(res.prana).toBe(5)
     expect(res.cardChoices.length).toBe(3)
+    expect(res.trialReward).toBeNull()
   })
 
-  it('правило «удержать праму»: без прамы в конце — провал', () => {
+  it('правило «удержать праму» (сантоша): без прамы в конце — провал', () => {
     const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
     run.nodeIndex = 0
-    run.floors[0][0] = { type: 'trial', rule: 'keep_prama' }
+    run.floors[0][0] = { type: 'trial', trialId: 'trial_santosa' }
     const combat = forceWin(run)
     combat.player.prama = false
     const res = finishCombat(run, combat)
@@ -351,7 +354,7 @@ describe('испытание Ямы/Ниямы (узел trial, идея №16 M
   it('правило «удержать праму»: с прамой в конце — пройдено', () => {
     const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
     run.nodeIndex = 0
-    run.floors[0][0] = { type: 'trial', rule: 'keep_prama' }
+    run.floors[0][0] = { type: 'trial', trialId: 'trial_santosa' }
     const combat = forceWin(run)
     combat.player.prama = true
     const res = finishCombat(run, combat)

@@ -1,7 +1,7 @@
 // Персистентность (localStorage) + синк через Telegram CloudStorage (фаза 2, §17.1).
 // Мета-прогресс: Грантха, дневник практики, статистика, стрики (§15), ежедневные вызовы (§16.2),
 // варны (§12.1 — социальный цикл: шудра → кшатрия → випра → вайшья).
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES, VARNA_ORDER } from './data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES, VARNA_ORDER, TRIALS, TRIAL_REWARD_CARDS } from './data.js'
 
 const KEY = 'tantra-yoga-save-v1'
 const CS_PREFIX = 'ty'
@@ -25,6 +25,8 @@ export const EMPTY_META = () => ({
   pacifiedBosses: [],
   nextLife: null,
   deathsInRow: 0,
+  // Дерево челленджей Ямы/Ниямы (§16.2): карты, открытые испытаниями (мета-прогресс)
+  unlockedCards: [],
   settings: { haptics: true },
   letter: { text: '', at: 0, shownAt: 0 },
   savedAt: 0,
@@ -127,6 +129,7 @@ export function loadMeta() {
     m.streak = { ...EMPTY_META().streak, ...m.streak }
     m.daily = { ...EMPTY_META().daily, ...m.daily }
     if (m.varnaPoints == null) m.varnaPoints = 0
+    if (!Array.isArray(m.unlockedCards)) m.unlockedCards = []
     return m
   } catch {
     return EMPTY_META()
@@ -332,4 +335,34 @@ export function addVarnaPoints(meta, n) {
   meta.varnaPoints = (meta.varnaPoints || 0) + n
   const after = varnaIndex(meta)
   return after > before ? { leveled: true, from: before, to: after } : { leveled: false, from: before, to: after }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Дерево челленджей Ямы/Ниямы (§16.2, идея №16)
+// ─────────────────────────────────────────────────────────────
+
+// Открыть карту навсегда (мета-прогресс). Прошёл испытание — карта в пуле наград.
+export function unlockCard(meta, cardId) {
+  meta.unlockedCards = Array.isArray(meta.unlockedCards) ? meta.unlockedCards : []
+  if (!meta.unlockedCards.includes(cardId)) {
+    meta.unlockedCards.push(cardId)
+    return true
+  }
+  return false
+}
+
+// Прогресс дерева: сколько карт открыто из 10 (Яма + Нияма), ветви отдельно.
+export function trialsProgress(meta) {
+  const unlocked = new Set(meta.unlockedCards || [])
+  const done = (branch) => Object.values(TRIALS).filter((t) => t.branch === branch && unlocked.has(t.rewardCard))
+  const yama = done('yama')
+  const niyama = done('niyama')
+  return {
+    total: TRIAL_REWARD_CARDS.length,
+    unlockedCount: unlocked.size,
+    yamaDone: yama.length,
+    niyamaDone: niyama.length,
+    yamaTotal: Object.values(TRIALS).filter((t) => t.branch === 'yama').length,
+    niyamaTotal: Object.values(TRIALS).filter((t) => t.branch === 'niyama').length,
+  }
 }

@@ -405,6 +405,19 @@ body {
 .choice.locked { opacity: 0.55; }
 .choice.locked .c-sub { color: var(--muted-2); }
 
+/* Дерево челленджей Ямы/Ниямы (§16.2): ветви испытаний на титуле и в дереве */
+.trial-branches { display: flex; gap: 14px; margin-top: 10px; }
+.trial-branch { flex: 1; }
+.trial-branch-name { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.trial-branch-bar { height: 6px; border-radius: 4px; background: rgba(0, 0, 0, 0.35); margin-top: 4px; overflow: hidden; }
+.trial-branch-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--sat), #7ad7a0); transition: width 0.5s ease; }
+.trial-row { padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.trial-row:last-child { border-bottom: none; }
+.trial-row.done { opacity: 0.72; }
+.trial-row-main { font-size: 14px; font-weight: 700; }
+.trial-row-sub { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.trial-row.done .trial-row-sub { color: var(--sat); }
+
 /* ─────────────────────────────────────────────────────────────
    Карта пути (чакры)
    ───────────────────────────────────────────────────────────── */

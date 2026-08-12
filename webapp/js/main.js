@@ -5,7 +5,7 @@ import { setHaptics, haptics } from './ui/haptics.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS, CHALLENGES, VARNA_ORDER } from './core/data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS, CHALLENGES, VARNA_ORDER, TRIALS } from './core/data.js'
 import { computeSynergies } from './core/engine.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
@@ -17,6 +17,7 @@ import {
 import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById, cloudSync,
   markVisit, progressDaily, varnaIndex, varnaProgress, addVarnaPoints,
+  unlockCard, trialsProgress,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -111,6 +112,7 @@ function showTitle() {
   const streakBlock = streakCard(meta)
   const challengeBlock = challengeCard(meta)
   const varnaBlock = varnaCard(meta)
+  const trialsBlock = trialsCard(meta)
 
   const bootEvent = app.bootEvent
   app.bootEvent = null
@@ -139,6 +141,7 @@ function showTitle() {
     streakBlock,
     challengeBlock,
     varnaBlock,
+    trialsBlock,
 
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
@@ -255,6 +258,58 @@ function varnaCard(meta) {
     next
       ? h('div', { class: 'varna-hint' }, `освобождайте владык ахимсой · ${vp.points}${vp.nextCost != null ? '/' + vp.nextCost : ''} очков`)
       : h('div', { class: 'varna-hint done' }, 'вы достигли высшей варны'))
+}
+
+// Дерево челленджей Ямы/Ниямы (§16.2, идея №16): испытания открывают карты-практики
+// навсегда. Ветви «Яма» (5) и «Нияма» (5) — дисциплина, прожитая в бою.
+function trialsCard(meta) {
+  const tp = trialsProgress(meta)
+  if (tp.total === 0) return null
+  const branch = (name, done, total) => h('div', { class: 'trial-branch' },
+    h('div', { class: 'trial-branch-name' }, name),
+    h('div', { class: 'trial-branch-bar' },
+      h('div', { class: 'trial-branch-fill', style: `width:${Math.max(4, Math.round((done / total) * 100))}%` })))
+  return h('div', { class: 'varna-card trial-card', onclick: () => showTrials() },
+    h('div', { class: 'varna-head' },
+      h('div', {},
+        h('div', { class: 'varna-label' }, 'дерево Ямы и Ниямы'),
+        h('div', { class: 'varna-name' }, `испытания · ${tp.unlockedCount}/${tp.total}`)),
+      h('div', { class: 'varna-next' }, 'открыть →')),
+    h('div', { class: 'trial-branches' },
+      branch('Яма', tp.yamaDone, tp.yamaTotal),
+      branch('Нияма', tp.niyamaDone, tp.niyamaTotal)),
+    h('div', { class: 'varna-hint' }, 'проходите испытания — карты практик открываются навсегда'))
+}
+
+// Экран дерева испытаний: две ветви, доступные и пройденные испытания.
+function showTrials() {
+  const meta = app.meta
+  const unlocked = new Set(meta.unlockedCards || [])
+  const branch = (name, order) => {
+    const list = Object.values(TRIALS).filter((t) => t.branch === order).sort((a, b) => a.order - b.order)
+    return h('div', { class: 'panel mt' },
+      h('div', { class: 'display', style: 'font-size:18px' }, name),
+      list.map((t) => {
+        const done = unlocked.has(t.rewardCard)
+        const card = CARDS[t.rewardCard]
+        return h('div', { class: `trial-row ${done ? 'done' : ''}` },
+          h('div', { class: 'trial-row-main' },
+            h('span', { style: 'color:var(--sat);font-weight:800' }, done ? '✓' : '✧'),
+            h('span', { class: 'sanscr' }, ` ${t.name} · ${t.sanskrit}`)),
+          h('div', { class: 'trial-row-sub' },
+            done
+              ? `карта открыта: ${card ? card.name : t.rewardCard}`
+              : `${t.desc} → откроет «${card ? card.name : t.rewardCard}» · этаж ${t.minFloor ?? 0}+`))
+      }))
+  }
+  show(h('div', { class: 'screen active comp-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
+    h('div', { class: 'display chakra-title' }, 'Дерево испытаний'),
+    h('div', { class: 'chakra-sub' }, 'дисциплина, прожитая в бою · знание остаётся'),
+    h('p', { class: 'hint center mt' }, 'Каждое испытание — правило боя. Выполните его — и карта практики навсегда войдёт в награды.'),
+    branch('Яма', 'yama'),
+    branch('Нияма', 'niyama'),
+  ))
 }
 
 
@@ -404,9 +459,8 @@ function enterNode(i) {
   } else if (node.type === 'memory') {
     showMemory()
   } else if (node.type === 'trial') {
-    toast(node.rule === 'keep_prama'
-      ? 'Испытание: удержите праму до конца боя — равновесие гун.'
-      : 'Испытание: победите, не сыграв ни одной оковки.')
+    const t = node.trialId && TRIALS[node.trialId] ? TRIALS[node.trialId] : null
+    toast(t ? `Испытание ${t.name}: ${t.desc}` : 'Испытание: соблюдите правило боя.')
     enterCombat()
   }
 }
@@ -561,6 +615,15 @@ function onCombatEnd(combat) {
   app.meta.stats.pacified += combat.pacified
   app.meta.stats.kills += combat.kills
   if (result.knowledge > 0) unlockRandomQuote()
+  // Дерево Ямы/Ниямы (§16.2): пройденное испытание открывает карту навсегда
+  if (result.trialReward) {
+    if (unlockCard(app.meta, result.trialReward)) {
+      markSeen('cards', result.trialReward)
+      const c = CARDS[result.trialReward]
+      app.trialUnlockToast = c ? `Карта открыта: ${c.name} — она теперь в наградах` : null
+      sfx.unlock()
+    }
+  }
   // §9.2: мирное освобождение дарит «память»-реликвию
   if (result.relic) {
     gainRelic(run, result.relic)
@@ -578,6 +641,10 @@ function onCombatEnd(combat) {
 
   saveMeta(app.meta)
   showRewards(result)
+  if (app.trialUnlockToast) {
+    toast(app.trialUnlockToast, 'hl')
+    app.trialUnlockToast = null
+  }
 }
 
 // Ежедневный вызов: прогресс по итогам боя. isBoss — бой с владыкой чакры.
@@ -618,6 +685,9 @@ function showRewards(result) {
       `Память: <b>${RELICS[result.relic].name}</b> — ${RELICS[result.relic].desc}`) : null,
     ),
 
+    result.trialReward ? h('div', { class: 'hint center mt', style: 'color:var(--sat);font-weight:700' },
+      `Дерево: карта «${CARDS[result.trialReward]?.name || result.trialReward}» открыта навсегда`) : null,
+
     result.pacified ? quoteBox((app.lastCombat && app.lastCombat.quoteId) || 'ahimsa') : null,
 
     varnaLevelLine(),
@@ -631,13 +701,13 @@ function showRewards(result) {
 // Результат испытания Ямы/Ниямы (узел «Испытание»): правило дисциплины соблюдено?
 function trialLine(result) {
   if (!result || result.trialPassed === undefined) return null
-  const ruleText = result.trialRule === 'keep_prama'
-    ? 'вы удержали праму — равновесие трёх гун.'
-    : 'вы победили, не сыграв ни одной оковки.'
+  const node = currentNode(app.run)
+  const t = node && node.trialId && TRIALS[node.trialId] ? TRIALS[node.trialId] : null
+  const trialName = t ? `${t.name} · ${t.sanskrit}` : 'Испытание'
   return h('div', { class: 'hint center', style: 'color:var(--sat);font-weight:700' },
     result.trialPassed
-      ? `✓ Испытание пройдено: ${ruleText}`
-      : `✗ Испытание нарушено. Дисциплина — следующая ступень.`)
+      ? `✓ ${trialName} пройдено: правило соблюдено.`
+      : `✗ ${trialName} нарушено. Дисциплина — следующая ступень.`)
 }
 
 // Строка наставника после боя: закрываем момент инсайта именем термина (идея §10/§15).

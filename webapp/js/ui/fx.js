@@ -175,6 +175,37 @@ function ensureAc() {
   return ac
 }
 
+// Текущее время аудио-такта (сек). Ритм-механики используют его как единый
+// источник времени — тапы и звук синхронизированы, без дрейфа setTimeout.
+export function audioNow() {
+  const a = ensureAc()
+  return a ? a.currentTime : null
+}
+
+// Точное планирование тона на АБСОЛЮТНОЕ аудио-время `whenSec` (сек по audioNow()).
+// Возвращает {stop} для отмены ещё не прозвучавшего звука.
+export function scheduleTone(freq, dur, type = 'sine', gain = 0.06, whenSec) {
+  const audio = ensureAc()
+  if (!audio || muted || whenSec == null) return { stop: () => {} }
+  try {
+    const osc = audio.createOscillator()
+    const g = audio.createGain()
+    osc.type = type
+    osc.frequency.value = freq
+    const t = Math.max(audio.currentTime, whenSec)
+    g.gain.setValueAtTime(0.0001, t)
+    g.gain.exponentialRampToValueAtTime(gain, t + 0.01)
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+    osc.connect(g)
+    g.connect(audio.destination)
+    osc.start(t)
+    osc.stop(t + dur + 0.02)
+    return { stop: () => { try { osc.stop() } catch {} } }
+  } catch {
+    return { stop: () => {} }
+  }
+}
+
 function tone(freq, dur, type = 'sine', gain = 0.06, when = 0) {
   const audio = ensureAc()
   if (!audio || muted) return

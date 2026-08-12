@@ -67,6 +67,10 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
     pacified: 0,
     kiirtanaPlayed: 0,
     vrittiPlayed: false,
+    cursePlayed: false,
+    practicePlayed: 0,
+    healUsed: false,
+    samadhiReached: false,
     playedCards: [],
     bossPacified: false,
     log: [],
@@ -75,6 +79,11 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
     o,
     autoResolve: opts.autoResolve === true,
   }
+
+  // Трекеры правил испытаний (§16.2): урон игроку, накопленный блок, scry
+  state.player.damageTaken = 0
+  state.player.blockGained = 0
+  state.player.scryUsed = 0
 
   // модификаторы реликвий: стартовые гуны, стартовая сила врага, стартовый хил
   if (relicMods.gunaStartS) state.player.guna.s += relicMods.gunaStartS
@@ -261,6 +270,9 @@ export function playCard(state, handIndex, targetEnemy = 0) {
   if (card.type === 'kiirtana') state.kiirtanaPlayed += 1
   // Испытание Ямы (§исследование): сыгранная оковка нарушает правило «не кормить вихри»
   if (card.type === 'vritti') state.vrittiPlayed = true
+  // Трекеры правил испытаний (§16.2): чистота (без мусора), усилие (практики)
+  if (card.type === 'curse') state.cursePlayed = true
+  if (card.type === 'practice') state.practicePlayed = (state.practicePlayed || 0) + 1
   // «Живые цитаты» (§исследование): применённая карта = прожитый термин
   if (!state.playedCards.includes(card.id)) state.playedCards.push(card.id)
   if (card.type === 'kiirtana' && state.relicMods.kiirtanaDraw > 0) {
@@ -378,6 +390,8 @@ const EFFECTS = {
       e.block += effectiveBlock(state, fx.amount)
     } else {
       state.player.block += effectiveBlock(state, fx.amount)
+      // правило «Апариграха» (§16.2): сколько блока накоплено за бой
+      state.player.blockGained = (state.player.blockGained || 0) + fx.amount
     }
     ctx.events.push({ type: 'block', target: target != null ? 'enemy' : 'player', amount: fx.amount })
   },
@@ -390,6 +404,8 @@ const EFFECTS = {
       // Поток Служения (§8.5): лечение игрока сильнее, когда в колоде 3+ севы
       const amount = fx.amount + (state.synergies.seva ? 1 : 0)
       state.player.hp = Math.min(state.player.maxHp, state.player.hp + amount)
+      // правило «Астея» (§16.2): «не брать сверх» — лечение запрещено в испытании
+      state.healUsed = true
       ctx.events.push({ type: 'heal', target: 'player', amount })
     }
     ctx.events.push({ type: 'heal', target: target != null ? 'enemy' : 'player', amount: fx.amount })
@@ -487,6 +503,8 @@ const EFFECTS = {
   },
   scry(state, fx, ctx) {
     state.peek = state.piles.draw.slice(0, fx.amount)
+    // правило «Свадхьяя» (§16.2): самоизучение — смотрели верх колоды
+    state.player.scryUsed = (state.player.scryUsed || 0) + (fx.amount || 1)
     ctx.events.push({ type: 'scry', amount: fx.amount })
   },
   addCardToDraw(state, fx, ctx) {
@@ -554,6 +572,8 @@ export function damagePlayer(state, amount, ctx = { events: [] }) {
   state.player.block -= absorbed
   const hpLoss = Math.max(0, dmg - absorbed)
   state.player.hp -= hpLoss
+  // правило «Сатья» (§16.2): правда видит удар заранее — полученный урон важен
+  state.player.damageTaken = (state.player.damageTaken || 0) + hpLoss
   ctx.events.push({ type: 'damage', target: 'player', amount: dmg, absorbed, hp: state.player.hp })
   if (state.player.hp <= 0) {
     state.player.hp = 0
@@ -665,6 +685,8 @@ export function applyGuna(state, delta, who = 'player', events = []) {
     if (state.player.samadhiGain >= state.o.samadhiThreshold && !state.player.inSamadhi) {
       state.player.inSamadhi = true
       state.player.samadhiTurns = 3
+      // правило «Ишвара-пранидхана» (§16.2): вверение ведёт к ясности
+      state.samadhiReached = true
       events.push({ type: 'samadhi', message: 'Самадхи: ясность! Практики бесплатны.' })
     }
   }

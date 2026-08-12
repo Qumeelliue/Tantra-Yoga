@@ -5,6 +5,7 @@ import relicsData from '@content/relics.json'
 import eventsData from '@content/events.json'
 import quotesData from '@content/quotes.json'
 import challengesData from '@content/challenges.json'
+import trialsData from '@content/trials.json'
 
 export const CARDS = cardsData
 export const ENEMIES = enemiesData
@@ -14,6 +15,34 @@ export const QUOTES = quotesData
 export const CHALLENGES = Object.fromEntries(
   Object.entries(challengesData).filter(([k]) => !k.startsWith('_'))
 )
+
+// Дерево челленджей Ямы/Ниямы (§16.2, идея №16): испытание открывает карту-практику
+// навсегда (мета-прогресс). Каждое испытание — поведенческое правило боя; пройдено →
+// rewardCard попадает в пул наград. Закрытая карта в наградах не появляется.
+export const TRIALS = Object.fromEntries(
+  Object.entries(trialsData).filter(([k]) => !k.startsWith('_'))
+)
+
+// Все карты, что открываются испытаниями (награда дерева).
+export const TRIAL_REWARD_CARDS = Object.values(TRIALS).map((t) => t.rewardCard)
+
+// Доступные испытания: первые неоткрытые из каждой ветви (Яма/Нияма) — остальные
+// закрыты «деревом» до прохождения предыдущих. Порядок внутри ветви — order.
+// floor — текущий этаж забега: испытание появляется не раньше своего minFloor
+// (прогрессивная сложность, как Ascension в StS / Pact of Punishment в Hades).
+export function availableTrials(unlocked = [], floor = 0) {
+  const byBranch = { yama: [], niyama: [] }
+  for (const t of Object.values(TRIALS)) {
+    ;(byBranch[t.branch] || (byBranch[t.branch] = [])).push(t)
+  }
+  const out = []
+  for (const branch of Object.keys(byBranch)) {
+    const list = byBranch[branch].sort((a, b) => a.order - b.order)
+    const next = list.find((t) => !unlocked.includes(t.rewardCard) && (t.minFloor ?? 0) <= floor)
+    if (next) out.push(next)
+  }
+  return out
+}
 
 export function starterDeck() {
   const deck = []
@@ -92,6 +121,15 @@ export function starterDeckFor(janna) {
   return deck
 }
 
-export function cardRewardPool() {
-  return Object.values(CARDS).filter((c) => c && c.id && !c.starter && c.type !== 'curse' && c.type !== 'vritti')
+// Пул наград: все карты кроме мусора/овковок и стартовых. Карты, открываемые
+// испытаниями (Яма/Нияма), доступны только после прохождения испытания (мета-прогресс).
+// Стартовые карты в награды не выпадают, кроме открытых испытанием (напр. Ахимса).
+export function cardRewardPool(unlocked = []) {
+  const open = new Set(unlocked)
+  return Object.values(CARDS).filter((c) => {
+    if (!c || !c.id || c.type === 'curse' || c.type === 'vritti') return false
+    if (TRIAL_REWARD_CARDS.includes(c.id)) return open.has(c.id)
+    if (c.starter) return false
+    return true
+  })
 }

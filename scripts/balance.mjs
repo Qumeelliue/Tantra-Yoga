@@ -1,8 +1,16 @@
 // Баланс-прогон: умный ИИ играет N забегов, считаем винрейт и статистику.
 import { createRun, startCombatAtNode, finishCombat, currentNode, floorComplete, advanceFloor, resolveEventChoice, rollShop, buyShopCard, buyShopRemove } from '../webapp/js/core/run.js'
 import { mulberry32, playCard, endTurn, resolveRemoval, effectiveCost } from '../webapp/js/core/engine.js'
-import { CARDS, EVENTS, RELICS } from '../webapp/js/core/data.js'
+import { CARDS, EVENTS, RELICS, TRIAL_REWARD_CARDS } from '../webapp/js/core/data.js'
 import { EMPTY_META } from '../webapp/js/core/save.js'
+
+// Симуляция играет как игрок с полностью открытым деревом Ямы/Ниямы: карты практик
+// доступны в наградах. Иначе симулятор не сможет построить колоду ахимсы/практик.
+function simMeta() {
+  const meta = EMPTY_META()
+  meta.unlockedCards = [...TRIAL_REWARD_CARDS]
+  return meta
+}
 
 const PRIORITY = ['ishvara_pranidhana', 'om', 'shaoca', 'seva', 'ahimsa', 'tapah', 'first_effort', 'santosa', 'satya', 'bija', 'nama_kevalam', 'svadhyaya', 'asteya', 'brahmacarya']
 const GOOD_REWARD = ['seva', 'om', 'tapah', 'ahimsa', 'santosa', 'ishvara_pranidhana', 'nama_kevalam', 'satya', 'bija', 'first_effort']
@@ -79,7 +87,7 @@ function pickReward(run, choices, pacifist = false) {
 }
 
 function runOnce(seed, pacifist = false) {
-  const run = createRun({ meta: EMPTY_META(), rng: mulberry32(seed) })
+  const run = createRun({ meta: simMeta(), rng: mulberry32(seed) })
   const agg = { fightPacified: 0, fightKills: 0 }
   let guard = 0
   while (run.status === 'active' && guard < 40) {

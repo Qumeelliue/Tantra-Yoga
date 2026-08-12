@@ -1,5 +1,5 @@
 // Управление забегом: карта пути, узлы, награды, смерть/перерождение.
-import { CARDS, ENEMIES, RELICS, EVENTS, starterDeck, starterDeckFor, JANMAS, cardRewardPool } from './data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, starterDeck, starterDeckFor, JANMAS, cardRewardPool, TRIALS, availableTrials } from './data.js'
 import { createCombat, mulberry32 } from './engine.js'
 
 export const CHAKRAS = [
@@ -47,6 +47,7 @@ export function createRun({ meta, rng, options = {} }) {
     pacifiedBosses: [],
     janna,
     gunaStart: j ? j.gunaStart : { s: 3, r: 3, t: 3 },
+    unlocked: (meta && meta.unlockedCards) ? [...meta.unlockedCards] : [],
     rand,
   }
   buildMap(run)
@@ -56,14 +57,23 @@ export function createRun({ meta, rng, options = {} }) {
 // Карта: 7 чакр (этажей) × [бой/элита, случайный узел] + босс чакры в конце этажа.
 function buildMap(run) {
   const floors = []
-  // «Воспоминание» (SRS-узел, §исследование) и «Испытание» (дерево Ямы/Ниямы)
+  // «Воспоминание» (SRS-узел, §исследование), «Испытание» (дерево Ямы/Ниямы, §16.2)
+  // и обычные узлы. Если все испытания пройдены — «Испытание» не появляется.
   const pool = ['meditate', 'event', 'relic', 'memory', 'trial']
   for (let f = 0; f < CHAKRAS.length; f++) {
     const secondType = pool[Math.floor(run.rand() * pool.length)]
     const second = { type: secondType }
     if (secondType === 'trial') {
-      // «Испытание» (дерево Ямы/Ниямы): разные правила — без оковок или удержать праму
-      second.rule = run.rand() < 0.5 ? 'no_vritti' : 'keep_prama'
+      // «Испытание» (дерево Ямы/Ниямы): случайное из доступных на этом этаже
+      // (первые неоткрытые ветвей + minFloor — прогрессивная сложность, §7.2a)
+      const openTrials = availableTrials(run.unlocked, f)
+      if (openTrials.length > 0) {
+        const picked = openTrials[Math.floor(run.rand() * openTrials.length)]
+        second.trialId = picked.id
+        second.rule = picked.rule
+      } else {
+        second.type = 'memory' // на этом этаже нет доступных испытаний — узел воспоминания
+      }
     }
     const firstType = run.rand() < 0.3 ? 'elite' : 'combat'
     floors.push([
@@ -132,6 +142,24 @@ export function startCombatAtNode(run) {
   })
 }
 
+// Проверка правила испытания Ямы/Ниямы по трекерам движка (дерево челленджей, §16.2).
+export function trialRulePassed(combat, rule) {
+  const p = combat.player
+  switch (rule) {
+    case 'pacify': return combat.pacified > 0
+    case 'no_vritti': return !combat.vrittiPlayed
+    case 'no_curse': return !combat.cursePlayed
+    case 'no_damage': return (p.damageTaken || 0) === 0
+    case 'no_heal': return !combat.healUsed
+    case 'block_10': return (p.blockGained || 0) >= 10
+    case 'keep_prama': return p.prama
+    case 'practice_3': return (combat.practicePlayed || 0) >= 3
+    case 'scry_2': return (p.scryUsed || 0) >= 2
+    case 'samadhi': return combat.samadhiReached || p.inSamadhi
+    default: return false
+  }
+}
+
 // Результат боя: обновить забег, выдать награды, вернуть данные для экрана награды.
 export function finishCombat(run, combat) {
   const node = currentNode(run)
@@ -144,10 +172,20 @@ export function finishCombat(run, combat) {
   run.hp = combat.player.hp
   if (run.hp <= 0) return handleDeath(run, combat)
 
-  // Испытание Ямы/Ниямы (§16.2, идея №16, MVP): разные правила дисциплины
-  const trialPassed = isTrial && (
-    node.rule === 'keep_prama' ? combat.player.prama : !combat.vrittiPlayed
-  )
+  // Испытание Ямы/Ниямы (§16.2, идея №16): победа по правилу открывает карту навсегда.
+  let trialPassed = false
+  let trialReward = null
+  let trialRule = null
+  if (isTrial) {
+    const t = (node.trialId && TRIALS[node.trialId]) ? TRIALS[node.trialId] : null
+    const rule = t ? t.rule : node.rule || 'no_vritti'
+    trialRule = rule
+    trialPassed = trialRulePassed(combat, rule)
+    if (trialPassed && t && !run.unlocked.includes(t.rewardCard)) {
+      run.unlocked.push(t.rewardCard)
+      trialReward = t.rewardCard
+    }
+  }
 
   // награды: элиты (§5.2) дают больше Праны и выбор из 4 карт
   const rewards = {
@@ -159,7 +197,8 @@ export function finishCombat(run, combat) {
     relic: null,
     bossHeal: 0,
     trialPassed,
-    trialRule: isTrial ? node.rule || 'no_vritti' : null,
+    trialRule,
+    trialReward,
   }
   if (trialPassed) rewards.prana += 5
   // §9.2: мирное освобождение дарит «память» — реликвию, которой ещё нет.
@@ -212,7 +251,7 @@ function handleDeath(run, combat) {
 }
 
 function pickCardChoices(run, n) {
-  const pool = cardRewardPool()
+  const pool = cardRewardPool(run.unlocked)
   const chosen = new Set()
   while (chosen.size < n && pool.length > 0) {
     chosen.add(pool[Math.floor(run.rand() * pool.length)].id)
@@ -299,7 +338,7 @@ export function resolveEventChoice(run, eventId, choiceIndex) {
 export const SHOP_COSTS = { card: 8, remove: 6, relic: 20 }
 
 export function rollShop(run) {
-  const pool = cardRewardPool()
+  const pool = cardRewardPool(run.unlocked)
   const cards = []
   const seen = new Set()
   while (cards.length < 3 && pool.length > 0) {
