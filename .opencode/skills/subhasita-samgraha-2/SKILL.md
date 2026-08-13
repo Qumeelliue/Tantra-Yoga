@@ -1,11 +1,11 @@
 ---
 name: subhasita-samgraha-2
 description: "База знаний из «Subháśita Saḿgraha Part 2» П.Р. Саркара (Shrii Shrii Ánandamúrti, дискурсы 1955–1956, цикл «The Intuitional Science of the Vedas» 1–5). Использовать при применении фреймворков Саркара: интуитивная наука Вед (Brahmavijiṋána), приписывание божественности объектам, Vidyá/Avidyá и баланс, три состояния (бодрствование/сон/глубокий сон) и Turiiya, Oṋḿkára как четырёхсложный мантра, Puruśottama и Iishvaragrása, различение Satya/Tathya/Samyak/Rta, а также для справки по терминам и дискурсам книги."
-  license: MIT
-  compatibility: opencode
-  metadata:
-    source: "Shastra/Subhasita_Samgraha_02.txt"
-    generated: "2026-08-06"
+license: MIT
+compatibility: opencode
+metadata:
+  source: "Shastra/Subhasita_Samgraha_02.txt"
+  generated: "2026-08-06"
 ---
 
 # Subháśita Saḿgraha Part 2

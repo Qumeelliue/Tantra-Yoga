@@ -1,7 +1,7 @@
 ---
 name: ananda-marga-ideology-way-of-life-7
 description: "База знаний из «Ananda Marga Ideology and Way of Life in a Nutshell Part 7» П.Р. Саркара. Использовать при применении фреймворков Саркара: природа материи и три гуны, Brahma Cakra и Purusottama как Центр творения, karma/жизнь как садхана, йога действия и самоотдача, кеvala bhakti (высшая категория преданности), пять видов совести (viveka paiṋcaka), различение dharma и религии."
-  license: MIT
+license: MIT
 compatibility: opencode
 metadata:
   source: "Shastra/Ananda_Marga_Ideology_and_Way_of_Life_in_a_Nutshell_07.txt"

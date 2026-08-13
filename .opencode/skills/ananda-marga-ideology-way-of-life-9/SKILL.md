@@ -1,7 +1,7 @@
 ---
 name: ananda-marga-ideology-way-of-life-9
 description: "База знаний из «Ananda Marga Ideology and Way of Life in a Nutshell Part 9» П.Р. Саркара. Использовать при применении фреймворков: космология творения (треугольник сил, biija/nada/kala), восхождение ума (citta/aham/mahat), Тантра и садхана, Citi Shakti и самадхи, наука действия и кармы, шакти и её применение."
-  license: MIT
+license: MIT
 compatibility: opencode
 metadata:
   source: "Shastra/Ananda_Marga_Ideology_and_Way_of_Life_in_a_Nutshell_09.txt"

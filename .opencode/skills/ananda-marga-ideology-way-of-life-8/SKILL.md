@@ -1,7 +1,7 @@
 ---
 name: ananda-marga-ideology-way-of-life-8
 description: "База знаний из «Ananda Marga Ideology and Way of Life in a Nutshell Part 8» П.Р. Саркара. Использовать при применении фреймворков: пара/парама-вопросы, три стадии садханы (Shákta/Vaeśńava/Shaeva), пять клеш Avidyá, борьба и притяжение Великого, фундаментальные факторы, сдача действий Brahma, преданность, Макрокосм/микрокосм."
-  license: MIT
+license: MIT
 compatibility: opencode
 metadata:
   source: "Shastra/Ananda_Marga_Ideology_and_Way_of_Life_in_a_Nutshell_08.txt"

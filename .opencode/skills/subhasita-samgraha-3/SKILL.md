@@ -1,11 +1,11 @@
 ---
 name: subhasita-samgraha-3
 description: "База знаний из «Subháśita Saḿgraha Part 3» П.Р. Саркара (Shrii Shrii Ánandamúrti, дискурсы 1956). Использовать при применении фреймворков Саркара: Avidyá/Видья-майя и силы vikśepa/ávarańii/samvit/hládinii/tatastha, три пути борьбы с Майей (Madhyamácára/Vámácára/Dakśińácára), вибрация/форма/цвет и теория та́нматра, shreya vs preya (Kathopaniśad/Начикета), желание и детachment, самоотдача, против идолопоклонства, а также для справки по терминам и дискурсам книги."
-  license: MIT
-  compatibility: opencode
-  metadata:
-    source: "Shastra/Subhasita_Samgraha_03.txt"
-    generated: "2026-08-06"
+license: MIT
+compatibility: opencode
+metadata:
+  source: "Shastra/Subhasita_Samgraha_03.txt"
+  generated: "2026-08-06"
 ---
 
 # Subháśita Saḿgraha Part 3

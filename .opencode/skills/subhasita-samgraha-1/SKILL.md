@@ -1,11 +1,11 @@
 ---
 name: subhasita-samgraha-1
 description: "База знаний из «Subháśita Saḿgraha Part 1» П.Р. Саркара (Shrii Shrii Ánandamúrti, дискурсы 1955–1956). Использовать при применении фреймворков Саркара: космология Практи-Пуруши и трёх гун (sattva/rajah/tamah), учение о карме и трёх процессах освобождения, практика са́дханы и madhuvidyá, адха́ра и относительная истина, семь локи/пять коши, типы бхакти (bhaktitattva), йаджинья и четыре вида служения, а также для справки по терминам и дискурсам книги."
-  license: MIT
-  compatibility: opencode
-  metadata:
-    source: "Shastra/Subhasita_Samgraha_01.txt"
-    generated: "2026-08-06"
+license: MIT
+compatibility: opencode
+metadata:
+  source: "Shastra/Subhasita_Samgraha_01.txt"
+  generated: "2026-08-06"
 ---
 
 # Subháśita Saḿgraha Part 1
