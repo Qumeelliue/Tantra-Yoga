@@ -1,5 +1,5 @@
 // Управление забегом: карта пути, узлы, награды, смерть/перерождение.
-import { CARDS, ENEMIES, RELICS, EVENTS, starterDeck, starterDeckFor, JANMAS, cardRewardPool, TRIALS, availableTrials } from './data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, starterDeck, starterDeckForFocus, MENTALITIES, cardRewardPool, TRIALS, availableTrials } from './data.js'
 import { createCombat, mulberry32 } from './engine.js'
 
 export const CHAKRAS = [
@@ -28,13 +28,15 @@ export const LEPESTKI = ['Кама', 'Артха', 'Дхарма', 'Мокша']
 
 export function createRun({ meta, rng, options = {} }) {
   const rand = typeof rng === 'function' ? rng : mulberry32(rng || (Date.now() >>> 0))
-  const janna = options.janna || null
-  const j = janna && JANMAS[janna] ? JANMAS[janna] : null
+  // Фокус ментальности (§12.2): какую ментальность ума тренируем в этой жизни —
+  // личный выбор садхаки, не «рождение в варне». Все четыре растут параллельно.
+  const focus = options.focus || null
+  const f = focus && MENTALITIES[focus] ? MENTALITIES[focus] : null
   const run = {
-    deck: starterDeckFor(janna),
-    hp: (options.hp || 60) + (j ? j.hp : 0),
-    maxHp: (options.hp || 60) + (j ? j.hp : 0),
-    prana: j ? j.prana : 0,
+    deck: starterDeckForFocus(focus),
+    hp: (options.hp || 60) + (f ? f.focusHp || 0 : 0),
+    maxHp: (options.hp || 60) + (f ? f.focusHp || 0 : 0),
+    prana: f ? f.focusPrana || 0 : 0,
     relics: [],
     floors: [],
     done: [],
@@ -45,8 +47,8 @@ export function createRun({ meta, rng, options = {} }) {
     bossPacified: false,
     bossesPacified: 0,
     pacifiedBosses: [],
-    janna,
-    gunaStart: j ? j.gunaStart : { s: 3, r: 3, t: 3 },
+    focus,
+    gunaStart: { s: 3, r: 3, t: 3 },
     unlocked: (meta && meta.unlockedCards) ? [...meta.unlockedCards] : [],
     rand,
   }

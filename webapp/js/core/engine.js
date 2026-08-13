@@ -19,6 +19,10 @@ export const DEFAULT_OPTIONS = {
   gunaStart: { s: 3, r: 3, t: 3 },
   samadhiThreshold: 12,
   pramaBonus: 1,
+  // Авидья (§9.1a): главный враг — фон неведения. Шкала натиска, самскары-волны.
+  avidyaEnabled: true,
+  avidyaMax: 12,
+  avidyaGainPerTurn: 1,
 }
 
 const PRAXIS_TYPES = new Set(['practice', 'mantra', 'kiirtana', 'seva'])
@@ -73,6 +77,13 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
     samadhiReached: false,
     playedCards: [],
     bossPacified: false,
+    // Авидья (§9.1a): шкала натиска неведения. Растёт каждый ход врага и резко
+    // накатывает волнами; при переполнении «прилетает самскара» — тяжёлый симптом
+    // (мусор в колоду, перекос, потеря саттвы). Сбрасывают: медитация, кииртан,
+    // мантра, сатсанга, прама. Питают: грязные карты (оковки, мусор).
+    avidya: 0,
+    avidyaMax: o.avidyaMax,
+    samskaraHits: 0,
     log: [],
     anchors: [],
     peek: null,
@@ -273,6 +284,15 @@ export function playCard(state, handIndex, targetEnemy = 0) {
   // Трекеры правил испытаний (§16.2): чистота (без мусора), усилие (практики)
   if (card.type === 'curse') state.cursePlayed = true
   if (card.type === 'practice') state.practicePlayed = (state.practicePlayed || 0) + 1
+  // Авидья (§9.1a): грязные карты (оковки, мусор) питают неведение; практики
+  // (кииртан, мантра, сатсанга, сева) шлют ПОЗИТИВНЫЕ микровиты, снижая натиск.
+  // Кииртан — тонкий звук, лучший носитель положительных микровитов (§9.1b).
+  if (state.o.avidyaEnabled) {
+    if (card.type === 'curse' || card.type === 'vritti') state.avidya += 1
+    else if (PRAXIS_TYPES.has(card.type)) {
+      state.avidya = Math.max(0, state.avidya - (card.type === 'kiirtana' ? 2 : 1))
+    }
+  }
   // «Живые цитаты» (§исследование): применённая карта = прожитый термин
   if (!state.playedCards.includes(card.id)) state.playedCards.push(card.id)
   if (card.type === 'kiirtana' && state.relicMods.kiirtanaDraw > 0) {
@@ -355,10 +375,56 @@ export function endTurn(state) {
     if (e.statuses.weak > 0) e.statuses.weak -= 1
     checkEnemies(state, events)
   }
+  // Авидья (§9.1a): каждый ход врага натиск неведения растёт и резко накатывает
+  // волнами. При переполнении «прилетает самскара» — тяжёлый симптом, который
+  // надо гасить практиками, а не терпеть.
+  if (state.o.avidyaEnabled) {
+    state.avidya += state.o.avidyaGainPerTurn
+    if (state.avidya >= state.avidyaMax) {
+      applySamskaraWave(state, events)
+    }
+  }
   rollIntents(state)
   checkOutcome(state, events)
   if (!state.outcome) startPlayerTurn(state)
   return events
+}
+
+// «Прилетела самскара» (§9.1a, Ananda Sutram гл. 2: «реакции прошлых действий
+// должны быть прожиты»). Натиск авидьи дошёл до предела — ум накрывает волна
+// неведения: тяжёлый симптом, показывающий, что оковы не отпущены. Симптом
+// выбирается из подлинных «уз ума»: мусор в колоду, потеря саттвы, перекос,
+// возврат старой оковки.
+function applySamskaraWave(state, events) {
+  state.avidya = 0
+  state.samskaraHits += 1
+  const kind = state.samskaraHits % 4
+  const msg = [
+    'Самскара: в ум закралась тревога (Чинта).',
+    'Самскара: саттва померкла — неведение прикрыло свет.',
+    'Самскара: ум потяжелел к тамасу.',
+    'Самскара: старая оковка вернулась — не всё отпущено.',
+  ][kind]
+  if (kind === 0) {
+    // мусор в колоду — тревога (curse)
+    for (let k = 0; k < 1; k++) state.piles.draw.push('cinta')
+  } else if (kind === 1) {
+    applyGuna(state, { s: -1 }, 'player', events)
+  } else if (kind === 2) {
+    applyGuna(state, { t: 1 }, 'player', events)
+  } else {
+    // возврат старой оковки (vritti)
+    state.piles.draw.push('alasya')
+  }
+  recomputeGunas(state)
+  events.push({ type: 'samskara', kind, message: msg })
+  return events
+}
+
+// Процент заполнения шкалы авидьи (для UI-индикатора «пелена»).
+export function avidyaFill(state) {
+  if (!state || !state.o || !state.o.avidyaEnabled) return 0
+  return Math.min(1, (state.avidya || 0) / state.avidyaMax)
 }
 
 // ─────────────────────────────────────────────────────────────

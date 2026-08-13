@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, varnaIndex, varnaProgress, addVarnaPoints } from '@webapp/js/core/save.js'
-import { VARNA_ORDER } from '@webapp/js/core/data.js'
+import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived } from '@webapp/js/core/save.js'
+import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel } from '@webapp/js/core/data.js'
 
 // Фейковый Telegram CloudStorage (callback-API) с проверкой чанков.
 function installFakeCloud() {
@@ -92,42 +92,142 @@ describe('CloudStorage-синк (§17.1)', () => {
   })
 })
 
-describe('Варны (§12.1, социальный цикл)', () => {
-  it('с 0 очков игрок — Шудра', () => {
+describe('Четыре ментальности ума (§12.1, Human Society Part 2)', () => {
+  it('с 0 очков все четыре ментальности на уровне 0, садвипры нет', () => {
     const meta = EMPTY_META()
-    expect(varnaIndex(meta)).toBe(0)
-    expect(VARNA_ORDER[varnaIndex(meta)]).toBe('shudra')
+    const vs = varnaState(meta)
+    expect(vs.levels.shudra).toBe(0)
+    expect(vs.levels.kshatriya).toBe(0)
+    expect(vs.levels.vipra).toBe(0)
+    expect(vs.levels.vaeshya).toBe(0)
+    expect(vs.sadvipra).toBe(false)
+    expect(isSadvipra(meta)).toBe(false)
   })
 
-  it('addVarnaPoints открывает следующую варну по порогу', () => {
+  it('addVarnaPoints начисляет очки конкретной ментальности и поднимает её уровень', () => {
     const meta = EMPTY_META()
-    // 4 освобождения → кшатрия (порог 4)
-    const lv = addVarnaPoints(meta, 4)
+    const lv = addVarnaPoints(meta, 'kshatriya', 4) // порог уровня 1 (4 очка)
     expect(lv.leveled).toBe(true)
     expect(lv.to).toBe(1)
-    expect(VARNA_ORDER[varnaIndex(meta)]).toBe('kshatriya')
+    expect(varnaState(meta).levels.kshatriya).toBe(1)
+    // другие ментальности не тронуты — рост ПАРАЛЛЕЛЬНЫЙ, не лестница
+    expect(varnaState(meta).levels.shudra).toBe(0)
   })
 
-  it('varnaProgress показывает прогресс до следующей варны', () => {
+  it('развитая одна ментальность не даёт садвипру — нужны все четыре', () => {
     const meta = EMPTY_META()
-    addVarnaPoints(meta, 2) // половина пути до кшатрии (4)
-    const vp = varnaProgress(meta)
-    expect(vp.index).toBe(0)
-    expect(vp.nextId).toBe('kshatriya')
-    expect(vp.progress).toBeCloseTo(0.5)
-    expect(vp.points).toBe(2)
+    addVarnaPoints(meta, 'kshatriya', 18) // макс одной
+    addVarnaPoints(meta, 'shudra', 18)
+    addVarnaPoints(meta, 'vipra', 18)
+    expect(isSadvipra(meta)).toBe(false) // вайшья отстаёт — слабая ментальность
   })
 
-  it('после набора всех очков цикл пройден', () => {
+  it('садвипра = все четыре ментальности достигли зрелости', () => {
     const meta = EMPTY_META()
-    addVarnaPoints(meta, 18) // порог вайшьи
-    const vp = varnaProgress(meta)
-    expect(VARNA_ORDER[vp.index]).toBe('vaeshya')
-    expect(vp.nextId).toBeNull()
-    expect(vp.progress).toBe(1)
+    addVarnaPoints(meta, 'shudra', 10)
+    addVarnaPoints(meta, 'kshatriya', 10)
+    addVarnaPoints(meta, 'vipra', 10)
+    addVarnaPoints(meta, 'vaeshya', 10)
+    expect(isSadvipra(meta)).toBe(true)
   })
 
-  it('порядок варн соответствует социальному циклу Саркара', () => {
-    expect(VARNA_ORDER).toEqual(['shudra', 'kshatriya', 'vipra', 'vaeshya'])
+  it('порядок ментальностей соответствует социальному циклу Саркара', () => {
+    expect(MENTALITY_ORDER).toEqual(['shudra', 'kshatriya', 'vipra', 'vaeshya'])
+  })
+
+  it('ментальности — не классы души: у каждой есть психология и фокус, а не «статус»', () => {
+    for (const id of MENTALITY_ORDER) {
+      const m = MENTALITIES[id]
+      expect(m.desc.length).toBeGreaterThan(20)
+      expect(m.focusDesc.length).toBeGreaterThan(10)
+    }
+  })
+
+  it('миграция: старые varnaPoints уходят в кшатрию (смелость освобождать)', () => {
+    const old = { ...EMPTY_META(), varnaPoints: 7 }
+    delete old.varnas
+    const m = migrateMeta(old)
+    expect(m.varnas.kshatriya).toBe(7)
+    expect(m.varnaPoints).toBeUndefined()
+    expect(m.varnas.shudra).toBe(0)
+  })
+
+  it('mentalityLevel соответствует порогам MENTALITY_LEVELS', () => {
+    expect(mentalityLevel(0)).toBe(0)
+    expect(mentalityLevel(3)).toBe(0)
+    expect(mentalityLevel(4)).toBe(1)
+    expect(mentalityLevel(18)).toBe(3)
+    expect(MENTALITY_LEVELS).toEqual([0, 4, 10, 18])
+  })
+})
+
+describe('Раскрываемость цитат (§исследование, живые цитаты)', () => {
+  it('markLived помечает цитату «прожитой» один раз', () => {
+    const meta = EMPTY_META()
+    expect(isLived(meta, 'ahimsa')).toBe(false)
+    expect(markLived(meta, 'ahimsa')).toBe(true)
+    expect(markLived(meta, 'ahimsa')).toBe(false)
+    expect(isLived(meta, 'ahimsa')).toBe(true)
+  })
+
+  it('markLived игнорирует пустой id', () => {
+    const meta = EMPTY_META()
+    expect(markLived(meta, null)).toBe(false)
+    expect(markLived(meta, undefined)).toBe(false)
+  })
+
+  it('isLived не падает без меты и lived-слоя', () => {
+    expect(isLived(null, 'ahimsa')).toBe(false)
+    expect(isLived(EMPTY_META(), 'ahimsa')).toBe(false)
+  })
+
+  it('карты имеют подсказку «сыграть», враги — «успокоить», реликвии — «взять»', () => {
+    const cardQuote = CARDS.ahimsa.quoteId
+    // враг, чья цитата не дублируется картой (иначе приоритет подсказки — у карты)
+    const enemy = Object.values(ENEMIES).find((e) => !Object.values(CARDS).some((c) => c.quoteId === e.quoteId))
+    const relic = Object.values(RELICS).find((r) => !Object.values(CARDS).some((c) => c.quoteId === r.quoteId) &&
+      !Object.values(ENEMIES).some((e2) => e2.quoteId === r.quoteId))
+    expect(enemy).toBeTruthy()
+    expect(relic).toBeTruthy()
+    expect(quoteLiveHint(cardQuote)).toMatch(/Сыграйте/)
+    expect(quoteLiveHint(enemy.quoteId)).toMatch(/Успокойте/)
+    expect(quoteLiveHint(relic.quoteId)).toMatch(/Возьмите/)
+  })
+
+  it('владыка подсказывает освобождение по пути Ахимсы', () => {
+    const boss = Object.values(ENEMIES).find((e) => e.isBoss && e.quoteId)
+    expect(boss).toBeTruthy()
+    expect(quoteLiveHint(boss.quoteId)).toMatch(/владыку/)
+  })
+
+  it('каждая открытая цитата с носителем имеет подсказку, как её прожить', () => {
+    for (const [id, q] of Object.entries(QUOTES)) {
+      if (id.startsWith('_')) continue
+      const hasCarrier = Object.values(CARDS).some((c) => c.quoteId === id) ||
+        Object.values(ENEMIES).some((e) => e.quoteId === id) ||
+        Object.values(RELICS).some((r) => r.quoteId === id)
+      if (!hasCarrier) continue
+      expect(quoteLiveHint(id), `цитата ${id} должна иметь подсказку`).toBeTruthy()
+    }
+  })
+
+  it('цитаты без носителя (понятия практики) раскрыты всегда', () => {
+    for (const [id, q] of Object.entries(QUOTES)) {
+      if (id.startsWith('_')) continue
+      const hasCarrier = Object.values(CARDS).some((c) => c.quoteId === id) ||
+        Object.values(ENEMIES).some((e) => e.quoteId === id) ||
+        Object.values(RELICS).some((r) => r.quoteId === id)
+      if (hasCarrier) continue
+      expect(quoteLiveHint(id), `цитата ${id} — без носителя`).toBeNull()
+      expect(isQuoteLived(EMPTY_META(), id)).toBe(true)
+    }
+  })
+
+  it('isQuoteLived: термин с носителем скрыт, пока не прожит', () => {
+    const meta = EMPTY_META()
+    const id = CARDS.ahimsa.quoteId
+    expect(isQuoteLived(meta, id)).toBe(false)
+    markLived(meta, id)
+    expect(isQuoteLived(meta, id)).toBe(true)
   })
 })

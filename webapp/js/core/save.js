@@ -1,7 +1,7 @@
 // Персистентность (localStorage) + синк через Telegram CloudStorage (фаза 2, §17.1).
 // Мета-прогресс: Грантха, дневник практики, статистика, стрики (§15), ежедневные вызовы (§16.2),
 // варны (§12.1 — социальный цикл: шудра → кшатрия → випра → вайшья).
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES, VARNA_ORDER, TRIALS, TRIAL_REWARD_CARDS } from './data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES, MENTALITY_ORDER, MENTALITY_LEVELS, mentalityLevel, SADVIPRA_MIN_LEVEL, TRIALS, TRIAL_REWARD_CARDS } from './data.js'
 
 const KEY = 'tantra-yoga-save-v1'
 const CS_PREFIX = 'ty'
@@ -21,7 +21,9 @@ export const EMPTY_META = () => ({
   encounters: {},
   streak: { current: 0, best: 0, lastDay: null, freeze: 0, total: 0 },
   daily: { date: null, challengeId: null, progress: 0, done: false, claimed: false },
-  varnaPoints: 0,
+  // Четыре ментальности ума (§12): очки каждой растут параллельно от поступков.
+  varnas: { shudra: 0, kshatriya: 0, vipra: 0, vaeshya: 0 },
+  sadvipraAnnounced: false,
   pacifiedBosses: [],
   nextLife: null,
   deathsInRow: 0,
@@ -123,17 +125,28 @@ export function loadMeta() {
   try {
     const raw = localStorage.getItem(KEY)
     if (!raw) return EMPTY_META()
-    const m = { ...EMPTY_META(), ...JSON.parse(raw) }
-    m.compendium = { ...EMPTY_META().compendium, ...m.compendium }
-    m.stats = { ...EMPTY_META().stats, ...m.stats }
-    m.streak = { ...EMPTY_META().streak, ...m.streak }
-    m.daily = { ...EMPTY_META().daily, ...m.daily }
-    if (m.varnaPoints == null) m.varnaPoints = 0
-    if (!Array.isArray(m.unlockedCards)) m.unlockedCards = []
-    return m
+    return migrateMeta(JSON.parse(raw))
   } catch {
     return EMPTY_META()
   }
+}
+
+// Приведение меты к актуальной схеме (совместимость старых сохранений).
+export function migrateMeta(m) {
+  m = { ...EMPTY_META(), ...m }
+  m.compendium = { ...EMPTY_META().compendium, ...m.compendium }
+  m.stats = { ...EMPTY_META().stats, ...m.stats }
+  m.streak = { ...EMPTY_META().streak, ...m.streak }
+  m.daily = { ...EMPTY_META().daily, ...m.daily }
+  // Миграция: старые сохранения с одной шкалой «очков варны» (начислялись за
+  // освобождения) переносим в кшатрию — смелость освобождать (Human Society 2).
+  if (typeof m.varnaPoints === 'number' && m.varnaPoints > 0) {
+    m.varnas = { ...EMPTY_META().varnas, ...(m.varnas || {}) }
+    m.varnas.kshatriya = (m.varnas.kshatriya || 0) + m.varnaPoints
+  }
+  delete m.varnaPoints
+  if (!Array.isArray(m.unlockedCards)) m.unlockedCards = []
+  return m
 }
 
 export function saveMeta(meta) {
@@ -191,6 +204,20 @@ export function recordRunEnd(meta, result) {
 
 export function quoteById(id) {
   return QUOTES[id] || null
+}
+
+// «Прожито» (живые цитаты, §исследование): термин применён — цитата раскрыта навсегда.
+// Возвращает true, если раскрытие новое (чтобы вызвать звук/тост один раз).
+export function markLived(meta, quoteId) {
+  if (!quoteId) return false
+  meta.lived = meta.lived || {}
+  if (meta.lived[quoteId]) return false
+  meta.lived[quoteId] = true
+  return true
+}
+
+export function isLived(meta, quoteId) {
+  return !!(meta && meta.lived && meta.lived[quoteId])
 }
 
 export function compendiumList(meta) {
@@ -302,39 +329,40 @@ export function progressDaily(meta, kind, amount = 1, ts = Date.now()) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// Варны (§12.1): социальный цикл шудра → кшатрия → випра → вайшья
+// Четыре ментальности ума (§12.1, Human Society Part 2)
 // ─────────────────────────────────────────────────────────────
 
-// Сколько очков нужно для каждой варны (кумулятивно по VARNA_ORDER).
-// Очки варны зарабатываются мирными освобождениями (ахимса) и пробуждениями.
-const VARNA_COST = [0, 4, 10, 18]
+// Очки ментальности растут ПАРАЛЛЕЛЬНО от разных поступков: шудра (присутствие) —
+// медитация и сожжение оков; кшатрия (смелость) — освобождения; випра (знание) —
+// цитаты и припоминание; вайшья (мудрость ресурсов) — лавка и сожжение в лавке.
+// Слабая ментальность = недостающий навык; садвипра = все четыре развиты.
 
-export function varnaIndex(meta) {
-  const pts = meta.varnaPoints || 0
-  let idx = 0
-  for (let i = 0; i < VARNA_COST.length; i++) {
-    if (pts >= VARNA_COST[i]) idx = i
+export function varnaState(meta) {
+  const points = { ...EMPTY_META().varnas, ...(meta.varnas || {}) }
+  const levels = {}
+  let sadvipra = true
+  for (const id of MENTALITY_ORDER) {
+    const p = points[id] || 0
+    const lv = mentalityLevel(p)
+    levels[id] = lv
+    if (lv < SADVIPRA_MIN_LEVEL) sadvipra = false
   }
-  return idx
+  return { points, levels, sadvipra, minLevel: SADVIPRA_MIN_LEVEL }
 }
 
-export function varnaProgress(meta) {
-  const pts = meta.varnaPoints || 0
-  const idx = varnaIndex(meta)
-  const total = VARNA_COST.length
-  const reached = VARNA_ORDER.slice(0, idx + 1)
-  const nextId = idx < total - 1 ? VARNA_ORDER[idx + 1] : null
-  const nextCost = idx < total - 1 ? VARNA_COST[idx + 1] : null
-  const progress = nextCost != null ? Math.min(1, (pts - VARNA_COST[idx]) / (nextCost - VARNA_COST[idx])) : 1
-  return { index: idx, total, points: pts, reached, nextId, nextCost, progress }
+export function isSadvipra(meta) {
+  return varnaState(meta).sadvipra
 }
 
-// Начисление очков варны. Источники (§12.1, идея №9): мирный путь.
-export function addVarnaPoints(meta, n) {
-  const before = varnaIndex(meta)
-  meta.varnaPoints = (meta.varnaPoints || 0) + n
-  const after = varnaIndex(meta)
-  return after > before ? { leveled: true, from: before, to: after } : { leveled: false, from: before, to: after }
+// Начисление очков конкретной ментальности. kind — id из MENTALITY_ORDER.
+// Возвращает { leveled: bool, kind, from, to } — поднялся ли уровень.
+export function addVarnaPoints(meta, kind, n) {
+  if (!MENTALITY_ORDER.includes(kind)) return { leveled: false, kind, from: 0, to: 0 }
+  meta.varnas = { ...EMPTY_META().varnas, ...(meta.varnas || {}) }
+  const before = mentalityLevel(meta.varnas[kind] || 0)
+  meta.varnas[kind] = (meta.varnas[kind] || 0) + n
+  const after = mentalityLevel(meta.varnas[kind])
+  return { leveled: after > before, kind, from: before, to: after }
 }
 
 // ─────────────────────────────────────────────────────────────

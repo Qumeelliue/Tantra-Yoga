@@ -5,7 +5,7 @@ import { setHaptics, haptics } from './ui/haptics.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, JANMAS, CHALLENGES, VARNA_ORDER, TRIALS } from './core/data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, quoteLiveHint, isQuoteLived } from './core/data.js'
 import { computeSynergies } from './core/engine.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
@@ -16,8 +16,8 @@ import {
 } from './core/run.js'
 import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById, cloudSync,
-  markVisit, progressDaily, varnaIndex, varnaProgress, addVarnaPoints,
-  unlockCard, trialsProgress,
+  markVisit, progressDaily, varnaState, addVarnaPoints, isSadvipra,
+  unlockCard, trialsProgress, markLived,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -68,6 +68,7 @@ function unlockRandomQuote() {
   if (locked.length === 0) return null
   const id = locked[Math.floor(Math.random() * locked.length)]
   app.meta.quotesUnlocked[id] = true
+  markLived(app.meta, id) // вручённое знание — уже прожитое (милость гуру)
   saveMeta(app.meta)
   return id
 }
@@ -240,24 +241,33 @@ function challengeCard(meta) {
     prog)
 }
 
-// Варна — ступень социального цикла (§12.1). Показывает текущую варну и прогресс
-// до следующей. Очки варны растут мирными освобождениями.
+// Четыре ментальности ума (§12): шудра/кшатрия/випра/вайшья растут параллельно.
+// Садвипра — когда все четыре достигли зрелости. Слабая ментальность = недостающий
+// навык (Human Society Part 2, гл. 4): развивайте все, а не одну.
 function varnaCard(meta) {
-  const vp = varnaProgress(meta)
-  const cur = JANMAS[VARNA_ORDER[vp.index]]
-  if (!cur) return null
-  const next = vp.nextId ? JANMAS[vp.nextId] : null
-  const pct = Math.max(4, Math.round(vp.progress * 100))
+  const vs = varnaState(meta)
+  const rows = MENTALITY_ORDER.map((id) => {
+    const m = MENTALITIES[id]
+    const lv = vs.levels[id]
+    const pts = vs.points[id] || 0
+    const pct = Math.max(4, Math.min(100, (pts / 18) * 100))
+    return h('div', { class: 'varna-row' },
+      h('div', { class: 'varna-row-head' },
+        h('span', { class: 'varna-m-name', style: `color:${m.color}` }, `${m.name} · ${m.sanskrit}`),
+        h('span', { class: 'varna-m-lv' }, `ур. ${lv}`)),
+      h('div', { class: 'varna-bar' }, h('div', { class: 'varna-fill', style: `width:${pct}%;background:${m.color}` })),
+      h('div', { class: 'varna-row-hint' }, `${m.focusDesc}`))
+  })
   return h('div', { class: 'varna-card' },
     h('div', { class: 'varna-head' },
       h('div', {},
-        h('div', { class: 'varna-label' }, 'варна · социальный цикл'),
-        h('div', { class: 'varna-name', style: `color:${cur.color}` }, `${cur.name} · ${cur.sanskrit}`)),
-      next ? h('div', { class: 'varna-next' }, `до ${next.name}`) : h('div', { class: 'varna-next done' }, 'цикл пройден')),
-    h('div', { class: 'varna-bar' }, h('div', { class: 'varna-fill', style: `width:${pct}%;background:${cur.color}` })),
-    next
-      ? h('div', { class: 'varna-hint' }, `освобождайте владык ахимсой · ${vp.points}${vp.nextCost != null ? '/' + vp.nextCost : ''} очков`)
-      : h('div', { class: 'varna-hint done' }, 'вы достигли высшей варны'))
+        h('div', { class: 'varna-label' }, 'четыре ментальности ума'),
+        h('div', { class: 'varna-name' },
+          vs.sadvipra ? '🕉 путь садвипры открыт' : 'развивайте все четыре')),
+      vs.sadvipra
+        ? h('div', { class: 'varna-next done' }, 'садвипра ✓')
+        : h('div', { class: 'varna-next' }, `зрелость: ур. ${vs.minLevel}+`)),
+    h('div', { class: 'varna-rows' }, rows))
 }
 
 // Дерево челленджей Ямы/Ниямы (§16.2, идея №16): испытания открывают карты-практики
@@ -320,30 +330,31 @@ function showTrials() {
 function startNewRun() {
   app.meta.stats.runs += 1
   saveMeta(app.meta)
-  showJanna()
+  showFocus()
 }
 
-function showJanna() {
-  const currentIdx = varnaIndex(app.meta)
+function showFocus() {
+  const vs = varnaState(app.meta)
   show(h('div', { class: 'screen active node-screen' },
     h('div', { class: 'node-icon' }, 'ॐ'),
-    h('div', { class: 'node-title display' }, 'Джанма'),
-    h('p', { class: 'node-text' }, 'Как вы родились в этот раз? Варна — это психология ума, а не каста: каждый забег — новая жизнь, и вы растёте по социальному циклу.'),
+    h('div', { class: 'node-title display' }, 'Фокус ума'),
+    h('p', { class: 'node-text' }, 'Какую ментальность вы тренируете в этой жизни? Варны — не классы и не «класс души», а психология ума (Human Society Part 2). Все четыре развиваются параллельно — слабая ментальность означает недостающий навык.'),
     h('div', { class: 'choices' },
-      Object.values(JANMAS).map((j) => {
-        const locked = j.varnaIdx > currentIdx
+      MENTALITY_ORDER.map((id) => {
+        const m = MENTALITIES[id]
+        const lv = vs.levels[id]
         return h('div', {
-          class: `choice ${locked ? 'locked' : ''}`,
-          onclick: locked ? null : () => beginRun(j.id),
+          class: 'choice',
+          onclick: () => beginRun(id),
         },
-          h('div', { class: 'c-main' }, `${j.name} · ${j.sanskrit}`),
-          h('div', { class: 'c-sub' }, locked ? '🔒 Освободите владык, чтобы родиться в этой варне' : j.desc))
+          h('div', { class: 'c-main' }, `${m.name} · ${m.sanskrit} · ур. ${lv}`),
+          h('div', { class: 'c-sub' }, m.focusDesc))
       })),
   ))
 }
 
-function beginRun(jannaId) {
-  app.run = createRun({ meta: app.meta, options: { janna: jannaId } })
+function beginRun(focusId) {
+  app.run = createRun({ meta: app.meta, options: { focus: focusId } })
   // Самскара прошлой жизни (§5/§10): смерть конструирует следующего тебя
   const nl = app.meta.nextLife
   if (nl) {
@@ -573,6 +584,11 @@ function onCombatEnd(combat) {
       if (qid && !app.meta.lived[qid]) app.meta.lived[qid] = true
     }
   }
+  // Раскрываемость: успокоенный враг = знание о нём прожито. Убийство НЕ раскрывает —
+  // окову понимают через ненасилие (ахимса = мирный путь, Undertale-логика).
+  for (const e of combat.enemies || []) {
+    if (e.pacified && e.def && e.def.quoteId) markLived(app.meta, e.def.quoteId)
+  }
 
   // якоря
   for (const a of combat.anchors) addAnchor(app.meta, a)
@@ -586,11 +602,12 @@ function onCombatEnd(combat) {
   // ежедневный вызов (§16.2): прогресс по метрикам боя
   trackDaily(combat, node.type === 'boss')
 
-  // варны (§12.1): мирный путь — освобождения питают социальный цикл
+  // Четыре ментальности ума (§12, Human Society Part 2): очки растут ПАРАЛЛЕЛЬНО
+  // от разных поступков. Освобождение (смелость НЕ убивать) питает кшатрию.
   if (combat.pacified > 0) {
     const gained = combat.bossPacified ? 2 : 1
-    const level = addVarnaPoints(app.meta, gained)
-    if (level.leveled) app.varnaLevel = level
+    const lv = gainMentality('kshatriya', gained, { silent: true })
+    if (lv.leveled) app.varnaLevel = lv
   }
 
   // «Учителя города» (§14.1, Undertale: враг → друг): успокоенные владыки остаются в Городе
@@ -628,6 +645,7 @@ function onCombatEnd(combat) {
   if (result.relic) {
     gainRelic(run, result.relic)
     markSeen('relics', result.relic)
+    if (RELICS[result.relic]) markLived(app.meta, RELICS[result.relic].quoteId)
   }
 
   if (isFinalBoss) {
@@ -727,16 +745,33 @@ function mentorLine(info) {
   return h('div', { class: 'mentor-line' }, text)
 }
 
-// Строка о подъёме варны (§12.1), если он случился в этом бою.
+// Начисление очков ментальности (§12): рост параллельный, у каждой своя пища.
+// silent — для боя (подъём покажет строка в наградах); иначе тост о росте.
+function gainMentality(kind, n, { silent = false } = {}) {
+  const lv = addVarnaPoints(app.meta, kind, n)
+  if (!silent && lv.leveled) {
+    const m = MENTALITIES[kind]
+    sfx.unlock()
+    toast(`⬆ Ментальность ${m.name}: уровень ${lv.to}. Навык ума зреет.`, 'hl')
+  }
+  // Садвипра (Human Society Part 2, гл. 4): все четыре ментальности развиты.
+  if (isSadvipra(app.meta) && !app.meta.sadvipraAnnounced) {
+    app.meta.sadvipraAnnounced = true
+    sfx.unlock()
+    toast('🕉 Садвипра: все четыре ментальности ума развиты. Путь к истинному финалу открыт.', 'hl')
+  }
+  return lv
+}
+
+// Строка о росте ментальности (§12.1), если он случился в бою (тихий режим).
 function varnaLevelLine() {
   const lv = app.varnaLevel
   app.varnaLevel = null
   if (!lv) return null
-  const from = JANMAS[VARNA_ORDER[lv.from]]
-  const to = JANMAS[VARNA_ORDER[lv.to]]
+  const m = MENTALITIES[lv.kind]
   sfx.unlock()
   return h('div', { class: 'varna-up' },
-    `⬆ Варна: ${from.name} → ${to.name}. Ум вырос по социальному циклу — новая джанма открыта.`)
+    `⬆ Ментальность ${m.name} достигла уровня ${lv.to}. Навык ума укрепился — так у садхаки зреют все четыре.`)
 }
 
 function pickRewardCard(id) {
@@ -770,6 +805,8 @@ function notifySynergy(before, after) {
 function showMeditation() {
   show(meditationScreen(app, { onDone: (res) => {
     if (res && res.quality >= 3) progressDaily(app.meta, 'meditate_q3', 1)
+    // Шудра-ментальность (присутствие): труд над умом — медитация и сожжение оков.
+    gainMentality('shudra', res && res.burned > 0 ? 1 : 0)
     saveMeta(app.meta)
     markNodeDone(app.run)
     afterNode()
@@ -838,6 +875,7 @@ function showRelic() {
 function takeRelic(id) {
   gainRelic(app.run, id)
   markSeen('relics', id)
+  if (RELICS[id]) markLived(app.meta, RELICS[id].quoteId) // реликвия прожита: она теперь с вами
   saveMeta(app.meta)
   sfx.unlock()
   markNodeDone(app.run)
@@ -932,8 +970,8 @@ function showCompendium(tab = 'Цитаты') {
     const pasha = has(PASHA_IDS)
     const boss = has(BOSS_IDS)
     let key = null
-    if (ripu === RIPU_IDS.length && !meta.quotesUnlocked.sadripu) { meta.quotesUnlocked.sadripu = true; key = 'sadripu' }
-    if (pasha === PASHA_IDS.length && !meta.quotesUnlocked.pasha) { meta.quotesUnlocked.pasha = true; key = key || 'pasha' }
+    if (ripu === RIPU_IDS.length && !meta.quotesUnlocked.sadripu) { meta.quotesUnlocked.sadripu = true; markLived(meta, 'sadripu'); key = 'sadripu' }
+    if (pasha === PASHA_IDS.length && !meta.quotesUnlocked.pasha) { meta.quotesUnlocked.pasha = true; markLived(meta, 'pasha'); key = key || 'pasha' }
     if (key) saveMeta(meta)
     return h('div', { class: 'hint center mt' },
       `собрано: рипу ${ripu}/${RIPU_IDS.length} · паши ${pasha}/${PASHA_IDS.length} · владыки ${boss}/${BOSS_IDS.length}`,
@@ -961,7 +999,7 @@ function showCompendium(tab = 'Цитаты') {
     } else {
       const qs = Object.keys(meta.quotesUnlocked).map((id) => quoteById(id)).filter(Boolean)
       const filtered = search
-        ? qs.filter((q) => `${q.term} ${q.meaning} ${q.quote}`.toLowerCase().includes(search.toLowerCase()))
+        ? qs.filter((q) => `${q.term} ${q.meaning} ${q.source}`.toLowerCase().includes(search.toLowerCase()))
         : qs
       mount(listEl, filtered.length === 0
         ? h('p', { class: 'hint center' }, search ? 'Ничего не найдено.' : 'Цитаты открываются по мере игры.')
@@ -971,14 +1009,23 @@ function showCompendium(tab = 'Цитаты') {
 
   function quoteCard(q) {
     if (!q) return null
-    const lived = app.meta.lived && app.meta.lived[q.id]
-    return h('div', { class: 'quote-card' },
+    const lived = isQuoteLived(app.meta, q.id)
+    const hint = quoteLiveHint(q.id)
+    return h('div', { class: `quote-card ${lived ? '' : 'qc-locked'}` },
       h('div', { class: 'qc-term sanscr' },
         `${q.term} · ${q.sanskrit}`,
-        lived ? h('span', { style: 'color:var(--sat);font-size:11px;margin-left:6px' }, '✓ прожито') : null),
-      h('div', { class: 'qc-quote' }, `«${q.quote}»`),
-      h('div', { class: 'qc-src' }, q.source),
-      h('div', { class: 'qc-life' }, q.life))
+        lived
+          ? h('span', { style: 'color:var(--sat);font-size:11px;margin-left:6px' }, '✓ прожито')
+          : h('span', { style: 'color:var(--muted);font-size:11px;margin-left:6px' }, '🔒 зерно')),
+      h('div', { class: 'qc-meaning' }, q.meaning),
+      lived ? [
+        h('div', { class: 'qc-quote' }, `«${q.quote}»`),
+        h('div', { class: 'qc-src' }, q.source),
+        h('div', { class: 'qc-life' }, q.life),
+      ] : [
+        h('div', { class: 'qc-src' }, q.source),
+        hint ? h('div', { class: 'qc-hint' }, `🔒 ${hint}`) : null,
+      ])
   }
 
   function entryRow(name, sanscr, sub, quoteId) {
@@ -1028,6 +1075,8 @@ function showRecall(quoteId) {
     answered = true
     app.meta.recalled = app.meta.recalled || {}
     app.meta.recalled[quoteId] = Date.now() // для SRS-спейсинга (интервал повторения)
+    // Випра-ментальность (знание): припоминание — пища различения (viveka).
+    if (opt.correct) gainMentality('vipra', 1)
     saveMeta(app.meta)
     if (opt.correct) { sfx.unlock(); haptics.notify('success') } else { sfx.play() }
     showQuoteCard(quoteId, { wrong: !opt.correct })
@@ -1066,12 +1115,13 @@ function recallOptions(q) {
 function showQuoteCard(quoteId, opts = {}) {
   const q = quoteById(quoteId)
   if (!q) return
+  const revealed = isQuoteLived(app.meta, quoteId)
   show(h('div', { class: 'screen active' },
     h('button', { class: 'btn ghost small', onclick: showCompendium }, '← Грантха'),
     opts.wrong ? h('div', { class: 'hint center mt', style: 'color:var(--gold-soft)' },
       `Правильный ответ — ${q.term}: ${q.meaning}. Запомните — это якорь.`) : null,
-    h('div', { class: 'mt' }, quoteBox(quoteId, { onClose: showCompendium })),
-    q.original ? h('div', { class: 'panel mt' },
+    h('div', { class: 'mt' }, quoteBox(quoteId, { onClose: showCompendium, revealed })),
+    revealed && q.original ? h('div', { class: 'panel mt' },
       h('div', { class: 'hint' }, 'Оригинал:'),
       h('div', { class: 'hint mt', style: 'font-style:italic;color:var(--ink-dim)' }, q.original)) : null,
   ))
@@ -1208,6 +1258,9 @@ function doBuy(fn, id) {
   notifySynergy(before, computeSynergies(app.run.deck, CARDS))
   markSeen('cards', id)
   markSeen('relics', id)
+  // Вайшья-ментальность (мудрость ресурсов): осознанная трата Праны — навык,
+  // а не накопление (Human Society Part 2: vaeshya = деньги как мера всего).
+  gainMentality('vaeshya', 1)
   saveMeta(app.meta)
   showShop()
 }

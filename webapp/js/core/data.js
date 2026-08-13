@@ -44,6 +44,73 @@ export function availableTrials(unlocked = [], floor = 0) {
   return out
 }
 
+// Четыре ментальности ума (§12.1, Human Society Part 2) — это НЕ классы и не
+// «класс души»: психологические типы ума, которые в каждом человеке присутствуют
+// одновременно (одна доминирует). Чтобы стать садвипрой, надо развить ВСЕ четыре.
+// В игре это мета-прогресс: ментальности растут ПАРАЛЛЕЛЬНО от разных поступков;
+// слабая ментальность = недостающий навык = заметные трудности.
+export const MENTALITIES = {
+  shudra: {
+    id: 'shudra',
+    name: 'Шудра',
+    sanskrit: 'शूद्र',
+    order: 0,
+    color: '#8a8f98',
+    desc: 'Присутствие и труд: ум в настоящем, выносливость, стабильность. Навык — стойкость: больше ХП и терпение к натиску авидьи.',
+    focusDesc: '+10 ХП на забег · стойкость к авидье',
+    focusHp: 10,
+  },
+  kshatriya: {
+    id: 'kshatriya',
+    name: 'Кшатрия',
+    sanskrit: 'क्षत्रिय',
+    order: 1,
+    color: '#c0392b',
+    desc: 'Смелость и борьба за дхарму: прошлое и настоящее, «might is right». Навык — смелость: противостоять давлению, не срываться в перекос.',
+    focusDesc: 'Старт с Тапахом и Первым усилием · смелость против перекоса',
+    focusCards: ['tapah', 'first_effort'],
+  },
+  vipra: {
+    id: 'vipra',
+    name: 'Випра',
+    sanskrit: 'विप्र',
+    order: 2,
+    color: '#e8e4d8',
+    desc: 'Знание и видение структуры: прошлое, настоящее и будущее. Навык — видение: читать интенты и видеть верх колоды.',
+    focusDesc: 'Старт со Свадхьяей и Шаочой · видение интентов',
+    focusCards: ['svadhyaya', 'shaoca'],
+  },
+  vaeshya: {
+    id: 'vaeshya',
+    name: 'Вайшья',
+    sanskrit: 'वैश्य',
+    order: 3,
+    color: '#c9a227',
+    desc: 'Мудрость ресурсов: мутативность, деньги как мера. Навык — мудрое использование: Прана тратится эффективнее, скидки в лавке.',
+    focusDesc: '+10 Праны на забег · скидки в лавке',
+    focusPrana: 10,
+  },
+}
+
+// Порядок ментальностей (социальный цикл Саркара: шудра → кшатрия → випра → вайшья).
+export const MENTALITY_ORDER = ['shudra', 'kshatriya', 'vipra', 'vaeshya']
+
+// Уровни развития ментальности: сколько очков нужно для каждого уровня.
+// Уровень 0 — стартовый, уровень 3 — зрелость ментальности.
+export const MENTALITY_LEVELS = [0, 4, 10, 18]
+
+// Порог «зрелости» ментальности: уровень, при котором она считается развитой.
+// Садвипра = все четыре ментальности на этом уровне и выше (Human Society Part 2, гл. 4).
+export const SADVIPRA_MIN_LEVEL = 2
+
+export function mentalityLevel(points) {
+  let lv = 0
+  for (let i = 0; i < MENTALITY_LEVELS.length; i++) {
+    if (points >= MENTALITY_LEVELS[i]) lv = i
+  }
+  return lv
+}
+
 export function starterDeck() {
   const deck = []
   for (const card of Object.values(CARDS)) {
@@ -54,71 +121,32 @@ export function starterDeck() {
   return deck
 }
 
-// Варны — социальный цикл Саркара (§12.1 спеки, Human Society Part 2):
-// психологические типы ума, а не касты. Прогрессия между забегами:
-// шудра → кшатрия → випра → вайшья. Каждая варна = джанма (стиль рождения).
-// varnaIdx — позиция в цикле (для открытия/прогресса).
-export const JANMAS = {
-  shudra: {
-    id: 'shudra',
-    name: 'Шудра',
-    sanskrit: 'शूद्र',
-    varnaIdx: 0,
-    color: '#555c66',
-    desc: 'Психология труда и статичности: ум привязан к настоящему и к телу. Выносливость выше — но гуны смещены к тамасу.',
-    gunaStart: { s: 3, r: 2, t: 4 },
-    prana: 0,
-    deckAdd: [],
-    hp: 10,
-  },
-  kshatriya: {
-    id: 'kshatriya',
-    name: 'Кшатрия',
-    sanskrit: 'क्षत्रिय',
-    varnaIdx: 1,
-    color: '#c0392b',
-    desc: 'Борцовский дух: прошлое и настоящее, «might is right». Агрессивный старт — Тапах и первое усилие вместо пассивных практик.',
-    gunaStart: { s: 3, r: 5, t: 2 },
-    prana: 0,
-    deckAdd: ['tapah', 'first_effort'],
-    hp: -5,
-  },
-  vipra: {
-    id: 'vipra',
-    name: 'Випра',
-    sanskrit: 'विप्र',
-    varnaIdx: 2,
-    color: '#e8e4d8',
-    desc: 'Психология интеллекта: прошлое, настоящее и будущее — видеть структуру. Саттвичный запас и знание на старте.',
-    gunaStart: { s: 5, r: 3, t: 2 },
-    prana: 0,
-    deckAdd: ['shaoca', 'svadhyaya'],
-    hp: 5,
-  },
-  vaeshya: {
-    id: 'vaeshya',
-    name: 'Вайшья',
-    sanskrit: 'वैश्य',
-    varnaIdx: 3,
-    color: '#c9a227',
-    desc: 'Мутативность и накопление: деньги как мера всего. Начинает с перекосом раджаса и лишней Праной — но и с оковкой жадности.',
-    gunaStart: { s: 3, r: 5, t: 3 },
-    prana: 10,
-    deckAdd: ['lobha', 'dana'],
-    hp: 0,
-  },
-}
-
-// Порядок варн в социальном цикле (для прогресса мета-игры).
-export const VARNA_ORDER = ['shudra', 'kshatriya', 'vipra', 'vaeshya']
-
-export function starterDeckFor(janna) {
+export function starterDeckForFocus(focusId) {
   const deck = starterDeck()
-  const j = janna && JANMAS[janna] ? JANMAS[janna] : null
-  if (j) {
-    for (const id of j.deckAdd || []) deck.push(id)
+  const f = focusId && MENTALITIES[focusId] ? MENTALITIES[focusId] : null
+  if (f) {
+    for (const id of f.focusCards || []) deck.push(id)
   }
   return deck
+}
+
+// «Раскрываемость» цитат (живые цитаты, §исследование): полный перевод и «жизнь»
+// открываются, когда термин ПРОЖИТ — сыграна карта, успокоен враг, получена реликвия
+// или знание вручено. Подсказка говорит, как раскрыть. Если у цитаты нет носителя
+// (понятие практики: гуна, прама, мантра…) — она раскрыта сразу.
+export function quoteLiveHint(quoteId) {
+  for (const c of Object.values(CARDS)) if (c.quoteId === quoteId) return 'Сыграйте эту карту в бою — знание оживёт.'
+  for (const e of Object.values(ENEMIES)) if (e.quoteId === quoteId) return e.isBoss
+    ? 'Освободите владыку чакры по пути Ахимсы.'
+    : 'Успокойте этого врага, не убивая его.'
+  for (const r of Object.values(RELICS)) if (r.quoteId === quoteId) return 'Возьмите эту реликвию — она раскроется в пути.'
+  return null
+}
+
+// Цитата раскрыта, если термин прожит; без носителя — всегда раскрыта.
+export function isQuoteLived(meta, quoteId) {
+  if (!quoteLiveHint(quoteId)) return true
+  return !!(meta && meta.lived && meta.lived[quoteId])
 }
 
 // Пул наград: все карты кроме мусора/овковок и стартовых. Карты, открываемые

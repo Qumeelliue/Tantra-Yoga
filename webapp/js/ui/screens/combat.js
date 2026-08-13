@@ -1,6 +1,6 @@
 // Экран боя: HUD, гуны, враг, рука, анимации.
 import { h, mount, clear } from '../dom.js'
-import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter } from '../widgets.js'
+import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter, avidyaMeter } from '../widgets.js'
 import { burst, floatNum, setTint, setGunaAudio, sfx, kiirtanaWave } from '../fx.js'
 import { haptics } from '../haptics.js'
 import { CARDS } from '../../core/data.js'
@@ -72,7 +72,10 @@ export function combatScreen(app) {
 
     mount(gunaEl, gunaOrbs(p.guna, { lead: p.imbalance, prama: p.prama }))
     mount(badgeEl, badges({ prama: p.prama, imbalance: p.imbalance, samadhi: p.inSamadhi, passive: synergyBadges(combat.synergies) }))
-    mount(meterEl, samadhiMeter(p.samadhiGain, combat.o.samadhiThreshold))
+    mount(meterEl,
+      samadhiMeter(p.samadhiGain, combat.o.samadhiThreshold),
+      avidyaMeter(combat))
+
 
     // враг
     if (e && !e.dead && !e.pacified) {
@@ -241,10 +244,19 @@ export function combatScreen(app) {
       } else if (ev.type === 'burn') {
         sfx.burn()
         toast('Карта отпущена — сожжена', 'good')
+      } else if (ev.type === 'samskara') {
+        // Авидья (§9.1a): «прилетела самскара» — тяжёлый симптом, ум накрыло
+        sfx.dmg()
+        haptics.impact('medium')
+        setTint('t')
+        toast(ev.message, 'danger')
       } else if (ev.type === 'kill') {
+        // Подавление силой (§9.2): окову задавили, но не освободили — самскара вернётся
         sfx.hit()
+        haptics.impact('medium')
         const pos = posOf(enemyZone)
         burst(pos.x, pos.y, '#e06a5a', 20)
+        toast('Окова подавлена, но не освобождена — она вернётся.', 'danger')
       } else if (ev.type === 'error') {
         toast(ev.message, 'danger')
         haptics.notify('error')

@@ -1,6 +1,7 @@
 // Переиспользуемые виджеты: карты, орбы гун, бейджи, цитаты, враги.
 import { h } from './dom.js'
-import { CARDS, QUOTES } from '../core/data.js'
+import { CARDS, QUOTES, quoteLiveHint } from '../core/data.js'
+import { avidyaFill } from '../core/engine.js'
 import { CHAKRAS } from '../core/run.js'
 
 export function cardEl(card, { cost, compact = false, onPlay } = {}) {
@@ -76,18 +77,31 @@ export function badges({ prama, imbalance, samadhi, passive = [] }) {
   return h('div', { class: 'badges' }, items)
 }
 
-export function quoteBox(quoteId, { onClose } = {}) {
+// Цитата. revealed=false → «зерно» (термин, значение, источник): полный перевод и
+// жизнь скрыты, пока термин не «прожит» (раскрываемость, §исследование).
+export function quoteBox(quoteId, { onClose, revealed = true } = {}) {
   const q = QUOTES[quoteId]
   if (!q) return null
   return h(
     'div',
     { class: 'quote-box fade-in' },
     h('div', { class: 'q-term sanscr' }, `${q.term} · ${q.sanskrit}`),
-    h('div', { class: 'q' }, `«${q.quote}»`),
+    revealed
+      ? h('div', { class: 'q' }, `«${q.quote}»`)
+      : h('div', { class: 'q' }, q.meaning),
     h('div', { class: 'q-src' }, q.source),
-    h('div', { class: 'q-term', style: 'margin-top:8px' }, q.life),
+    revealed
+      ? h('div', { class: 'q-term', style: 'margin-top:8px' }, q.life)
+      : qLiveHintEl(quoteId),
     onClose ? h('button', { class: 'btn small mt', onclick: onClose }, 'Хорошо') : null
   )
+}
+
+// Подсказка «как прожить термин» для цитаты-зерна (раскрываемость).
+function qLiveHintEl(quoteId) {
+  const hint = quoteLiveHint(quoteId)
+  if (!hint) return null
+  return h('div', { class: 'q-hint' }, `🔒 ${hint}`)
 }
 
 export function enemyCard(e, { calmHint = true } = {}) {
@@ -155,5 +169,21 @@ export function samadhiMeter(gain, threshold) {
       h('span', {}, 'Самадхи'),
       h('span', {}, `${Math.min(gain, threshold)}/${threshold}`)),
     h('div', { class: 'hp-bar', style: 'margin-top:3px' }, h('div', { class: 'enemy-hp-fill', style: `width:${pct}%;background:linear-gradient(90deg,#f2c46d,#ffe9b3)` }))
+  )
+}
+
+// Авидья (§9.1a): шкала натиска неведения. Полная пелена = «прилетит самскара».
+// Практики гасят натиск; грязные карты его питают. Визуально — тёмная пелена.
+export function avidyaMeter(combat) {
+  const fill = avidyaFill(combat)
+  if (!combat.o.avidyaEnabled) return null
+  return h(
+    'div',
+    { class: 'meter-wrap', style: 'margin:2px 0' },
+    h('div', { class: 'row between', style: 'font-size:10px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase' },
+      h('span', {}, 'Авидья'),
+      h('span', {}, `${Math.round(fill * 100)}%`)),
+    h('div', { class: 'hp-bar', style: 'margin-top:3px' },
+      h('div', { class: 'enemy-hp-fill', style: `width:${Math.max(0, fill * 100)}%;background:linear-gradient(90deg,#3a2f45,#6b4a66)` }))
   )
 }

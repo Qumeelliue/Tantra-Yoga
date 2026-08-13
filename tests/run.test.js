@@ -43,29 +43,33 @@ describe('забег: поток', () => {
     expect(run.deck.length).toBe(16)
   })
 
-  it('варна «Кшатрия» добавляет агрессивные карты и снижает ХП', () => {
-    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'kshatriya' } })
-    expect(run.deck.filter((id) => id === 'tapah').length).toBe(1)
-    expect(run.maxHp).toBe(55)
-    expect(run.gunaStart).toEqual({ s: 3, r: 5, t: 2 })
+  it('фокус «Кшатрия» (смелость) даёт стартовые карты борьбы', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { focus: 'kshatriya' } })
+    expect(run.deck.filter((id) => id === 'tapah').length).toBeGreaterThanOrEqual(1)
+    expect(run.deck.filter((id) => id === 'first_effort').length).toBeGreaterThanOrEqual(1)
+    expect(run.maxHp).toBe(60) // кшатрия не даёт +ХП — смелость, а не выносливость
   })
 
-  it('варна «Вайшья» даёт перекос раджаса и Прану', () => {
-    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'vaeshya' } })
+  it('фокус «Вайшья» (мудрость ресурсов) даёт стартовую Прану', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { focus: 'vaeshya' } })
     expect(run.prana).toBe(10)
-    expect(run.gunaStart).toEqual({ s: 3, r: 5, t: 3 })
-    expect(run.deck.filter((id) => id === 'lobha').length).toBeGreaterThan(2)
+    expect(run.maxHp).toBe(60)
   })
 
-  it('варна «Випра» даёт саттву, очищение и знание', () => {
-    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { janna: 'vipra' } })
-    expect(run.gunaStart).toEqual({ s: 5, r: 3, t: 2 })
+  it('фокус «Випра» (знание) даёт стартовые карты самоизучения', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { focus: 'vipra' } })
     expect(run.deck.filter((id) => id === 'shaoca').length).toBe(1)
     expect(run.deck.filter((id) => id === 'svadhyaya').length).toBe(1)
-    expect(run.maxHp).toBe(65)
+    expect(run.maxHp).toBe(60)
   })
 
-  it('стартовая колода — ровно 16 карт (спека 14 + 2 ахимсы)', () => {
+  it('фокус «Шудра» (присутствие) даёт выносливость', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1), options: { focus: 'shudra' } })
+    expect(run.maxHp).toBe(70)
+    expect(run.prana).toBe(0)
+  })
+
+  it('стартовая колода без фокуса — ровно 16 карт (спека 14 + 2 ахимсы)', () => {
     const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1) })
     expect(run.deck.filter((id) => id === 'ahimsa').length).toBe(2)
     expect(run.deck.filter((id) => id === 'cinta').length).toBe(4)

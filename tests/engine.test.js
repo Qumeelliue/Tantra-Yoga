@@ -10,6 +10,7 @@ import {
   recomputeGunas,
   kiirtanaRhythmBonus,
   samadhiPacify,
+  avidyaFill,
   mulberry32,
 } from '@webapp/js/core/engine.js'
 import cards from '@content/cards.json'
@@ -620,5 +621,104 @@ describe('новые карты фазы 1', () => {
       rng: seeded(),
     })
     expect(s.player.guna.s).toBe(4)
+  })
+})
+
+describe('Авидья (§9.1a): фоновый враг и самскары-волны', () => {
+  it('натиск авидьи растёт каждый ход врага', () => {
+    const s = createCombat({
+      deck: makeDeck(['first_effort', 'first_effort', 'first_effort', 'first_effort']),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { playerHp: 200, autoResolve: true },
+    })
+    expect(s.avidya).toBe(0)
+    endTurn(s)
+    expect(s.avidya).toBeGreaterThan(0)
+  })
+
+  it('при переполнении шкалы «прилетает самскара» — тяжёлый симптом', () => {
+    // малый максимум — волна случится быстро
+    const s = createCombat({
+      deck: makeDeck(['first_effort', 'first_effort', 'first_effort']),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { playerHp: 300, autoResolve: true, avidyaMax: 3, avidyaGainPerTurn: 1 },
+    })
+    let ev = []
+    for (let i = 0; i < 4; i++) {
+      ev = endTurn(s)
+      if (s.outcome) break
+    }
+    expect(s.samskaraHits).toBeGreaterThan(0)
+    expect(s.avidya).toBeLessThan(3) // после волны натиск сброшен, но авидья всегда рядом
+  })
+
+  it('практики шлют позитивные микровиты и снижают натиск авидьи', () => {
+    const s = createCombat({
+      deck: makeDeck(['nama_kevalam'], { nama_kevalam: 5 }),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { playerHp: 300, autoResolve: true },
+    })
+    s.avidya = 6 // пусть авидья уже давит
+    const i = s.piles.hand.indexOf('nama_kevalam')
+    playCard(s, i >= 0 ? i : 0, 0)
+    expect(s.avidya).toBeLessThan(6) // кииртан снял натиск (микровиты)
+  })
+
+  it('грязные карты (оковки/мусор) питают авидью', () => {
+    const s = createCombat({
+      deck: makeDeck(['alasya', 'cinta']),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    const i = s.piles.hand.indexOf('alasya')
+    playCard(s, i >= 0 ? i : 0, 0)
+    expect(s.avidya).toBeGreaterThan(0)
+  })
+
+  it('avidyaFill возвращает долю заполнения шкалы (для UI-индикатора)', () => {
+    const s = createCombat({
+      deck: makeDeck(['first_effort']),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { avidyaMax: 10 },
+    })
+    s.avidya = 5
+    expect(avidyaFill(s)).toBe(0.5)
+    const off = createCombat({
+      deck: makeDeck(['first_effort']),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { avidyaEnabled: false },
+    })
+    expect(avidyaFill(off)).toBe(0)
+  })
+
+  it('авидью можно отключить (для тестов/настроек)', () => {
+    const s = createCombat({
+      deck: makeDeck(['first_effort', 'first_effort']),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { playerHp: 200, autoResolve: true, avidyaEnabled: false },
+    })
+    endTurn(s)
+    expect(s.avidya).toBe(0)
   })
 })

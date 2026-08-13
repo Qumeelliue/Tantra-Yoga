@@ -392,6 +392,12 @@ body {
 .varna-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
 .varna-hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
 .varna-hint.done { color: var(--sat); }
+.varna-rows { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.varna-row { border-top: 1px dashed var(--line-gold-soft); padding-top: 8px; }
+.varna-row-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.varna-m-name { font-weight: 700; font-size: 13.5px; }
+.varna-m-lv { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+.varna-row-hint { font-size: 10.5px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
 .varna-up {
   margin-top: 8px;
   padding: 8px 10px;
@@ -1158,6 +1164,9 @@ body {
 .quote-card .qc-src { margin-top: 12px; font-size: 11.5px; color: var(--muted); }
 .quote-card .qc-life { margin-top: 10px; font-size: 13px; color: var(--ink-dim); border-top: 1px solid var(--line-gold-soft); padding-top: 10px; }
 .quote-card .qc-original { margin-top: 8px; font-size: 11px; color: var(--muted-2); font-style: italic; }
+.quote-card .qc-hint { margin-top: 10px; font-size: 12.5px; color: var(--sat); border-top: 1px solid var(--line-gold-soft); padding-top: 10px; }
+.quote-card.qc-locked { border-style: dashed; border-color: var(--muted-2); opacity: 0.92; }
+.quote-box .q-hint { margin-top: 10px; font-size: 12.5px; color: var(--sat); border-top: 1px solid var(--line-gold-soft); padding-top: 8px; }
 
 .anchor-entry {
   padding: 14px 16px;
