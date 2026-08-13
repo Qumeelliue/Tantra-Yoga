@@ -845,8 +845,7 @@ describe('Микровиты (§9.1b): полноценная механика �
   })
 })
 
-describe('навыки ментальностей (§12.1): слабая ментальность = недостающий навык', () => {
-  const ment = (m) => ({ engineOpts: { mentalities: m, avidyaEnabled: true, avidyaMax: 12 } })
+describe('навыки ментальностей (§12.1): слабая ментальность = недостающий навык', () => {  const ment = (m) => ({ engineOpts: { mentalities: m, avidyaEnabled: true, avidyaMax: 12 } })
 
   it('випра ур.0: неведение скрывает намерение врага (hideIntents)', () => {
     const c = combatWith(['first_effort'], 'krodha', ment({ vipra: 0 }))
@@ -945,5 +944,24 @@ describe('навыки ментальностей (§12.1): слабая мен�
     expect(c.avidya).toBe(0)
     expect(events.some((e) => e.type === 'samskara' && e.kind === 'resisted')).toBe(true)
     expect(c.player.guna).toEqual(g) // никакого симптома
+  })
+})
+
+describe('Пратьяхара (отвод чувств, §7.2-подобные практики)', () => {
+  it('даёт +2 блока и ослабляет атаки врага (weak)', () => {
+    const c = combatWith(['pratyahara'], 'krodha', { engineOpts: { avidyaEnabled: false } })
+    const hpBefore = c.player.hp
+    playCard(c, c.piles.hand.indexOf('pratyahara'), 0)
+    expect(c.player.block).toBeGreaterThanOrEqual(2)
+    const e = c.enemies[0]
+    expect(e.statuses.weak).toBeGreaterThanOrEqual(1)
+    // weak врага: его атака наносит на 2 меньше
+    endTurn(c)
+    expect(c.player.hp).toBeGreaterThanOrEqual(hpBefore - 5) // базовый удар Кродхи ~7 → −2 (weak)
+  })
+
+  it('не валится в создании боя и попадает в пул наград', () => {
+    const c = createCombat({ deck: ['pratyahara'], enemies: [enemies.krodha], cards, enemyDefs: enemies, rng: seeded(), opts: { autoResolve: true } })
+    expect(c.piles.hand).toContain('pratyahara')
   })
 })

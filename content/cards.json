@@ -695,5 +695,21 @@
     "quoteId": "siddha",
     "exhaust": true,
     "tags": ["mantra"]
+  },
+  "pratyahara": {
+    "id": "pratyahara",
+    "name": "Пратьяхара",
+    "sanskrit": "प्रत्याहार",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Отвод чувств: враг ослабевает (−2 урона его атак на ход) и +2 блока.",
+    "effects": [
+      { "kind": "status", "status": "weak", "amount": 1, "target": "all_enemies" },
+      { "kind": "block", "amount": 2 }
+    ],
+    "guna": { "s": 1, "r": 0, "t": 0 },
+    "rarity": "uncommon",
+    "quoteId": "pratyahara",
+    "tags": ["practice", "defend"]
   }
 }
