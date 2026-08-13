@@ -1,7 +1,7 @@
 // Экран боя: HUD, гуны, враг, рука, анимации.
 import { h, mount, clear } from '../dom.js'
-import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter, avidyaMeter } from '../widgets.js'
-import { burst, floatNum, setTint, setGunaAudio, sfx, kiirtanaWave } from '../fx.js'
+import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter, avidyaMeter, microvitaBadge } from '../widgets.js'
+import { burst, floatNum, setTint, setGunaAudio, sfx, kiirtanaWave, microvitaFx } from '../fx.js'
 import { haptics } from '../haptics.js'
 import { CARDS } from '../../core/data.js'
 import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome, kiirtanaRhythmBonus, samadhiPacify } from '../../core/engine.js'
@@ -71,18 +71,24 @@ export function combatScreen(app) {
     )
 
     mount(gunaEl, gunaOrbs(p.guna, { lead: p.imbalance, prama: p.prama }))
-    mount(badgeEl, badges({ prama: p.prama, imbalance: p.imbalance, samadhi: p.inSamadhi, passive: synergyBadges(combat.synergies) }))
+    mount(badgeEl, badges({ prama: p.prama, imbalance: p.imbalance, samadhi: p.inSamadhi, passive: synergyBadges(combat.synergies), mentalities: combat.mentalities }))
     mount(meterEl,
       samadhiMeter(p.samadhiGain, combat.o.samadhiThreshold),
-      avidyaMeter(combat))
+      avidyaMeter(combat),
+      microvitaBadge(combat))
 
 
     // враг
     if (e && !e.dead && !e.pacified) {
       const enc = app.meta && app.meta.encounters && app.meta.encounters[e.id]
+      const intentsHidden = !!combat.hideIntents
       mount(enemyZone,
         enemyCard(e),
-        h('div', { class: 'row', style: 'gap:6px' }, intentChip(e)),
+        h('div', { class: 'row', style: 'gap:6px' }, intentChip(e, { hidden: intentsHidden })),
+        intentsHidden
+          ? h('div', { class: 'hint center', style: 'font-size:10px;margin-top:2px;color:var(--muted)' },
+              'неведение скрывает шаг врага — знание (випра) откроет видение')
+          : null,
         enc > 1 ? h('div', { class: 'hint center', style: 'font-size:10px;margin-top:4px' },
           `встреч в прошлых жизнях: ${enc}`) : null)
     } else {
@@ -102,8 +108,9 @@ export function combatScreen(app) {
       cardEl(CARDS[id], { cost: effectiveCost(combat, CARDS[id]), onPlay: () => doPlay(i) })
     ))
 
-    // предвидение/память: самадхи показывает следующие карты, Дхрувасмрити — верхнюю колоды
-    const memoryPeek = combat.relicMods.peekStart && combat.peek && combat.peek.length > 0
+    // предвидение/память: самадхи показывает следующие карты, Дхрувасмрити и
+    // зрелая випра (ур.2+) — верхнюю карту колоды (видение ума, §12.1)
+    const memoryPeek = combat.peekStart && combat.peek && combat.peek.length > 0
     if ((p.inSamadhi || memoryPeek) && combat.piles.draw.length > 0) {
       const next = p.inSamadhi
         ? combat.piles.draw.slice(-2).reverse()
@@ -226,6 +233,27 @@ export function combatScreen(app) {
         const pos = posOf(enemyZone)
         burst(pos.x, pos.y, '#ffe9b3', 26)
         toast(ev.message, 'good')
+      } else if (ev.type === 'pacify_gain') {
+        floatNum(innerWidth / 2, innerHeight / 2 + 70, `+${ev.calm} спокойствие`, 'sat')
+      } else if (ev.type === 'calm_decay') {
+        // Владыка сопротивляется (§9.4): его ход снимает накопленное спокойствие —
+        // нужно опережать давление, чтобы освободить его
+        const pos = posOf(enemyZone)
+        floatNum(pos.x, pos.y - 24, 'спокойствие тает', 'tam')
+      } else if (ev.type === 'microvita') {
+        // Микровиты (§9.1b): положительный микровит летит от карты к окове —
+        // свет растворяет узел (+calm), пелена спадает. Явный светлый визуал.
+        sfx.microvitaPos()
+        haptics.impact('soft')
+        microvitaFx(from.x, from.y, 'pos', 12)
+        const pos = posOf(enemyZone)
+        burst(pos.x, pos.y, '#ffe9b3', 10)
+        floatNum(pos.x, pos.y - 10, `+${ev.amount} микровит`, 'sat')
+      } else if (ev.type === 'negative_microvita') {
+        // Отрицательные микровиты: грязная карта порождает тьму вниз — она
+        // питает неведение (шкала авидьи растёт). Видно, чем кормишь ум.
+        sfx.microvitaNeg()
+        microvitaFx(from.x, from.y, 'neg', 8)
       } else if (ev.type === 'samadhi') {
         sfx.samadhi()
         haptics.notify('success')

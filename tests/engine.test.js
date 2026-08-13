@@ -317,6 +317,50 @@ describe('прама для ахимсы босса (§18)', () => {
     expect(e.pacified).toBe(true)
     expect(s.outcome).toBe('victory')
   })
+
+  it('владыка сопротивляется: доведённый до 50% он снимает calm своим ходом', () => {
+    const s = bossFight()
+    const e = s.enemies[0]
+    e.hp = Math.floor(e.maxHp / 2) // фаза сопротивления (HP ≤ 50%)
+    e.calm = 3
+    endTurn(s)
+    expect(e.calm).toBe(2) // −1 за ход владыки (без потока ахимсы)
+  })
+
+  it('пока владыка здоров (HP > 50%), спокойствие не снимается', () => {
+    const s = bossFight()
+    const e = s.enemies[0]
+    e.hp = Math.floor(e.maxHp * 0.7)
+    e.calm = 3
+    endTurn(s)
+    expect(e.calm).toBe(3)
+  })
+
+  it('поток ахимсы (3+ в колоде) ослабляет сопротивление владыки', () => {
+    const s = bossFight() // колода: 6 ахимс → поток активен
+    const e = s.enemies[0]
+    e.hp = Math.floor(e.maxHp / 2)
+    e.calm = 3
+    endTurn(s)
+    expect(e.calm).toBe(2) // 2 (базовый) − 1 (поток) = 1
+  })
+
+  it('calm не уходит ниже нуля при сопротивлении', () => {
+    const s = createCombat({
+      deck: makeDeck(['ahimsa']),
+      enemies: [enemies.moha],
+      relics: [],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { autoResolve: true },
+    })
+    const e = s.enemies[0]
+    e.hp = Math.floor(e.maxHp / 2)
+    e.calm = 0
+    endTurn(s)
+    expect(e.calm).toBe(0)
+  })
 })
 
 describe('самадхи-успокоение (§8.4)', () => {
@@ -720,5 +764,186 @@ describe('Авидья (§9.1a): фоновый враг и самскары-в�
     })
     endTurn(s)
     expect(s.avidya).toBe(0)
+  })
+})
+
+describe('Микровиты (§9.1b): полноценная механика — свет растворяет окову', () => {
+  it('эффект microvita даёт +calm окове и −натиск авидьи', () => {
+    const s = createCombat({
+      deck: makeDeck(['vidyadhara'], { vidyadhara: 3 }),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { playerHp: 300, autoResolve: true },
+    })
+    s.avidya = 4
+    const i = s.piles.hand.indexOf('vidyadhara')
+    const ev = playCard(s, i >= 0 ? i : 0, 0)
+    const e = s.enemies[0]
+    expect(e.calm).toBe(1) // микровит влетел в окову: +calm
+    expect(s.avidya).toBeLessThan(4) // и снял пелену
+    expect(ev.some((x) => x.type === 'microvita')).toBe(true)
+    expect(s.microvitaPos).toBeGreaterThan(0)
+  })
+
+  it('счётчики микровитов: практики +положительные, грязные карты −отрицательные', () => {
+    const s = createCombat({
+      deck: makeDeck(['nama_kevalam', 'alasya']),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { playerHp: 300, autoResolve: true },
+    })
+    let i = s.piles.hand.indexOf('nama_kevalam')
+    playCard(s, i >= 0 ? i : 0, 0)
+    i = s.piles.hand.indexOf('alasya')
+    const ev = playCard(s, i >= 0 ? i : 0, 0)
+    expect(s.microvitaPos).toBe(1) // кииртан послал положительный микровит
+    expect(s.microvitaNeg).toBe(1) // лень породила отрицательный
+    expect(ev.some((x) => x.type === 'negative_microvita')).toBe(true)
+  })
+
+  it('полные микровиты + HP≤50% освобождают врага (как ахимса)', () => {
+    const s = createCombat({
+      deck: makeDeck(['vidyadhara'], { vidyadhara: 5 }),
+      enemies: [enemies.lobha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { playerHp: 300, autoResolve: true },
+    })
+    const e = s.enemies[0]
+    e.hp = Math.floor(e.maxHp / 2) // HP ≤ 50% — условие успокоения
+    // играем видъядхары, пока не освободим окову
+    let guard = 0
+    while (!e.pacified && guard++ < 10) {
+      const i = s.piles.hand.indexOf('vidyadhara')
+      if (i < 0) break
+      playCard(s, i, 0)
+    }
+    expect(e.pacified).toBe(true)
+    expect(s.pacified).toBe(1)
+  })
+
+  it('сиддха даёт двойной микровит и сгорает', () => {
+    const s = createCombat({
+      deck: makeDeck(['siddha']),
+      enemies: [enemies.krodha],
+      cards,
+      enemyDefs: enemies,
+      rng: seeded(),
+      opts: { playerHp: 300, autoResolve: true },
+    })
+    const i = s.piles.hand.indexOf('siddha')
+    playCard(s, i, 0)
+    const e = s.enemies[0]
+    expect(e.calm).toBe(2)
+    expect(s.microvitaPos).toBeGreaterThanOrEqual(2)
+    expect(s.piles.exhaust).toContain('siddha') // карта сгорает после применения
+  })
+})
+
+describe('навыки ментальностей (§12.1): слабая ментальность = недостающий навык', () => {
+  const ment = (m) => ({ engineOpts: { mentalities: m, avidyaEnabled: true, avidyaMax: 12 } })
+
+  it('випра ур.0: неведение скрывает намерение врага (hideIntents)', () => {
+    const c = combatWith(['first_effort'], 'krodha', ment({ vipra: 0 }))
+    expect(c.hideIntents).toBe(true)
+    expect(c.peekStart).toBe(false)
+  })
+
+  it('випра ур.1: намерения врага читаются', () => {
+    const c = combatWith(['first_effort'], 'krodha', ment({ vipra: 1 }))
+    expect(c.hideIntents).toBe(false)
+  })
+
+  it('випра ур.2: в начале боя видна верхняя карта колоды (видение ума)', () => {
+    const c = combatWith(['first_effort', 'ahimsa', 'seva', 'ahimsa', 'seva', 'cinta'], 'krodha', ment({ vipra: 2 }))
+    expect(c.peekStart).toBe(true)
+    expect(c.peek).toBeTruthy()
+    expect(c.peek.length).toBeGreaterThan(0)
+  })
+
+  it('шудра ур.0: натиск авидьи растёт стандартно (1 за ход врага)', () => {
+    const c = combatWith(['first_effort'], 'krodha', ment({ shudra: 0 }))
+    c.avidya = 10
+    endTurn(c)
+    expect(c.avidya).toBe(11)
+  })
+
+  it('шудра ур.2: натиск авидьи растёт медленнее (стойкость к авидье)', () => {
+    const c = combatWith(['first_effort'], 'krodha', ment({ shudra: 2 }))
+    c.avidya = 10
+    endTurn(c)
+    expect(c.avidya).toBe(10) // 10 + (1 − 1) = 10, волны нет
+  })
+
+  it('шудра ур.3: натиск не растёт со временем (−2)', () => {
+    const c = combatWith(['first_effort'], 'krodha', ment({ shudra: 3 }))
+    c.avidya = 10
+    endTurn(c)
+    expect(c.avidya).toBe(10)
+  })
+
+  it('кшатрия ур.0: тамас-перекос отнимает карту в начале хода', () => {
+    const c = combatWith(['first_effort', 'ahimsa', 'ahimsa', 'seva', 'seva', 'cinta'], 'krodha', { engineOpts: { mentalities: {}, avidyaEnabled: false, drawPerTurn: 5 } })
+    c.player.guna = { s: 2, r: 1, t: 5 }
+    recomputeGunas(c)
+    expect(c.player.imbalance).toBe('t')
+    c.piles.draw.unshift(...c.piles.hand)
+    c.piles.hand = []
+    startPlayerTurn(c)
+    expect(c.piles.hand.length).toBe(4) // 5 − 1 (тамас)
+  })
+
+  it('кшатрия ур.1: смелость — тамас-перекос не отнимает карту', () => {
+    const c = combatWith(['first_effort', 'ahimsa', 'ahimsa', 'seva', 'seva', 'cinta'], 'krodha', { engineOpts: { mentalities: { kshatriya: 1 }, avidyaEnabled: false, drawPerTurn: 5 } })
+    c.player.guna = { s: 2, r: 1, t: 5 }
+    recomputeGunas(c)
+    expect(c.player.imbalance).toBe('t')
+    c.piles.draw.unshift(...c.piles.hand)
+    c.piles.hand = []
+    startPlayerTurn(c)
+    expect(c.piles.hand.length).toBe(5)
+  })
+
+  it('кшатрия ур.0: раджас-перекос удорожает практики на 1', () => {
+    const c = combatWith(['first_effort'], 'krodha', { engineOpts: { mentalities: {}, avidyaEnabled: false } })
+    c.player.guna = { s: 1, r: 5, t: 1 }
+    recomputeGunas(c)
+    expect(c.player.imbalance).toBe('r')
+    expect(effectiveCost(c, cards.first_effort)).toBe(cards.first_effort.cost + 1)
+  })
+
+  it('кшатрия ур.1: смелость — раджас-перекос не удорожает практики', () => {
+    const c = combatWith(['first_effort'], 'krodha', { engineOpts: { mentalities: { kshatriya: 1 }, avidyaEnabled: false } })
+    c.player.guna = { s: 1, r: 5, t: 1 }
+    recomputeGunas(c)
+    expect(effectiveCost(c, cards.first_effort)).toBe(cards.first_effort.cost)
+  })
+
+  it('кшатрия ур.0: переполнение авидьи приносит самскару-симптом', () => {
+    const c = combatWith(['first_effort'], 'krodha', ment({ kshatriya: 0 }))
+    c.avidya = 11
+    const g = { ...c.player.guna }
+    const events = endTurn(c) // натиск 12 → самскара
+    expect(c.avidya).toBe(0)
+    const sam = events.filter((e) => e.type === 'samskara')
+    expect(sam.length).toBe(1)
+    expect(sam[0].kind).not.toBe('resisted')
+    // симптом есть: либо мусор в колоду, либо сдвиг гун
+    expect(c.player.guna).not.toEqual(g)
+  })
+
+  it('кшатрия ур.2: волна авидьи отступает без симптома (ум устоял)', () => {
+    const c = combatWith(['first_effort'], 'krodha', ment({ kshatriya: 2 }))
+    c.avidya = 11
+    const g = { ...c.player.guna }
+    const events = endTurn(c)
+    expect(c.avidya).toBe(0)
+    expect(events.some((e) => e.type === 'samskara' && e.kind === 'resisted')).toBe(true)
+    expect(c.player.guna).toEqual(g) // никакого симптома
   })
 })

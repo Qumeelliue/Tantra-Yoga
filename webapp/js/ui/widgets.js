@@ -65,13 +65,18 @@ export function gunaOrbs(g, { lead, prama } = {}) {
   )
 }
 
-export function badges({ prama, imbalance, samadhi, passive = [] }) {
+export function badges({ prama, imbalance, samadhi, passive = [], mentalities } = {}) {
   const items = []
   if (prama) items.push(h('span', { class: 'badge prama' }, '☯ прама'))
   if (samadhi) items.push(h('span', { class: 'badge samadhi' }, '◉ самадхи'))
   if (imbalance === 't') items.push(h('span', { class: 'badge imbalance' }, '▼ тамас-перекос'))
   if (imbalance === 'r') items.push(h('span', { class: 'badge imbalance' }, '▲ раджас-перекос'))
   if (imbalance === 's') items.push(h('span', { class: 'badge imbalance' }, '☀ саттва-перекос'))
+  // Навыки ментальностей (§12.1): зрелые навыки видны в бою как бейджи
+  const m = mentalities || {}
+  if (m.vipra >= 2) items.push(h('span', { class: 'badge passive' }, '◈ видение'))
+  if (m.shudra >= 2) items.push(h('span', { class: 'badge passive' }, '◊ стойкость'))
+  if (m.kshatriya >= 1) items.push(h('span', { class: 'badge passive' }, '✦ смелость'))
   for (const p of passive) items.push(h('span', { class: 'badge passive' }, p))
   if (items.length === 0) return null
   return h('div', { class: 'badges' }, items)
@@ -137,19 +142,21 @@ export function enemyCard(e, { calmHint = true } = {}) {
     calmHint ? h('div', { class: 'calm-hint' },
       e.def.calmCard
         ? `освобождается: ${CARDS[e.def.calmCard]?.name || ''} · ахимса`
-        : 'успокоение ахимсой') : null
+        : 'успокоение ахимсой') : null,
+    e.def.isBoss ? h('div', { class: 'calm-hint resist' },
+      'владыка сопротивляется: его ход снимает спокойствие · соберите поток ахимсы') : null
   )
 }
 
-export function intentChip(e) {
+export function intentChip(e, { hidden = false } = {}) {
   const kind = intentKind(e.intentName)
-  const dmg = e.intentDamage > 0 ? h('span', { class: 'i-dmg' }, e.intentDamage) : null
+  const dmg = !hidden && e.intentDamage > 0 ? h('span', { class: 'i-dmg' }, e.intentDamage) : null
   return h(
     'div',
-    { class: 'intent' },
+    { class: `intent ${hidden ? 'intent-hidden' : ''}` },
     h('span', { class: 'i-kind' }, kind),
     dmg,
-    h('span', {}, e.intentName)
+    h('span', {}, hidden ? '···' : e.intentName)
   )
 }
 
@@ -186,4 +193,16 @@ export function avidyaMeter(combat) {
     h('div', { class: 'hp-bar', style: 'margin-top:3px' },
       h('div', { class: 'enemy-hp-fill', style: `width:${Math.max(0, fill * 100)}%;background:linear-gradient(90deg,#3a2f45,#6b4a66)` }))
   )
+}
+
+// Микровиты (§9.1b, Microvitum in a Nutshell): «серебряная линия» между материей
+// и идеей. Счётчик боя: ✦ +N — положительные микровиты (посланы практиками и
+// девайонами), ✧ −M — отрицательные (наплодили грязные карты). Свет вверх / тьма вниз.
+export function microvitaBadge(combat) {
+  if (!combat || !combat.o || !combat.o.avidyaEnabled) return null
+  const pos = combat.microvitaPos || 0
+  const neg = combat.microvitaNeg || 0
+  if (pos === 0 && neg === 0) return null
+  return h('span', { class: `badge microvita ${pos > 0 && neg === 0 ? 'pure' : ''}` },
+    `✦ микровиты +${pos}${neg > 0 ? ` · ✧ −${neg}` : ''}`)
 }

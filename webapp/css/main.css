@@ -398,6 +398,40 @@ body {
 .varna-m-name { font-weight: 700; font-size: 13.5px; }
 .varna-m-lv { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
 .varna-row-hint { font-size: 10.5px; color: var(--muted); margin-top: 3px; line-height: 1.35; }
+.varna-row-skill { font-size: 10.5px; color: var(--gold-soft); margin-top: 2px; line-height: 1.35; font-style: italic; }
+
+/* Сад Знания (соцслой, локально): прожитые термины пускают корни */
+.garden-card { cursor: pointer; }
+.garden-row { display: flex; justify-content: space-between; gap: 4px; margin-top: 8px; }
+.garden-dot { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; opacity: 0.45; }
+.garden-dot.on { opacity: 1; }
+.garden-dot.cur .g-dot-e { transform: scale(1.35); }
+.g-dot-e { font-size: 20px; transition: transform 0.25s; }
+.g-dot-l { font-size: 9px; color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase; }
+.garden-scene { position: relative; height: 120px; margin: 14px 0 6px; border-radius: 14px; background: linear-gradient(180deg, rgba(20, 28, 40, 0.2), rgba(60, 90, 50, 0.12)); }
+.garden-canopy { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); font-size: 72px; filter: drop-shadow(0 4px 10px rgba(120, 190, 90, 0.3)); }
+.garden-ground { position: absolute; bottom: 0; left: 0; right: 0; height: 26px; border-radius: 0 0 14px 14px; background: linear-gradient(180deg, rgba(70, 100, 55, 0.35), rgba(40, 60, 30, 0.5)); }
+.garden-line { display: flex; gap: 10px; align-items: flex-start; padding: 7px 0; border-top: 1px dashed var(--line-gold-soft); opacity: 0.45; }
+.garden-line.on { opacity: 1; }
+.g-line-e { font-size: 22px; }
+.g-line-name { font-weight: 700; font-size: 13px; }
+
+/* Призраки прошлых жизней (§10.3): след смерти — урок на карте пути */
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px auto 6px;
+  padding: 4px 10px;
+  border: 1px dashed rgba(139, 111, 214, 0.4);
+  border-radius: 999px;
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.75;
+  cursor: pointer;
+  width: fit-content;
+}
+.ghost:hover { opacity: 1; color: var(--ink); }
 .varna-up {
   margin-top: 8px;
   padding: 8px 10px;
@@ -608,6 +642,10 @@ body {
 .badge.imbalance { color: #ffb787; border-color: rgba(255, 138, 74, 0.5); background: rgba(255, 138, 74, 0.1); }
 .badge.samadhi { color: var(--gold-soft); border-color: var(--gold); background: rgba(242, 196, 109, 0.16); animation: breathe 1.6s ease-in-out infinite; }
 .badge.passive { color: var(--muted); border-color: var(--line-gold-soft); background: rgba(0, 0, 0, 0.2); }
+/* Микровиты (§9.1b): «серебряная линия» между материей и идеей. Светлый бейдж
+   показывает баланс вибраций боя: ✦ +N положительных (свет вверх), ✧ −M отрицательных. */
+.badge.microvita { color: #e8d9ff; border-color: rgba(242, 196, 109, 0.55); background: linear-gradient(90deg, rgba(139, 111, 214, 0.12), rgba(242, 196, 109, 0.12)); box-shadow: 0 0 14px rgba(242, 196, 109, 0.18); }
+.badge.microvita.pure { box-shadow: 0 0 18px rgba(242, 196, 109, 0.4); animation: breathe 2s ease-in-out infinite; }
 
 @keyframes breathe {
   0%, 100% { opacity: 1; }
@@ -818,6 +856,7 @@ body {
 }
 .calm-dot.on { background: radial-gradient(circle at 40% 35%, #fff3d6, var(--gold)); box-shadow: 0 0 12px rgba(242, 196, 109, 0.7); }
 .calm-hint { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+.calm-hint.resist { color: var(--tam); font-style: italic; text-transform: none; letter-spacing: 0.02em; }
 
 .intent {
   display: flex;
@@ -832,6 +871,8 @@ body {
 }
 .intent .i-dmg { font-weight: 800; color: var(--danger); font-variant-numeric: tabular-nums; }
 .intent .i-kind { letter-spacing: 0.08em; text-transform: uppercase; font-size: 10px; color: var(--muted); }
+/* Слабая випра (§12.1): неведение прячет намерение врага — интент «мутный» */
+.intent.intent-hidden { border-style: dashed; opacity: 0.75; filter: blur(0.3px); }
 
 /* рука */
 .hand-wrap { position: relative; }
@@ -1004,6 +1045,11 @@ body {
 @keyframes burstFly {
   to { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.2); }
 }
+/* Микровиты (§9.1b): положительные светятся золотом (вверх), отрицательные —
+   фиолетовым (вниз). Явная «серебряная линия»: свет растворяет окову, тьма питает. */
+.burst.mv { width: 5px; height: 5px; animation-duration: 0.85s; }
+.burst.mv-pos { box-shadow: 0 0 8px rgba(255, 233, 179, 0.9), 0 0 16px rgba(242, 196, 109, 0.5); }
+.burst.mv-neg { box-shadow: 0 0 8px rgba(139, 111, 214, 0.9), 0 0 14px rgba(90, 60, 140, 0.5); }
 
 /* кииртан-волна */
 .kiirtana-ring {

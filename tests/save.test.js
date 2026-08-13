@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived } from '@webapp/js/core/save.js'
+import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived, gardenState, GARDEN_STAGES, recordDeath } from '@webapp/js/core/save.js'
 import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel } from '@webapp/js/core/data.js'
 
 // Фейковый Telegram CloudStorage (callback-API) с проверкой чанков.
@@ -229,5 +229,65 @@ describe('Раскрываемость цитат (§исследование, �
     expect(isQuoteLived(meta, id)).toBe(false)
     markLived(meta, id)
     expect(isQuoteLived(meta, id)).toBe(true)
+  })
+})
+
+describe('Сад Знания (соцслой, локально): прожитые термины пускают корни', () => {
+  function metaWithLived(n) {
+    const meta = EMPTY_META()
+    meta.lived = {}
+    for (let i = 0; i < n; i++) meta.lived['q' + i] = true
+    return meta
+  }
+
+  it('считает прожитые знания из meta.lived', () => {
+    expect(gardenState(EMPTY_META()).lived).toBe(0)
+    expect(gardenState(metaWithLived(7)).lived).toBe(7)
+  })
+
+  it('стадии идут по порядку от зерна к древу', () => {
+    expect(GARDEN_STAGES[0].name).toBe('Зерно')
+    expect(GARDEN_STAGES[GARDEN_STAGES.length - 1].name).toBe('Древо')
+    for (let i = 1; i < GARDEN_STAGES.length; i++) {
+      expect(GARDEN_STAGES[i].min).toBeGreaterThan(GARDEN_STAGES[i - 1].min)
+    }
+  })
+
+  it('цветение даёт +1 саттву, древо — +2', () => {
+    const flower = gardenState(metaWithLived(GARDEN_STAGES[2].min))
+    expect(flower.stage.bonus).toBe(1)
+    const tree = gardenState(metaWithLived(GARDEN_STAGES[GARDEN_STAGES.length - 1].min))
+    expect(tree.stage.bonus).toBe(2)
+  })
+
+  it('пустой сад — без бонуса', () => {
+    expect(gardenState(EMPTY_META()).stage.bonus).toBe(0)
+  })
+
+  it('gardenState не падает без меты', () => {
+    expect(gardenState(null).lived).toBe(0)
+  })
+})
+
+describe('призраки прошлых жизней (§10.3): смерть оставляет урок на карте пути', () => {
+  it('recordDeath добавляет запись с местом и убийцей', () => {
+    const meta = EMPTY_META()
+    const entry = recordDeath(meta, { floor: 3, killedBy: 'Маха-Кродха', killedById: 'krodha_maharaja' })
+    expect(meta.deathLog.length).toBe(1)
+    expect(meta.deathLog[0]).toEqual(entry)
+    expect(meta.deathLog[0].floor).toBe(3)
+    expect(meta.deathLog[0].killedById).toBe('krodha_maharaja')
+  })
+
+  it('хранит максимум 5 последних смертей', () => {
+    const meta = EMPTY_META()
+    for (let i = 0; i < 7; i++) recordDeath(meta, { floor: i, killedBy: 'Враг' + i, killedById: null })
+    expect(meta.deathLog.length).toBe(5)
+    expect(meta.deathLog[0].floor).toBe(2) // 0..1 вытеснены
+    expect(meta.deathLog[4].floor).toBe(6)
+  })
+
+  it('по умолчанию — пустой журнал', () => {
+    expect(EMPTY_META().deathLog).toEqual([])
   })
 })

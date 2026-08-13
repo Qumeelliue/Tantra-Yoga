@@ -12,12 +12,12 @@ import {
   takeCardReward, gainRelic,
   eventOptions, resolveEventChoice, isNodeDone, markNodeDone,
   floorComplete, advanceFloor, CHAKRAS, LEPESTKI,
-  rollShop, buyShopCard, buyShopRemove, buyShopRelic, SHOP_COSTS,
+  rollShop, buyShopCard, buyShopRemove, buyShopRelic, SHOP_COSTS, shopPrice, shopDiscount,
 } from './core/run.js'
 import {
-  loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, resetMeta, quoteById, cloudSync,
+  loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, recordDeath, resetMeta, quoteById, cloudSync,
   markVisit, progressDaily, varnaState, addVarnaPoints, isSadvipra,
-  unlockCard, trialsProgress, markLived,
+  unlockCard, trialsProgress, markLived, gardenState,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -114,6 +114,7 @@ function showTitle() {
   const challengeBlock = challengeCard(meta)
   const varnaBlock = varnaCard(meta)
   const trialsBlock = trialsCard(meta)
+  const gardenBlock = gardenCard(meta)
 
   const bootEvent = app.bootEvent
   app.bootEvent = null
@@ -143,6 +144,7 @@ function showTitle() {
     challengeBlock,
     varnaBlock,
     trialsBlock,
+    gardenBlock,
 
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
@@ -251,12 +253,15 @@ function varnaCard(meta) {
     const lv = vs.levels[id]
     const pts = vs.points[id] || 0
     const pct = Math.max(4, Math.min(100, (pts / 18) * 100))
+    const skills = m.skills || []
+    const skillText = skills[Math.min(skills.length - 1, lv)] || ''
     return h('div', { class: 'varna-row' },
       h('div', { class: 'varna-row-head' },
         h('span', { class: 'varna-m-name', style: `color:${m.color}` }, `${m.name} · ${m.sanskrit}`),
         h('span', { class: 'varna-m-lv' }, `ур. ${lv}`)),
       h('div', { class: 'varna-bar' }, h('div', { class: 'varna-fill', style: `width:${pct}%;background:${m.color}` })),
-      h('div', { class: 'varna-row-hint' }, `${m.focusDesc}`))
+      h('div', { class: 'varna-row-hint' }, `${m.focusDesc}`),
+      h('div', { class: 'varna-row-skill' }, skillText))
   })
   return h('div', { class: 'varna-card' },
     h('div', { class: 'varna-head' },
@@ -322,6 +327,61 @@ function showTrials() {
   ))
 }
 
+// Сад Знания (соцслой, локально): прожитые термины пускают корни — знание,
+// которое переживает смерть, помогает в следующих жизнях (+саттва к забегу).
+function gardenCard(meta) {
+  const g = gardenState(meta)
+  const s = g.stage
+  const next = g.stages.find((st) => st.min > g.lived)
+  return h('div', { class: 'varna-card garden-card', onclick: () => showGarden() },
+    h('div', { class: 'varna-head' },
+      h('div', {},
+        h('div', { class: 'varna-label' }, 'Сад Знания'),
+        h('div', { class: 'varna-name' }, `${s.emoji} ${s.name} · прожито ${g.lived}`)),
+      h('div', { class: 'varna-next' }, 'открыть →')),
+    h('div', { class: 'garden-row' },
+      g.stages.map((st, i) => {
+        const done = i <= g.stages.indexOf(s)
+        const active = i === g.stages.indexOf(s)
+        return h('div', { class: `garden-dot ${done ? 'on' : ''} ${active ? 'cur' : ''}` },
+          h('span', { class: 'g-dot-e' }, st.emoji),
+          h('span', { class: 'g-dot-l' }, `${st.name}`))
+      })),
+    h('div', { class: 'varna-hint' },
+      next
+        ? `до «${next.name}»: ещё ${next.min - g.lived} прожитых знаний`
+        : 'сад в полном цвету: древо знания дарит +2 саттвы к каждому забегу'))
+}
+
+// Экран «Сад Знания»: наглядный рост прожитых терминов и его награда.
+function showGarden() {
+  const g = gardenState(app.meta)
+  const s = g.stage
+  show(h('div', { class: 'screen active comp-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
+    h('div', { class: 'display chakra-title' }, 'Сад Знания'),
+    h('div', { class: 'chakra-sub' }, 'прожитое знание пускает корни'),
+    h('div', { class: 'garden-scene' },
+      h('div', { class: 'garden-canopy' }, s.emoji),
+      h('div', { class: 'garden-ground' })),
+    h('p', { class: 'node-text center' },
+      'Каждый сыгранный термин, успокоенный враг и взятая реликвия — прожитое знание. Оно переживает смерть и в следующих жизнях помогает: цветущий сад даёт +1 саттву к началу забега, древо — +2.'),
+    h('div', { class: 'panel mt' },
+      h('div', { class: 'row between' },
+        h('span', { class: 'hint' }, 'прожито знаний'),
+        h('span', { style: 'color:var(--sat);font-weight:800' }, g.lived)),
+      g.stages.map((st) => {
+        const on = st.min <= g.lived
+        return h('div', { class: `garden-line ${on ? 'on' : ''}` },
+          h('span', { class: 'g-line-e' }, st.emoji),
+          h('div', {},
+            h('div', { class: 'g-line-name' }, `${st.name}${st.bonus > 0 ? ` · +${st.bonus} саттвы` : ''}`),
+            h('div', { class: 'hint' }, st.desc)))
+      })),
+    h('div', { class: 'hint center mt' }, 'Знание — единственный ресурс, который не умирает.'),
+  ))
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // Забег: карта
@@ -365,6 +425,14 @@ function beginRun(focusId) {
     app.meta.nextLife = null
   }
   markSeenMany('cards', app.run.deck)
+  // Сад Знания (соцслой, локально): прожитое знание помогает в следующей жизни —
+  // цветущий сад даёт +саттву к старту забега (Outer Wilds: прогресс = знание).
+  const gBonus = gardenState(app.meta).stage.bonus
+  if (gBonus > 0) {
+    const g = app.run.gunaStart
+    app.run.gunaStart = { ...g, s: g.s + gBonus }
+    toast(`Сад Знания цветёт: +${gBonus} саттва к началу этой жизни`, 'hl')
+  }
   // открываем врагов заранее в этом забеге нельзя — откроются при встрече
   // Сострадательный дизайн (§исследование): после трёх смертей подряд Путь мягче
   if ((app.meta.deathsInRow || 0) >= 3) {
@@ -383,6 +451,10 @@ function showMap() {
   if (!run) return showTitle()
   const chakra = CHAKRAS[Math.min(run.floor, CHAKRAS.length - 1)]
 
+  // Призраки прошлых жизней (§10.3): последняя смерть на этаже оставляет урок
+  const deathsByFloor = {}
+  for (const d of (app.meta.deathLog || [])) deathsByFloor[d.floor] = d
+
   const nodes = []
   run.floors.forEach((floor, f) => {
     if (f > run.floor) return
@@ -396,6 +468,11 @@ function showMap() {
           h('span', { class: 'glyph' }, NODE_GLYPH[node.type]),
           h('span', { class: 'node-label' }, NODE_LABEL[node.type]))
       })))
+    const ghost = deathsByFloor[f]
+    if (ghost) {
+      nodes.push(h('div', { class: 'ghost', onclick: () => showGhostLesson(ghost) },
+        `👻 здесь ты пал: ${ghost.killedBy} · нажми — урок`))
+    }
     if (f < run.floors.length - 1 && f < run.floor) nodes.push(h('div', { class: 'connector' }))
   })
 
@@ -425,6 +502,17 @@ function sageTrace(run) {
   const q = QUOTES[id]
   if (!q) return null
   return h('div', { class: 'hint center mt', style: 'font-style:italic;color:var(--muted)' }, `«${q.quote}»`)
+}
+
+// Призрак прошлой жизни (§10.3): клик открывает цитату врага, от которого пал —
+// знание пережило смерть, теперь его можно прожить (освободить, не убивая).
+function showGhostLesson(d) {
+  const qid = d.killedById && ENEMIES[d.killedById] ? ENEMIES[d.killedById].quoteId : null
+  if (qid && QUOTES[qid]) {
+    showQuote(qid)
+    return
+  }
+  toast('Смерть — не потеря: непрожитое знание ждёт в Грантхе.')
 }
 
 // Потоки-«школы ума» (§8.5) на карте забега: видно, какие синергии уже собраны.
@@ -621,6 +709,8 @@ function onCombatEnd(combat) {
     recordRunEnd(app.meta, 'death')
     app.meta.stats.kills += combat.kills
     app.meta.stats.pacified += combat.pacified
+    // Призрак прошлой жизни (§10.3): место падения оставляет урок на карте пути
+    recordDeath(app.meta, { floor: run.floor, killedBy: result.killedBy, killedById: result.killedById })
     // Сострадательный дизайн (§исследование, God Mode Hades): усталый ум не ломается
     app.meta.deathsInRow = (app.meta.deathsInRow || 0) + 1
     saveMeta(app.meta)
@@ -1203,8 +1293,13 @@ function showShop() {
   const run = app.run
   const shop = app.shop || rollShop(run)
   app.shop = shop
+  const disc = shopDiscount(run)
 
   const pranaEl = h('div', { class: 'hint center', style: 'font-size:14px;color:var(--gold-soft);font-weight:800' }, `Прана: ${run.prana}`)
+  const discEl = disc > 0
+    ? h('div', { class: 'hint center mt', style: 'color:var(--gold-soft);font-size:11px' },
+        `Мудрость вайшьи: скидка −${disc} ⚡ на всё`)
+    : null
 
   const row = (title, sub, price, onclick, disabled) =>
     h('div', { class: `shop-item ${disabled ? 'disabled' : ''}`, onclick: disabled ? null : onclick },
@@ -1218,13 +1313,14 @@ function showShop() {
     h('div', { class: 'node-title display' }, 'Лавка Садхака'),
     h('p', { class: 'node-text' }, 'Между чакрами — привал. Здесь Прана возвращается как жертва: карты в ум, очищение, память.'),
     pranaEl,
+    discEl,
     runSynergiesLine(run),
 
     h('div', { class: 'hint mt' }, 'Карты в колоду (ум)'),
     h('div', { class: 'choices' },
       shop.cards.map((id) => {
         const c = CARDS[id]
-        return row(`${c.name} · ${c.sanskrit || ''}`, c.desc, `${SHOP_COSTS.card} ⚡`, () => doBuy(() => buyShopCard(run, id), id))
+        return row(`${c.name} · ${c.sanskrit || ''}`, c.desc, `${shopPrice(run, 'card')} ⚡`, () => doBuy(() => buyShopCard(run, id), id))
       })),
 
     h('div', { class: 'hint mt' }, 'Отпустить карту-овку'),
@@ -1232,14 +1328,14 @@ function showShop() {
       shop.removable.length === 0
         ? h('div', { class: 'hint center' }, 'В уме нет оков.')
         : shop.removable.map((id) =>
-            row(`Сжечь: ${CARDS[id].name}`, '', `${SHOP_COSTS.remove} ⚡`, () => doBuy(() => buyShopRemove(run, id), id)))),
+            row(`Сжечь: ${CARDS[id].name}`, '', `${shopPrice(run, 'remove')} ⚡`, () => doBuy(() => buyShopRemove(run, id), id)))),
 
     shop.relic
       ? h('div', { class: 'hint mt' }, 'Память (реликвия)')
       : null,
     shop.relic
       ? h('div', { class: 'choices' },
-          row(`${RELICS[shop.relic].name}`, RELICS[shop.relic].desc, `${SHOP_COSTS.relic} ⚡`, () => doBuy(() => buyShopRelic(run, shop.relic), shop.relic)))
+          row(`${RELICS[shop.relic].name}`, RELICS[shop.relic].desc, `${shopPrice(run, 'relic')} ⚡`, () => doBuy(() => buyShopRelic(run, shop.relic), shop.relic)))
       : null,
 
     h('div', { class: 'btn-row mt' },

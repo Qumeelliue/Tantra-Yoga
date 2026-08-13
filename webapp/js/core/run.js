@@ -1,5 +1,5 @@
 // Управление забегом: карта пути, узлы, награды, смерть/перерождение.
-import { CARDS, ENEMIES, RELICS, EVENTS, starterDeck, starterDeckForFocus, MENTALITIES, cardRewardPool, TRIALS, availableTrials } from './data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, starterDeck, starterDeckForFocus, MENTALITIES, MENTALITY_ORDER, mentalityLevel, SADVIPRA_MIN_LEVEL, cardRewardPool, TRIALS, availableTrials } from './data.js'
 import { createCombat, mulberry32 } from './engine.js'
 
 export const CHAKRAS = [
@@ -32,10 +32,25 @@ export function createRun({ meta, rng, options = {} }) {
   // личный выбор садхаки, не «рождение в варне». Все четыре растут параллельно.
   const focus = options.focus || null
   const f = focus && MENTALITIES[focus] ? MENTALITIES[focus] : null
+  // Уровни ментальностей (§12.1): слабая ментальность = недостающий навык.
+  // Уровни приходят из меты (растут между забегами) и дают навыки в бою и лавке.
+  const levels = {}
+  let sadvipra = true
+  for (const id of MENTALITY_ORDER) {
+    const lv = mentalityLevel((meta && meta.varnas && meta.varnas[id]) || 0)
+    levels[id] = lv
+    if (lv < SADVIPRA_MIN_LEVEL) sadvipra = false
+  }
+  // Путь садвипры (§12.3): все четыре ментальности зрелы — каждый навык на максимуме
+  // (мудрость зрелого ума, а не «усиление одной»).
+  if (sadvipra) {
+    for (const id of MENTALITY_ORDER) levels[id] = Math.min(3, (levels[id] || 0) + 1)
+  }
+  const shudraHp = (levels.shudra || 0) * 4 // выносливость присутствия (Human Society 2)
   const run = {
     deck: starterDeckForFocus(focus),
-    hp: (options.hp || 60) + (f ? f.focusHp || 0 : 0),
-    maxHp: (options.hp || 60) + (f ? f.focusHp || 0 : 0),
+    hp: (options.hp || 60) + (f ? f.focusHp || 0 : 0) + shudraHp,
+    maxHp: (options.hp || 60) + (f ? f.focusHp || 0 : 0) + shudraHp,
     prana: f ? f.focusPrana || 0 : 0,
     relics: [],
     floors: [],
@@ -50,6 +65,7 @@ export function createRun({ meta, rng, options = {} }) {
     focus,
     gunaStart: { s: 3, r: 3, t: 3 },
     unlocked: (meta && meta.unlockedCards) ? [...meta.unlockedCards] : [],
+    mentalities: levels,
     rand,
   }
   buildMap(run)
@@ -140,6 +156,7 @@ export function startCombatAtNode(run) {
     opts: {
       playerHp: run.hp,
       gunaStart: run.gunaStart || { s: 3, r: 3, t: 3 },
+      mentalities: run.mentalities,
     },
   })
 }
@@ -173,6 +190,9 @@ export function finishCombat(run, combat) {
 
   run.hp = combat.player.hp
   if (run.hp <= 0) return handleDeath(run, combat)
+
+  // Мирный путь копится в забеге (§13.1): «награда за мирный путь больше».
+  run.pacified = (run.pacified || 0) + combat.pacified
 
   // Испытание Ямы/Ниямы (§16.2, идея №16): победа по правилу открывает карту навсегда.
   let trialPassed = false
@@ -247,6 +267,7 @@ function handleDeath(run, combat) {
   return {
     dead: true,
     killedBy: enemy ? enemy.name : 'неведение',
+    killedById: enemy ? enemy.def.id : null,
     lastIntent: enemy ? enemy.intentName : null,
     hpAtDeath: 0,
   }
@@ -339,6 +360,17 @@ export function resolveEventChoice(run, eventId, choiceIndex) {
 
 export const SHOP_COSTS = { card: 8, remove: 6, relic: 20 }
 
+// Скидка вайшьи (§12.1, Human Society Part 2: vaeshya = деньги как мера всего):
+// мудрое распоряжение Праной — цены в лавке падают на уровень ментальности (до −3).
+export function shopDiscount(run) {
+  const lv = (run && run.mentalities && run.mentalities.vaeshya) || 0
+  return Math.min(3, lv)
+}
+
+export function shopPrice(run, kind) {
+  return Math.max(1, (SHOP_COSTS[kind] || 0) - shopDiscount(run))
+}
+
 export function rollShop(run) {
   const pool = cardRewardPool(run.unlocked)
   const cards = []
@@ -359,25 +391,28 @@ export function rollShop(run) {
 }
 
 export function buyShopCard(run, cardId) {
-  if (run.prana < SHOP_COSTS.card) return { ok: false, reason: 'Не хватает Праны' }
-  run.prana -= SHOP_COSTS.card
+  const price = shopPrice(run, 'card')
+  if (run.prana < price) return { ok: false, reason: 'Не хватает Праны' }
+  run.prana -= price
   run.deck.push(cardId)
   return { ok: true, card: cardId }
 }
 
 export function buyShopRemove(run, cardId) {
-  if (run.prana < SHOP_COSTS.remove) return { ok: false, reason: 'Не хватает Праны' }
+  const price = shopPrice(run, 'remove')
+  if (run.prana < price) return { ok: false, reason: 'Не хватает Праны' }
   const i = run.deck.indexOf(cardId)
   if (i < 0) return { ok: false, reason: 'Карта не найдена' }
-  run.prana -= SHOP_COSTS.remove
+  run.prana -= price
   run.deck.splice(i, 1)
   return { ok: true, card: cardId }
 }
 
 export function buyShopRelic(run, relicId) {
-  if (run.prana < SHOP_COSTS.relic) return { ok: false, reason: 'Не хватает Праны' }
+  const price = shopPrice(run, 'relic')
+  if (run.prana < price) return { ok: false, reason: 'Не хватает Праны' }
   if (run.relics.includes(relicId)) return { ok: false, reason: 'Уже есть' }
-  run.prana -= SHOP_COSTS.relic
+  run.prana -= price
   run.relics.push(relicId)
   return { ok: true, relic: relicId }
 }

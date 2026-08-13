@@ -27,6 +27,9 @@ export const EMPTY_META = () => ({
   pacifiedBosses: [],
   nextLife: null,
   deathsInRow: 0,
+  // Призраки прошлых жизней (§10.3): следы смертей — урок на карте пути.
+  // Знание переживает смерть; призрак указывает, что осталось непрожитым.
+  deathLog: [],
   // Дерево челленджей Ямы/Ниямы (§16.2): карты, открытые испытаниями (мета-прогресс)
   unlockedCards: [],
   settings: { haptics: true },
@@ -200,6 +203,21 @@ export function recordRunEnd(meta, result) {
   if (result === 'death') meta.stats.deaths += 1
   if (result === 'victory') meta.stats.victories += 1
   if (result === 'awakening') meta.stats.awakened += 1
+}
+
+// Записать смерть как «призрак» для карты пути (§10.3): где пал и от чего.
+// Знание переживает смерть — призрак напоминает о непрожитом термине.
+export function recordDeath(meta, info) {
+  if (!Array.isArray(meta.deathLog)) meta.deathLog = []
+  const entry = {
+    floor: info.floor,
+    killedBy: info.killedBy || 'неведение',
+    killedById: info.killedById || null,
+    at: Date.now(),
+  }
+  meta.deathLog.push(entry)
+  if (meta.deathLog.length > 5) meta.deathLog = meta.deathLog.slice(-5)
+  return entry
 }
 
 export function quoteById(id) {
@@ -393,4 +411,28 @@ export function trialsProgress(meta) {
     yamaTotal: Object.values(TRIALS).filter((t) => t.branch === 'yama').length,
     niyamaTotal: Object.values(TRIALS).filter((t) => t.branch === 'niyama').length,
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Сад Знания (соцслой, локально): прожитые термины пускают корни.
+// ─────────────────────────────────────────────────────────────
+
+// Стадии сада по числу прожитых знаний (meta.lived). Знание, прожитое в бою,
+// «пускает корень»; цветущий сад — знание, которое помогает в следующих жизнях
+// (мета-бонус к старту забега: +саттва). Outer Wilds: прогресс = знание.
+export const GARDEN_STAGES = [
+  { min: 0, name: 'Зерно', emoji: '🌰', bonus: 0, desc: 'Знание ещё спит в земле — проживите первые термины.' },
+  { min: 5, name: 'Росток', emoji: '🌱', bonus: 0, desc: 'Первые прожитые слова пускают корни.' },
+  { min: 12, name: 'Цветение', emoji: '🌸', bonus: 1, desc: 'Сад цветёт: +1 саттва к началу каждого забега.' },
+  { min: 24, name: 'Плод', emoji: '🍎', bonus: 1, desc: 'Плод знания кормит следующие жизни.' },
+  { min: 36, name: 'Древо', emoji: '🌳', bonus: 2, desc: 'Древо знания: +2 саттвы к началу каждого забега.' },
+]
+
+export function gardenState(meta) {
+  const lived = Object.keys((meta && meta.lived) || {}).length
+  let stage = GARDEN_STAGES[0]
+  for (const s of GARDEN_STAGES) {
+    if (lived >= s.min) stage = s
+  }
+  return { lived, stage, stages: GARDEN_STAGES }
 }

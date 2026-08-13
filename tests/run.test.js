@@ -370,3 +370,73 @@ describe('испытание Ямы/Ниямы (узел trial, дерево ч�
     expect(combat.vrittiPlayed).toBe(false)
   })
 })
+
+describe('ментальности в забеге (§12.1): слабая ментальность = недостающий навык', () => {
+  function metaWith(varnas) {
+    const meta = EMPTY_META()
+    meta.varnas = { shudra: 0, kshatriya: 0, vipra: 0, vaeshya: 0, ...varnas }
+    return meta
+  }
+
+  it('уровни ментальностей попадают в забег из меты', () => {
+    const run = createRun({ meta: metaWith({ vipra: 10 }), rng: mulberry32(1) })
+    expect(run.mentalities.vipra).toBe(2)
+    expect(run.mentalities.shudra).toBe(0)
+  })
+
+  it('шудра ур.2 даёт +8 макс ХП (выносливость — не только фокус)', () => {
+    const run = createRun({ meta: metaWith({ shudra: 10 }), rng: mulberry32(1) })
+    expect(run.mentalities.shudra).toBe(2)
+    expect(run.maxHp).toBe(68) // 60 + 8
+  })
+
+  it('шудра ур.0 не даёт бонуса ХП', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(1) })
+    expect(run.maxHp).toBe(60)
+  })
+
+  it('садвипра: все четыре ментальности зрелы — навыки на максимуме', () => {
+    const run = createRun({ meta: metaWith({ shudra: 10, kshatriya: 10, vipra: 10, vaeshya: 10 }), rng: mulberry32(1) })
+    expect(run.mentalities).toEqual({ shudra: 3, kshatriya: 3, vipra: 3, vaeshya: 3 })
+  })
+
+  it('садвипра-бонус ХП шудры применяется после усиления уровня', () => {
+    const run = createRun({ meta: metaWith({ shudra: 10, kshatriya: 10, vipra: 10, vaeshya: 10 }), rng: mulberry32(1) })
+    expect(run.maxHp).toBe(72) // 60 + 3*4
+  })
+
+  it('вайшья ур.0: лавка в полную цену', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.prana = 20
+    const shop = rollShop(run)
+    const res = buyShopCard(run, shop.cards[0])
+    expect(res.ok).toBe(true)
+    expect(run.prana).toBe(12) // 8
+  })
+
+  it('вайшья ур.2: скидка −2 ⚡ в лавке', () => {
+    const run = createRun({ meta: metaWith({ vaeshya: 10 }), rng: mulberry32(5) })
+    run.prana = 20
+    const shop = rollShop(run)
+    const res = buyShopCard(run, shop.cards[0])
+    expect(res.ok).toBe(true)
+    expect(run.prana).toBe(14) // 8 − 2 = 6
+  })
+
+  it('вайшья ур.2: скидка действует и на удаление оковки', () => {
+    const run = createRun({ meta: metaWith({ vaeshya: 10 }), rng: mulberry32(5) })
+    run.prana = 20
+    const shop = rollShop(run)
+    const removable = shop.removable[0]
+    if (!removable) return
+    const res = buyShopRemove(run, removable)
+    expect(res.ok).toBe(true)
+    expect(run.prana).toBe(16) // 6 − 2 = 4
+  })
+
+  it('уровни ментальностей передаются в бой (движок видит их)', () => {
+    const run = createRun({ meta: metaWith({ vipra: 10 }), rng: mulberry32(1) })
+    const combat = startCombatAtNode(run)
+    expect(combat.mentalities.vipra).toBe(2)
+  })
+})

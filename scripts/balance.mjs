@@ -48,7 +48,18 @@ function score(card, combat, p, e, pacifist = false) {
   if (!card) return 5000
   const isCurse = card.type === 'curse'
   if (isCurse) return 5000 // мусор не играем
+  // Пасифист: не кормит вртти (гнев, жадность, страх…) — оковки питают авидью
+  // и ломают равновесие гун (§9.1a/§8.2). Мирный путь = не играть их в принципе.
+  if (pacifist && card.type === 'vritti') return 5000
   if (card.id === 'bhaya' || card.id === 'alasya') return 5000 // чистый урон от себя
+  // Микровиты (§9.1b): девайоны не бьют — они растворяют окову светом.
+  // Сила не тратит на них энергию (5000); пасифист шлёт микровит, только когда
+  // окову уже ослабили до ≤50% (условие успокоения) — как ахимсу.
+  if (card.id === 'vidyadhara' || card.id === 'siddha') {
+    if (!pacifist) return 5000
+    if (e.hp <= e.maxHp * 0.55) return 2
+    return 4000
+  }
   const idx = PRIORITY.indexOf(card.id)
   if (idx >= 0) s = idx * 5
   if (card.id === 'krodha') {
@@ -65,6 +76,11 @@ function score(card, combat, p, e, pacifist = false) {
   if (threat >= 5 && p.block < threat && p.hp < p.maxHp * 0.85) {
     if (card.type === 'defend' || card.id === 'santosa' || card.id === 'first_effort' || card.id === 'shaoca' || card.id === 'pranayama') s = Math.min(s, 1)
   }
+  // Пасифист: Ишвара-пранидхана — баланс гун: успокоение босса требует прамы
+  // (§8.2). Играем при перекосе, чтобы вернуть равновесие (впустую не тратим).
+  if (pacifist && card.id === 'ishvara_pranidhana') {
+    return p.imbalance ? 3 : 9000
+  }
   // пасифист: не добиваем, копим ахимсу
   if (pacifist) {
     if (card.id === 'ahimsa' && e.hp <= e.maxHp * 0.55) return 0
@@ -79,11 +95,17 @@ function score(card, combat, p, e, pacifist = false) {
 
 function pickReward(run, choices, pacifist = false) {
   if (pacifist) {
-    for (const id of ['ahimsa', 'om', 'seva', 'santosa']) if (choices.includes(id)) return id
+    // Микровиты (§9.1b): девайоны vidyadhara/siddha — второй путь успокоения.
+    // Их берём после ахимсы и защиты: свет растворяет окову, но не кормит.
+    // Ишвара-пранидхана — баланс гун: успокоение босса требует прамы (§8.2).
+    for (const id of ['ahimsa', 'om', 'seva', 'santosa', 'ishvara_pranidhana', 'vidyadhara', 'siddha']) if (choices.includes(id)) return id
   }
   for (const id of choices) if (id === 'om' || id === 'seva' || id === 'tapah') return id
   for (const id of GOOD_REWARD) if (choices.includes(id)) return id
-  return choices[0]
+  // Сила не берёт микровит-карты (они не бьют, §9.1b) — предпочитаем любой другой
+  // вариант. Пасифист их уже разобрал в своей ветке выше.
+  const rest = choices.filter((id) => id !== 'vidyadhara' && id !== 'siddha')
+  return rest[0] || choices[0]
 }
 
 function runOnce(seed, pacifist = false) {

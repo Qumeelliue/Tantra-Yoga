@@ -93,6 +93,32 @@ export function kiirtanaWave() {
   }
 }
 
+// Микровиты (§9.1b): искры «серебряной линии» между материей и идеей.
+// kind 'pos' — положительные микровиты (свет вверх, растворяют окову);
+// kind 'neg' — отрицательные (тьма вниз, питают неведение). Приходит с точки
+// разыгранной карты (from) и летит к врагу/вниз — видно, чем кормишь ум.
+export function microvitaFx(x, y, kind = 'pos', count = 10) {
+  const body = document.body
+  const color = kind === 'pos' ? '#ffe9b3' : '#8a6fb6'
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div')
+    el.className = `burst mv mv-${kind}`
+    const ang = Math.random() * Math.PI * 2
+    const dist = 16 + Math.random() * 44
+    let dx = Math.cos(ang) * dist
+    let dy = Math.sin(ang) * dist
+    if (kind === 'pos') dy -= 30 + Math.random() * 22 // подъём к врагу
+    else dy += 30 + Math.random() * 22 // падение вниз
+    el.style.left = x + 'px'
+    el.style.top = y + 'px'
+    el.style.background = color
+    el.style.setProperty('--dx', dx + 'px')
+    el.style.setProperty('--dy', dy + 'px')
+    body.append(el)
+    setTimeout(() => el.remove(), 850)
+  }
+}
+
 // Всплывающее число
 export function floatNum(x, y, text, cls = 'dmg') {
   const el = document.createElement('div')
@@ -246,4 +272,8 @@ export const sfx = {
     tone(329.6, 0.3, 'triangle', 0.03, notes.length * 0.09)
   },
   buy() { tone(440, 0.16, 'sine', 0.045); tone(660, 0.2, 'sine', 0.04, 0.08); tone(880, 0.24, 'sine', 0.035, 0.16) },
+  // Микровиты (§9.1b): положительный — светлый звон-восход (тонкий звук — носитель
+  // положительных микровитов), отрицательный — тяжёлый низкий гул (тьма вниз).
+  microvitaPos() { tone(880, 0.18, 'sine', 0.035); tone(1318, 0.26, 'sine', 0.025, 0.07) },
+  microvitaNeg() { tone(165, 0.2, 'triangle', 0.04); tone(110, 0.28, 'triangle', 0.03, 0.05) },
 }

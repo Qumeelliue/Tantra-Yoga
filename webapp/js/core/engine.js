@@ -23,6 +23,12 @@ export const DEFAULT_OPTIONS = {
   avidyaEnabled: true,
   avidyaMax: 12,
   avidyaGainPerTurn: 1,
+  // Ментальности ума (§12.1): уровни 0..3 — навыки, а не классы.
+  // Слабая ментальность = недостающий навык (скрытые интенты, нет стойкости).
+  mentalities: {},
+  // Владыки чакр «сопротивляются» спокойствию (§9.4): каждый ход босса снимает
+  // накопленный calm — успокоить владыку труднее, чем обычную окову.
+  bossCalmDecay: 2,
 }
 
 const PRAXIS_TYPES = new Set(['practice', 'mantra', 'kiirtana', 'seva'])
@@ -84,13 +90,19 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
     avidya: 0,
     avidyaMax: o.avidyaMax,
     samskaraHits: 0,
+    // Микровиты (§9.1b, Microvitum in a Nutshell): «серебряная линия» между
+    // материей и идеей. Положительные (микровит-эффекты и практики) растворяют
+    // окову (+calm) и гасят пелену; отрицательные (грязные карты) питают неведение.
+    microvitaPos: 0,
+    microvitaNeg: 0,
     log: [],
     anchors: [],
     peek: null,
     o,
     autoResolve: opts.autoResolve === true,
+    // Ментальности ума (§12.1): уровни 0..3 — навыки, а не классы.
+    mentalities: o.mentalities || {},
   }
-
   // Трекеры правил испытаний (§16.2): урон игроку, накопленный блок, scry
   state.player.damageTaken = 0
   state.player.blockGained = 0
@@ -114,10 +126,20 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
   // Стартовый блок (Шаоча-майнджуса) и память (Дхрувасмрити) — после startPlayerTurn,
   // иначе он их обнулит (блок) или сотрёт (peek)
   if (relicMods.combatStartBlock) state.player.block += relicMods.combatStartBlock
-  if (relicMods.peekStart && state.piles.draw.length > 0) {
+  // Видение випры (§12.1): зрелое знание (ур.2+) читает верх колоды в начале боя —
+  // как реликвия Дхрувасмрити, но как навык ума.
+  state.peekStart = relicMods.peekStart || lvl(state, 'vipra') >= 2
+  if (state.peekStart && state.piles.draw.length > 0) {
     state.peek = state.piles.draw.slice(-1)
   }
+  // Слабая випра (§12.1): неведение прячет намерение врага — UI показывает «?».
+  state.hideIntents = lvl(state, 'vipra') < 1
   return state
+}
+
+// Уровень ментальности ума в бою (0..3). Отсутствие — уровень 0 (слабый навык).
+function lvl(state, id) {
+  return (state.mentalities && state.mentalities[id]) || 0
 }
 
 // Первый ход врага не должен быть самым тяжёлым — даём игроку разогнаться.
@@ -240,7 +262,7 @@ export function startPlayerTurn(state) {
 
   p.energy = p.maxEnergy + (p.inSamadhi ? 1 : 0)
 
-  const tamasPenalty = p.imbalance === 't' && !state.relicMods.tamasImmune
+  const tamasPenalty = p.imbalance === 't' && !state.relicMods.tamasImmune && lvl(state, 'kshatriya') < 1
   // Дремота (drowsy): ум «спит» — рука на 1 карту меньше (тикает в конце хода, §9.1)
   let drawCount = state.o.drawPerTurn + (tamasPenalty ? -1 : 0) - (p.statuses.drowsy > 0 ? 1 : 0)
   if (drawCount < 0) drawCount = 0
@@ -287,10 +309,15 @@ export function playCard(state, handIndex, targetEnemy = 0) {
   // Авидья (§9.1a): грязные карты (оковки, мусор) питают неведение; практики
   // (кииртан, мантра, сатсанга, сева) шлют ПОЗИТИВНЫЕ микровиты, снижая натиск.
   // Кииртан — тонкий звук, лучший носитель положительных микровитов (§9.1b).
+  // Отрицательные микровиты — тёмные искры вниз (UI), положительные — светлые вверх.
   if (state.o.avidyaEnabled) {
-    if (card.type === 'curse' || card.type === 'vritti') state.avidya += 1
-    else if (PRAXIS_TYPES.has(card.type)) {
+    if (card.type === 'curse' || card.type === 'vritti') {
+      state.avidya += 1
+      state.microvitaNeg = (state.microvitaNeg || 0) + 1
+      events.push({ type: 'negative_microvita', amount: 1 })
+    } else if (PRAXIS_TYPES.has(card.type)) {
       state.avidya = Math.max(0, state.avidya - (card.type === 'kiirtana' ? 2 : 1))
+      state.microvitaPos = (state.microvitaPos || 0) + 1
     }
   }
   // «Живые цитаты» (§исследование): применённая карта = прожитый термин
@@ -373,13 +400,29 @@ export function endTurn(state) {
     const ctx = { source: 'enemy', enemyIndex: i, targetEnemy: i, events }
     applyEffects(state, e.intentEffects, ctx)
     if (e.statuses.weak > 0) e.statuses.weak -= 1
+    // Владыка «сопротивляется» спокойствию (§9.4): доведённый до предела
+    // (HP ≤ 50% — фаза, где успокоение работает), он яростно снимает calm
+    // каждым своим ходом. Успокоить босса — значит опережать давление.
+    // Поток Ахимсы (§8.5) — построенная колода ненасилия — ослабляет
+    // сопротивление: владыка уступает «уму, который живёт ахимсой».
+    if (e.def.isBoss && e.hp <= e.maxHp / 2 && state.o.bossCalmDecay > 0 && e.calm > 0) {
+      const decay = state.synergies.ahimsa
+        ? Math.max(0, state.o.bossCalmDecay - 1)
+        : state.o.bossCalmDecay
+      if (decay > 0) {
+        e.calm = Math.max(0, e.calm - decay)
+        events.push({ type: 'calm_decay', enemy: i, calm: e.calm })
+      }
+    }
     checkEnemies(state, events)
   }
   // Авидья (§9.1a): каждый ход врага натиск неведения растёт и резко накатывает
   // волнами. При переполнении «прилетает самскара» — тяжёлый симптом, который
   // надо гасить практиками, а не терпеть.
+  // Стойкость шудры (§12.1): присутствие терпит неведение — натиск растёт медленнее.
   if (state.o.avidyaEnabled) {
-    state.avidya += state.o.avidyaGainPerTurn
+    const resist = lvl(state, 'shudra') >= 3 ? 2 : lvl(state, 'shudra') >= 2 ? 1 : 0
+    state.avidya += Math.max(0, state.o.avidyaGainPerTurn - resist)
     if (state.avidya >= state.avidyaMax) {
       applySamskaraWave(state, events)
     }
@@ -398,6 +441,11 @@ export function endTurn(state) {
 function applySamskaraWave(state, events) {
   state.avidya = 0
   state.samskaraHits += 1
+  // Смелость кшатрии (§12.1): ум устоял против волны неведения — симптом не наступил
+  if (lvl(state, 'kshatriya') >= 2) {
+    events.push({ type: 'samskara', kind: 'resisted', message: 'Волна авидьи отхлынула — ум устоял (смелость).' })
+    return events
+  }
   const kind = state.samskaraHits % 4
   const msg = [
     'Самскара: в ум закралась тревога (Чинта).',
@@ -525,6 +573,27 @@ const EFFECTS = {
     // успокоение по правилу: полный счётчик + HP ≤ 50% (для босса — ещё и прама, §18)
     if (pacifyReady(state, e)) {
       pacifyEnemy(state, i, ctx.events)
+    }
+  },
+  // Микровит (§9.1b, Microvitum in a Nutshell гл. 1/3): положительный микровит —
+  // «серебряная линия» между материей и идеей. Влетая в окову, он ускоряет её
+  // растворение (+calm) и одновременно гасит пелену неведения (−натиск авидьи).
+  // Отрицательные микровиты идут от грязных карт (см. playCard).
+  microvita(state, fx, ctx) {
+    const i = ctx.targetEnemy
+    const e = state.enemies[i]
+    const amount = fx.amount || 1
+    state.microvitaPos = (state.microvitaPos || 0) + amount
+    if (e && !e.dead && !e.pacified) {
+      e.calm += amount
+      ctx.events.push({ type: 'microvita', target: i, amount })
+      if (pacifyReady(state, e)) {
+        pacifyEnemy(state, i, ctx.events)
+      }
+    }
+    // свет против неведения: положительный микровит снимает натиск авидьи
+    if (state.o.avidyaEnabled) {
+      state.avidya = Math.max(0, (state.avidya || 0) - amount)
     }
   },
   discardFromHand(state, fx, ctx) {
@@ -681,7 +750,7 @@ function triggerThreshold(state, e, events) {
 }
 
 // Успокоение готово? Полный счётчик Ахимсы + HP ≤ 50%. Босс чакры требует
-// ещё и праму (§18): мирный путь против владыки — это равновесие ума, а не случай.
+// ещё и прамы (§18): мирный путь против владыки — это равновесие ума, а не случай.
 function pacifyReady(state, e) {
   if (e.calm < e.calmMax) return false
   if (e.hp > e.maxHp / 2) return false
@@ -812,7 +881,8 @@ export function effectiveCost(state, card) {
   let cost = card.cost
   if (PRAXIS_TYPES.has(card.type)) {
     if (p.inSamadhi) return 0
-    if (p.imbalance === 'r') cost += 1
+    // Смелость кшатрии (§12.1): раджас-перекос не «плющит» — практики не дорожают
+    if (p.imbalance === 'r' && lvl(state, 'kshatriya') < 1) cost += 1
     if (p.imbalance === 's') cost -= 1
     cost += state.relicMods.practiceCostMod
     // Поток Ямы (§8.5): 4+ практик в колоде — дисциплина удешевляет практики
