@@ -1,11 +1,11 @@
 // Точка входа: маршрутизация экранов, забег, узлы, Грантха, дневник.
 import { h, mount } from './ui/dom.js'
-import { initFx, sfx, setTint } from './ui/fx.js'
+import { initFx, sfx, setTint, playLibrarySound } from './ui/fx.js'
 import { setHaptics, haptics } from './ui/haptics.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, quoteLiveHint, isQuoteLived } from './core/data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard } from './core/data.js'
 import { computeSynergies } from './core/engine.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
@@ -17,7 +17,7 @@ import {
 import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, recordDeath, resetMeta, quoteById, cloudSync,
   markVisit, progressDaily, varnaState, addVarnaPoints, isSadvipra,
-  unlockCard, trialsProgress, markLived, gardenState,
+  unlockCard, trialsProgress, markLived, gardenState, recordSound, soundState,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -115,6 +115,7 @@ function showTitle() {
   const varnaBlock = varnaCard(meta)
   const trialsBlock = trialsCard(meta)
   const gardenBlock = gardenCard(meta)
+  const audioBlock = audioCard(meta)
 
   const bootEvent = app.bootEvent
   app.bootEvent = null
@@ -145,6 +146,7 @@ function showTitle() {
     varnaBlock,
     trialsBlock,
     gardenBlock,
+    audioBlock,
 
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
@@ -379,6 +381,61 @@ function showGarden() {
             h('div', { class: 'hint' }, st.desc)))
       })),
     h('div', { class: 'hint center mt' }, 'Знание — единственный ресурс, который не умирает.'),
+  ))
+}
+
+// Аудиотека практики (§16.2, идея №33): звуки, прожитые в игре, записываются в
+// личную аудиотеку — «собрать биджа-звуки, забрать в жизнь». Слушать можно как
+// практику (WebAudio, без файлов). Как живые цитаты: звук надо прожить (сыграть
+// карту-носитель или пройти дыхательную медитацию).
+function audioCard(meta) {
+  const s = soundState(meta, AUDIO_LIBRARY)
+  return h('div', { class: 'varna-card garden-card audio-card', onclick: () => showAudioLibrary() },
+    h('div', { class: 'varna-head' },
+      h('div', {},
+        h('div', { class: 'varna-label' }, 'Аудиотека практики'),
+        h('div', { class: 'varna-name' }, `звуки · ${s.recorded.length}/${s.total}`)),
+      h('div', { class: 'varna-next' }, 'открыть →')),
+    h('div', { class: 'audio-icons' },
+      Object.values(AUDIO_LIBRARY).map((a) => {
+        const on = s.recorded.includes(a.id)
+        return h('div', { class: `audio-ic ${on ? 'on' : ''}` }, a.emoji)
+      })),
+    h('div', { class: 'varna-hint' },
+      s.recorded.length === 0
+        ? 'Сыграйте Ом, кииртану или мантру — звук запишется в вашу практику'
+        : 'Звук, прожитый в игре, остаётся с вами — слушайте как практику'))
+}
+
+// Экран аудиотеки: список собранных звуков; клик по прожитому — прослушать.
+function showAudioLibrary() {
+  const s = soundState(app.meta, AUDIO_LIBRARY)
+  const items = Object.values(AUDIO_LIBRARY).map((a) => {
+    const on = s.recorded.includes(a.id)
+    const how = a.meditate
+      ? 'Проживите дыхательную медитацию в забеге'
+      : `Сыграйте в бою: ${a.cardIds.map((id) => CARDS[id]?.name || id).join(', ')}`
+    return h('div', { class: `audio-item ${on ? 'on' : 'locked'}` },
+      h('div', { class: 'audio-item-head' },
+        h('span', { class: 'audio-item-e' }, a.emoji),
+        h('div', {},
+          h('div', { class: 'audio-item-name' }, `${a.name} · ${a.sanskrit}`),
+          h('div', { class: 'audio-item-desc' }, a.desc)),
+        on
+          ? h('button', { class: 'btn ghost small', onclick: () => { playLibrarySound(a.id); haptics.notify('selection') } }, '▶ слушать')
+          : null),
+      on
+        ? h('div', { class: 'audio-item-src' }, a.source)
+        : h('div', { class: 'audio-item-hint' }, `🔒 ${how}`))
+  })
+  show(h('div', { class: 'screen active comp-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
+    h('div', { class: 'display chakra-title' }, 'Аудиотека практики'),
+    h('div', { class: 'chakra-sub' }, 'собрать звуки · забрать в жизнь'),
+    h('p', { class: 'hint center mt' },
+      'Собранные звуки — подлинные термины Шастры, прожитые в игре. Каждый можно слушать как практику: вернитесь к Ом, когда ум шумит, к кииртане — когда уныние.'),
+    items,
+    h('div', { class: 'hint center mt' }, `собрано звуков: ${s.recorded.length}/${s.total}`),
   ))
 }
 
@@ -670,6 +727,13 @@ function onCombatEnd(combat) {
     for (const cid of combat.playedCards) {
       const qid = CARDS[cid] && CARDS[cid].quoteId
       if (qid && !app.meta.lived[qid]) app.meta.lived[qid] = true
+      // Аудиотека практики (§16.2): сыгранная звуковая карта записывает звук
+      const sid = soundForCard(cid)
+      if (recordSound(app.meta, sid)) {
+        const snd = AUDIO_LIBRARY[sid]
+        app.audioRecordedToast = snd ? `Записан звук: ${snd.emoji} ${snd.name}` : null
+        sfx.unlock()
+      }
     }
   }
   // Раскрываемость: успокоенный враг = знание о нём прожито. Убийство НЕ раскрывает —
@@ -752,6 +816,10 @@ function onCombatEnd(combat) {
   if (app.trialUnlockToast) {
     toast(app.trialUnlockToast, 'hl')
     app.trialUnlockToast = null
+  }
+  if (app.audioRecordedToast) {
+    toast(app.audioRecordedToast, 'hl')
+    app.audioRecordedToast = null
   }
 }
 
@@ -895,6 +963,11 @@ function notifySynergy(before, after) {
 function showMeditation() {
   show(meditationScreen(app, { onDone: (res) => {
     if (res && res.quality >= 3) progressDaily(app.meta, 'meditate_q3', 1)
+    // Аудиотека практики (§16.2): дыхательная медитация записывает звук пранаямы
+    if (recordSound(app.meta, 'pranayama')) {
+      sfx.unlock()
+      toast('Записан звук: 〰 Пранаяма — дыхание как практика', 'hl')
+    }
     // Шудра-ментальность (присутствие): труд над умом — медитация и сожжение оков.
     gainMentality('shudra', res && res.burned > 0 ? 1 : 0)
     saveMeta(app.meta)

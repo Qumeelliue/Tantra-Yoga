@@ -30,6 +30,10 @@ export const EMPTY_META = () => ({
   // Призраки прошлых жизней (§10.3): следы смертей — урок на карте пути.
   // Знание переживает смерть; призрак указывает, что осталось непрожитым.
   deathLog: [],
+  // Аудиотека практики (§16.2, идея №33): звуки, «прожитые» и записанные в жизнь.
+  // Звук, сыгранный в бою картой-носителем или дыхательной медитацией, остаётся
+  // в аудиотеке — его можно слушать как практику (WebAudio). Собирается между жизнями.
+  audioLibrary: {},
   // Дерево челленджей Ямы/Ниямы (§16.2): карты, открытые испытаниями (мета-прогресс)
   unlockedCards: [],
   settings: { haptics: true },
@@ -435,4 +439,27 @@ export function gardenState(meta) {
     if (lived >= s.min) stage = s
   }
   return { lived, stage, stages: GARDEN_STAGES }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Аудиотека практики (§16.2, идея №33): звуки, прожитые и собранные.
+// ─────────────────────────────────────────────────────────────
+
+// Записать звук в аудиотеку. Возвращает true, если запись новая (звук «собран»).
+// Звук проживается носителем: сыгранной картой (om → пранава, кииртан-карты →
+// кииртана) или дыхательной медитацией (pranayama). Собирается между жизнями —
+// знание (и звук) переживает смерть.
+export function recordSound(meta, soundId) {
+  if (!soundId) return false
+  meta.audioLibrary = meta.audioLibrary || {}
+  if (meta.audioLibrary[soundId]) return false
+  meta.audioLibrary[soundId] = true
+  return true
+}
+
+// Сколько звуков собрано из аудиотеки.
+export function soundState(meta, library) {
+  const rec = Object.keys((meta && meta.audioLibrary) || {})
+  const all = Object.keys(library || {})
+  return { recorded: rec.filter((id) => library && library[id]), total: all.length }
 }

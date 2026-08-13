@@ -416,6 +416,20 @@ body {
 .g-line-e { font-size: 22px; }
 .g-line-name { font-weight: 700; font-size: 13px; }
 
+/* Аудиотека практики (§16.2): собранные звуки — записанная практика */
+.audio-card { cursor: pointer; }
+.audio-icons { display: flex; gap: 6px; margin-top: 10px; justify-content: center; }
+.audio-ic { font-size: 18px; opacity: 0.3; filter: grayscale(0.9); transition: opacity 0.3s, filter 0.3s; }
+.audio-ic.on { opacity: 1; filter: none; }
+.audio-item { padding: 10px 0; border-top: 1px dashed var(--line-gold-soft); }
+.audio-item.locked { opacity: 0.6; }
+.audio-item-head { display: flex; align-items: center; gap: 10px; }
+.audio-item-e { font-size: 22px; min-width: 28px; text-align: center; }
+.audio-item-name { font-weight: 700; font-size: 13.5px; }
+.audio-item-desc { font-size: 11.5px; color: var(--muted); margin-top: 2px; line-height: 1.4; }
+.audio-item-src { font-size: 10.5px; color: var(--gold-soft); margin-top: 4px; font-style: italic; }
+.audio-item-hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
 /* Призраки прошлых жизней (§10.3): след смерти — урок на карте пути */
 .ghost {
   display: inline-flex;

@@ -177,6 +177,75 @@ export function isQuoteLived(meta, quoteId) {
 // Пул наград: все карты кроме мусора/овковок и стартовых. Карты, открываемые
 // испытаниями (Яма/Нияма), доступны только после прохождения испытания (мета-прогресс).
 // Стартовые карты в награды не выпадают, кроме открытых испытанием (напр. Ахимса).
+// Аудиотека практики (§16.2, идея №33): «собрать биджа-звуки, забрать в жизнь».
+// Звук, прожитый в игре (сыграна карта-носитель или пройдена медитация), записывается
+// в личную аудиотеку — и его можно слушать как практику (WebAudio, без файлов).
+// Источники сверены с концепт-слоем OKF (omkara, acoustic-roots, mantra).
+export const AUDIO_LIBRARY = {
+  omkara: {
+    id: 'omkara',
+    name: 'Пранава',
+    sanskrit: 'ॐ',
+    emoji: 'ॐ',
+    desc: 'Космический звук-семя (Шабда-Брахма): a-u-ma — творение, сохранение, растворение. Его слышат внутри, а не произносят.',
+    source: 'Ānanda Vacanāmrtam, ч. 34, «Praṇava»; OKF oṃkāra',
+    cardIds: ['om'],
+  },
+  kiirtana: {
+    id: 'kiirtana',
+    name: 'Кииртана',
+    sanskrit: 'कीर्तन',
+    emoji: '◉',
+    desc: 'Пение Имени — сиддха-мантра. Пять минут искреннего кииртана меняют состояние ума.',
+    source: '«Saḿgiita: Song, Dance and Instrumental Music», дискурс о кииртане',
+    cardIds: ['nama_kevalam', 'bhajan', 'sangacchadhvam', 'smarana', 'bavanam_kevalam'],
+  },
+  bija: {
+    id: 'bija',
+    name: 'Биджа-мантра',
+    sanskrit: 'बीज',
+    emoji: '✦',
+    desc: 'Акустический корень — звук-семя, которое поддерживает каждое действие и управляет пропенситивностью ума.',
+    source: 'Ānanda Vacanāmrtam, ч. 14, «Acoustic Roots»; OKF acoustic-roots',
+    cardIds: ['bija'],
+  },
+  japa: {
+    id: 'japa',
+    name: 'Джапа',
+    sanskrit: 'जप',
+    emoji: '✴',
+    desc: 'Медитативное повторение мантры: «манана» — думать, «трана» — освобождать.',
+    source: '«Subhāṣita Saṃgraha», ч. 24, «Incantation and Human Progress»; OKF mantra',
+    cardIds: ['japa'],
+  },
+  mantra: {
+    id: 'mantra',
+    name: 'Мантра',
+    sanskrit: 'मन्त्र',
+    emoji: '🕉',
+    desc: '«Mananāt tārayet yastu sah mantrah» — то, что повторением ума ведёт к освобождению. Проснувшаяся мантра несёт микровиты.',
+    source: '«Subhāṣita Saṃgraha», ч. 10, «Mantra Caetanya»; OKF mantra',
+    cardIds: ['guru_mantra', 'madhuvidya', 'samyama', 'vidyadhara', 'siddha'],
+  },
+  pranayama: {
+    id: 'pranayama',
+    name: 'Пранаяма',
+    sanskrit: 'प्राणायाम',
+    emoji: '〰',
+    desc: 'Дыхание — мост между телом и умом. Контроль дыхания с идеацией Высшего помогает концентрации.',
+    source: '«Yoga Psychology», дискурс «Пранаяма»',
+    meditate: true,
+  },
+}
+
+// Какой звук аудиотеки записывает карта (или null).
+export function soundForCard(cardId) {
+  for (const s of Object.values(AUDIO_LIBRARY)) {
+    if (s.cardIds && s.cardIds.includes(cardId)) return s.id
+  }
+  return null
+}
+
 export function cardRewardPool(unlocked = []) {
   const open = new Set(unlocked)
   return Object.values(CARDS).filter((c) => {

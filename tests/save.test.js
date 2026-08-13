@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived, gardenState, GARDEN_STAGES, recordDeath } from '@webapp/js/core/save.js'
-import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel } from '@webapp/js/core/data.js'
+import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived, gardenState, GARDEN_STAGES, recordDeath, recordSound, soundState } from '@webapp/js/core/save.js'
+import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel, AUDIO_LIBRARY, soundForCard } from '@webapp/js/core/data.js'
 
 // Фейковый Telegram CloudStorage (callback-API) с проверкой чанков.
 function installFakeCloud() {
@@ -291,3 +291,39 @@ describe('призраки прошлых жизней (§10.3): смерть о
     expect(EMPTY_META().deathLog).toEqual([])
   })
 })
+
+describe('Аудиотека практики (§16.2, идея №33): звуки, прожитые и собранные', () => {
+  it('recordSound записывает новый звук и возвращает true', () => {
+    const meta = EMPTY_META()
+    expect(recordSound(meta, 'omkara')).toBe(true)
+    expect(meta.audioLibrary.omkara).toBe(true)
+  })
+
+  it('повторная запись того же звука — false, коллекция не дублируется', () => {
+    const meta = EMPTY_META()
+    recordSound(meta, 'kiirtana')
+    expect(recordSound(meta, 'kiirtana')).toBe(false)
+    expect(Object.keys(meta.audioLibrary).length).toBe(1)
+  })
+
+  it('soundForCard находит носителя: om → omkara, кииртан-карта → kiirtana', () => {
+    expect(soundForCard('om')).toBe('omkara')
+    expect(soundForCard('nama_kevalam')).toBe('kiirtana')
+    expect(soundForCard('bija')).toBe('bija')
+    expect(soundForCard('guru_mantra')).toBe('mantra')
+  })
+
+  it('soundForCard для карты без звука (напр. ахимса) — null', () => {
+    expect(soundForCard('ahimsa')).toBeNull()
+  })
+
+  it('soundState считает собранные и всего звуков', () => {
+    const meta = EMPTY_META()
+    recordSound(meta, 'omkara')
+    recordSound(meta, 'japa')
+    const st = soundState(meta, AUDIO_LIBRARY)
+    expect(st.total).toBe(Object.keys(AUDIO_LIBRARY).length)
+    expect(st.recorded.sort()).toEqual(['japa', 'omkara'])
+  })
+})
+
