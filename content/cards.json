@@ -664,5 +664,36 @@
     "rarity": "uncommon",
     "quoteId": "pranayama",
     "tags": ["practice"]
+  },
+  "vidyadhara": {
+    "id": "vidyadhara",
+    "name": "Видъядхара",
+    "sanskrit": "विद्याधर",
+    "type": "mantra",
+    "cost": 1,
+    "desc": "Девайон знания. Положительный микровит летит к окове: +1 успокоение, −1 пелена авидьи.",
+    "effects": [
+      { "kind": "microvita", "amount": 1 }
+    ],
+    "guna": { "s": 1, "r": 0, "t": 0 },
+    "rarity": "common",
+    "quoteId": "vidyadhara",
+    "tags": ["mantra"]
+  },
+  "siddha": {
+    "id": "siddha",
+    "name": "Сиддха",
+    "sanskrit": "सिद्ध",
+    "type": "mantra",
+    "cost": 2,
+    "desc": "Лучший из девайонов: +2 успокоения окове, −2 пелены авидьи. Карта сгорает.",
+    "effects": [
+      { "kind": "microvita", "amount": 2 }
+    ],
+    "guna": { "s": 2, "r": 0, "t": 0 },
+    "rarity": "rare",
+    "quoteId": "siddha",
+    "exhaust": true,
+    "tags": ["mantra"]
   }
 }
