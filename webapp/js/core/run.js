@@ -160,6 +160,7 @@ export function startCombatAtNode(run) {
     relics: run.relics,
     cards: CARDS,
     enemyDefs: ENEMIES,
+    relicDefs: RELICS,
     rng: run.rand,
     opts: {
       playerHp: run.hp,

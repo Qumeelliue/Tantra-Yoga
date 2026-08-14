@@ -13,10 +13,12 @@ import {
   setSamadhiFocus,
   samadhiLandscape,
   avidyaFill,
+  aggregateRelics,
   mulberry32,
 } from '@webapp/js/core/engine.js'
 import cards from '@content/cards.json'
 import enemies from '@content/enemies.json'
+import relics from '@content/relics.json'
 
 function makeDeck(ids, n = {}) {
   const deck = []
@@ -38,6 +40,7 @@ function combatWith(deckIds, enemyId = 'krodha', opts = {}) {
     relics: opts.relics || [],
     cards,
     enemyDefs: enemies,
+    relicDefs: relics,
     rng: opts.rng || seeded(),
     opts: { autoResolve: true, ...(opts.engineOpts || {}) },
   })
@@ -625,6 +628,7 @@ describe('новые реликвии «память» (§исследовани
       relics: ['dhruvasmriti'],
       cards,
       enemyDefs: enemies,
+      relicDefs: relics,
       rng: seeded(),
     })
     expect(s.peek.length).toBe(1)
@@ -638,6 +642,7 @@ describe('новые реликвии «память» (§исследовани
       relics: ['jatismara'],
       cards,
       enemyDefs: enemies,
+      relicDefs: relics,
       rng: seeded(),
     })
     expect(s.player.strength).toBe(1)
@@ -650,6 +655,7 @@ describe('новые реликвии «память» (§исследовани
       relics: ['shaoca_mainjusa'],
       cards,
       enemyDefs: enemies,
+      relicDefs: relics,
       rng: seeded(),
     })
     expect(s.player.block).toBe(3)
@@ -662,9 +668,34 @@ describe('новые реликвии «память» (§исследовани
       relics: ['kaopiina'],
       cards,
       enemyDefs: enemies,
+      relicDefs: relics,
       rng: seeded(),
     })
     expect(s.player.guna.s).toBe(5)
+  })
+
+  it('каждая реликвия контента имеет декларативный эффект с известным kind', () => {
+    const known = new Set([
+      'mod_pacify', 'mod_practice_cost', 'mod_pacify_sattva', 'mod_tamas_imbalance',
+      'mod_kiirtana_draw', 'mod_guna_start', 'mod_enemy_start_strength',
+      'mod_combat_start_heal', 'mod_peek_start', 'mod_player_start_strength',
+      'mod_combat_start_block',
+    ])
+    for (const [id, r] of Object.entries(relics)) {
+      if (id.startsWith('_')) continue
+      expect(Array.isArray(r.effects) && r.effects.length > 0, `реликвия ${id} должна иметь effects`).toBe(true)
+      for (const fx of r.effects) {
+        expect(known.has(fx.kind), `реликвия ${id}: неизвестный kind ${fx.kind}`).toBe(true)
+      }
+    }
+  })
+
+  it('aggregateRelics применяет эффекты декларативно (порядок не важен)', () => {
+    const m = aggregateRelics(['shankha', 'pratik', 'prana_drop', 'tulasi'], relics)
+    expect(m.pacifySattvaBonus).toBe(1)
+    expect(m.pacifyBonus).toBe(1)
+    expect(m.combatStartHeal).toBe(3)
+    expect(m.tamasImmune).toBe(true)
   })
 })
 
@@ -699,6 +730,7 @@ describe('новые карты фазы 1', () => {
       relics: ['prana_drop'],
       cards,
       enemyDefs: enemies,
+      relicDefs: relics,
       rng: seeded(),
       opts: { playerHp: 40 },
     })
@@ -713,6 +745,7 @@ describe('новые карты фазы 1', () => {
       relics: ['shiva_lingam'],
       cards,
       enemyDefs: enemies,
+      relicDefs: relics,
       rng: seeded(),
     })
     expect(s.player.guna.s).toBe(4)

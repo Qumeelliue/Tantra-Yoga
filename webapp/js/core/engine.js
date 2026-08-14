@@ -38,13 +38,13 @@ const PRAXIS_TYPES = new Set(['practice', 'mantra', 'kiirtana', 'seva'])
 // Создание боя
 // ─────────────────────────────────────────────────────────────
 
-export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng = Math.random, opts = {} }) {
+export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, relicDefs = {}, rng = Math.random, opts = {} }) {
   const o = { ...DEFAULT_OPTIONS, ...opts }
   const rand = typeof rng === 'function' ? rng : mulberry32(rng)
   const draw = [...deck]
   shuffle(draw, rand)
 
-  const relicMods = aggregateRelics(relics)
+  const relicMods = aggregateRelics(relics, relicDefs)
   const synergies = computeSynergies(deck, cards)
 
   const state = {
@@ -192,7 +192,10 @@ function makeEnemy(def) {
   }
 }
 
-function aggregateRelics(relics) {
+// Агрегация реликвий в модификаторы боя. Декларативно: эффекты описаны в
+// content/relics.json (`effects`), движок лишь применяет их — новые реликвии
+// добавляются в контент, а не в цепочку if (техдолг из аудита, исправлено).
+export function aggregateRelics(relics, relicDefs = {}) {
   const m = {
     pacifyBonus: 0,
     practiceCostMod: 0,
@@ -207,20 +210,25 @@ function aggregateRelics(relics) {
     combatStartBlock: 0,
   }
   for (const id of relics || []) {
-    if (id === 'pratik') m.pacifyBonus += 1
-    if (id === 'tridanda') m.practiceCostMod -= 1
-    if (id === 'shankha') m.pacifySattvaBonus += 1
-    if (id === 'kambala') m.tamasImmune = true
-    if (id === 'mahamantra_mala') m.kiirtanaDraw += 1
-    if (id === 'shiva_lingam') m.gunaStartS += 1
-    if (id === 'kalachakra') m.enemyStartStrength -= 1
-    if (id === 'tulasi') m.tamasImmune = true
-    if (id === 'prana_drop') m.combatStartHeal += 3
-    if (id === 'guru_darshana') m.practiceCostMod -= 1
-    if (id === 'dhruvasmriti') m.peekStart = true
-    if (id === 'jatismara') m.playerStartStrength += 1
-    if (id === 'shaoca_mainjusa') m.combatStartBlock += 3
-    if (id === 'kaopiina') m.gunaStartS += 2
+    const def = relicDefs[id]
+    if (!def) continue
+    for (const fx of def.effects || []) {
+      const amt = fx.amount || 0
+      switch (fx.kind) {
+        case 'mod_pacify': m.pacifyBonus += amt; break
+        case 'mod_practice_cost': m.practiceCostMod += amt; break
+        case 'mod_pacify_sattva': m.pacifySattvaBonus += amt; break
+        case 'mod_tamas_imbalance': m.tamasImmune = true; break
+        case 'mod_kiirtana_draw': m.kiirtanaDraw += amt; break
+        case 'mod_guna_start': m.gunaStartS += (fx.s || 0); break
+        case 'mod_enemy_start_strength': m.enemyStartStrength += amt; break
+        case 'mod_combat_start_heal': m.combatStartHeal += amt; break
+        case 'mod_peek_start': m.peekStart = true; break
+        case 'mod_player_start_strength': m.playerStartStrength += amt; break
+        case 'mod_combat_start_block': m.combatStartBlock += amt; break
+        default: break
+      }
+    }
   }
   return m
 }
