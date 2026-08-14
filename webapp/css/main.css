@@ -1535,3 +1535,24 @@ body {
 .varna-branch-pick { font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line-gold-soft); background: rgba(0, 0, 0, 0.2); color: var(--gold-soft); line-height: 1.4; }
 .varna-branch-pick.hint-pick { color: var(--muted); border-style: dashed; }
 .varna-branch-pick.hint-pick:hover { color: var(--gold-soft); border-style: solid; }
+
+/* Статистика (§16.2, «Бэкенд — статистика», локально) */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.stats-cell { text-align: center; padding: 10px 6px; border-radius: 12px; border: 1px solid var(--line-gold-soft); background: rgba(0, 0, 0, 0.2); }
+.stats-n { font-size: 20px; font-weight: 800; color: var(--gold-soft); }
+.stats-l { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px; }
+.stats-mini { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+.stats-mini-cell { text-align: center; padding: 6px 2px; border-radius: 10px; background: rgba(0, 0, 0, 0.18); }
+.stats-mini-n { font-size: 15px; font-weight: 800; color: var(--gold-soft); }
+.stats-mini-l { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.run-row { display: flex; align-items: center; gap: 10px; padding: 9px 4px; border-top: 1px dashed var(--line-gold-soft); }
+.run-row:first-child { border-top: none; }
+.run-row-icon { font-size: 18px; min-width: 24px; text-align: center; }
+.run-row-main { flex: 1; }
+.run-row-name { font-weight: 700; font-size: 13px; }
+.run-row.death .run-row-name { color: var(--muted-2); }
+.run-row.victory .run-row-name { color: var(--gold-soft); }
+.run-row.awakening .run-row-name { color: var(--sat); }
+.run-row-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.run-row-date { font-size: 11px; color: var(--muted-2); }

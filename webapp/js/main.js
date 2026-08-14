@@ -135,6 +135,22 @@ function showTitle() {
         ? 'Успокойте владык чакр — и они зажгут свет в Городе'
         : 'Успокоенные владыки стали учителями — поговорите с ними'))
 
+  const statsBlock = h('div', { class: 'varna-card garden-card audio-card city-card', onclick: () => showStats() },
+    h('div', { class: 'varna-head' },
+      h('div', {},
+        h('div', { class: 'varna-label' }, 'Статистика'),
+        h('div', { class: 'varna-name' }, `${meta.stats.runs} забегов · ${meta.stats.victories + meta.stats.awakened} побед`)),
+      h('div', { class: 'varna-next' }, 'смотреть →')),
+    h('div', { class: 'stats-mini' },
+      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.runs), h('div', { class: 'stats-mini-l' }, 'забеги')),
+      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.awakened), h('div', { class: 'stats-mini-l' }, 'пробуждений')),
+      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.pacified), h('div', { class: 'stats-mini-l' }, 'мирных')),
+      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, (meta.stats.runs > 0 ? Math.round(((meta.stats.victories + meta.stats.awakened) / meta.stats.runs) * 100) : 0)), h('div', { class: 'stats-mini-l' }, '% побед'))),
+    h('div', { class: 'varna-hint' },
+      meta.runLog && meta.runLog.length > 0
+        ? 'История последних забегов — каждый прожит, ни один не зря'
+        : 'Сыграйте первый забег — начнётся история ума'))
+
   // Прогресс-бары (§дофамин): тонкие полоски «ещё чуть-чуть» на титуле —
   // сколько владык успокоено до Пробуждения, сколько цитат до новой, сад.
   const bosses = (meta.pacifiedBosses || []).length
@@ -181,6 +197,7 @@ function showTitle() {
     gardenBlock,
     audioBlock,
     cityBlock,
+    statsBlock,
     progressBlock,
 
     h('div', { class: 'panel city-card' },
@@ -611,6 +628,76 @@ function talkToTeacher(t) {
   )
 }
 
+// ─────────────────────────────────────────────────────────────
+// Статистика (§16.2, «Бэкенд — статистика», локально)
+// ─────────────────────────────────────────────────────────────
+
+function showStats() {
+  const { meta } = app
+  const s = meta.stats
+  const total = s.runs || 0
+  const wins = s.victories + s.awakened
+  const winPct = total > 0 ? Math.round((wins / total) * 100) : 0
+  const log = (meta.runLog || []).slice().reverse()
+
+  const RESULT = {
+    death: { icon: '✝', label: 'перерождение', cls: 'death' },
+    victory: { icon: '☀', label: 'завершён', cls: 'victory' },
+    awakening: { icon: '🕉', label: 'пробуждение', cls: 'awakening' },
+  }
+  const rows = log.length === 0
+    ? h('div', { class: 'hint center mt' }, 'Забегов ещё не было. Каждая смерть — шаг к пониманию, а не конец.')
+    : log.map((r, i) => {
+        const rk = RESULT[r.result] || RESULT.death
+        const d = new Date(r.at)
+        const date = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`
+        return h('div', { class: `run-row ${rk.cls}` },
+          h('div', { class: 'run-row-icon' }, rk.icon),
+          h('div', { class: 'run-row-main' },
+            h('div', { class: 'run-row-name' }, rk.label),
+            h('div', { class: 'run-row-sub' },
+              r.floor != null ? `этаж ${r.floor + 1}` : '—',
+              r.pacified > 0 ? ` · мирных ${r.pacified}` : '',
+              r.kills > 0 ? ` · подавлено ${r.kills}` : '')),
+          h('div', { class: 'run-row-date' }, date))
+      })
+
+  const gauges = [
+    ['забеги', total],
+    ['победы', wins],
+    ['пробуждения', s.awakened],
+    ['мирные', s.pacified],
+    ['% побед', `${winPct}%`],
+  ]
+  show(h('div', { class: 'screen active comp-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
+    h('div', { class: 'display chakra-title' }, 'Статистика'),
+    h('div', { class: 'chakra-sub' }, 'история ума — каждая жизнь прожита'),
+    h('div', { class: 'stats-grid' },
+      gauges.map(([l, v]) => h('div', { class: 'stats-cell' },
+        h('div', { class: 'stats-n' }, v),
+        h('div', { class: 'stats-l' }, l)))),
+    meta.bestRun
+      ? h('div', { class: 'panel mt' },
+          h('div', { class: 'row between' },
+            h('span', { class: 'hint' }, 'лучший забег'),
+            h('span', { style: 'color:var(--gold-soft);font-weight:800' },
+              meta.bestRun.awakened ? 'полное Пробуждение' : `${meta.bestRun.pacified} мирных освобождений`)))
+      : null,
+    h('div', { class: 'panel mt' },
+      h('div', { class: 'row between' },
+        h('span', { class: 'hint' }, 'последние забеги'),
+        h('span', { style: 'color:var(--muted)' }, `${log.length}/12`)),
+      rows),
+    h('div', { class: 'hint center mt' },
+      log.length > 0
+        ? 'Пробуждение — не везение, а накопленный мир. Каждый забег учил вас чему-то.'
+        : null),
+    h('div', { class: 'btn-row mt' },
+      h('button', { class: 'btn primary', onclick: startNewRun }, 'Новый забег ▶')),
+  ))
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // Забег: карта
@@ -964,7 +1051,7 @@ function onCombatEnd(combat) {
   }
 
   if (result.dead) {
-    recordRunEnd(app.meta, 'death')
+    recordRunEnd(app.meta, 'death', { floor: run.floor, pacified: combat.pacified, kills: combat.kills })
     app.meta.stats.kills += combat.kills
     app.meta.stats.pacified += combat.pacified
     // Призрак прошлой жизни (§10.3): место падения оставляет урок на карте пути
@@ -997,7 +1084,7 @@ function onCombatEnd(combat) {
   }
 
   if (isFinalBoss) {
-    recordRunEnd(app.meta, run.outcome === 'awakening' ? 'awakening' : 'victory')
+    recordRunEnd(app.meta, run.outcome === 'awakening' ? 'awakening' : 'victory', { floor: run.floor, pacified: combat.pacified, kills: combat.kills })
     if (run.bossPacified) app.meta.stats.awakened += 1
     app.meta.bestRun = { pacified: app.meta.stats.pacified, awakened: run.bossPacified, date: Date.now() }
     saveMeta(app.meta)

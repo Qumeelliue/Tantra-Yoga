@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived, gardenState, GARDEN_STAGES, recordDeath, recordSound, soundState, cityBlessingBonus, setVarnaBranch, varnaBranch } from '@webapp/js/core/save.js'
+import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived, gardenState, GARDEN_STAGES, recordDeath, recordSound, soundState, cityBlessingBonus, setVarnaBranch, varnaBranch, recordRunEnd } from '@webapp/js/core/save.js'
 import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS } from '@webapp/js/core/data.js'
 
 // Фейковый Telegram CloudStorage (callback-API) с проверкой чанков.
@@ -399,6 +399,38 @@ describe('Варны-деревья (§12.1): ветви мастерства м
   it('миграция добавляет пустой объект varnaBranches', () => {
     const m = migrateMeta({ quotesUnlocked: {} })
     expect(m.varnaBranches).toEqual({})
+  })
+})
+
+describe('Статистика (§16.2): история забегов', () => {
+  it('recordRunEnd пишет исход в runLog с деталями', () => {
+    const meta = EMPTY_META()
+    recordRunEnd(meta, 'death', { floor: 3, pacified: 2, kills: 1 })
+    expect(meta.stats.deaths).toBe(1)
+    expect(meta.runLog.length).toBe(1)
+    expect(meta.runLog[0].result).toBe('death')
+    expect(meta.runLog[0].floor).toBe(3)
+    expect(meta.runLog[0].pacified).toBe(2)
+  })
+
+  it('пробуждение считается и в stats, и в runLog', () => {
+    const meta = EMPTY_META()
+    recordRunEnd(meta, 'awakening', { floor: 6, pacified: 21, kills: 0 })
+    expect(meta.stats.awakened).toBe(1)
+    expect(meta.runLog[0].awakened).toBe(1)
+  })
+
+  it('история ограничена последними 12 забегами', () => {
+    const meta = EMPTY_META()
+    for (let i = 0; i < 15; i++) recordRunEnd(meta, i % 3 === 0 ? 'death' : 'victory', { floor: i })
+    expect(meta.runLog.length).toBe(12)
+    expect(meta.runLog[0].floor).toBe(3) // срезали первые 3
+  })
+
+  it('миграция: отсутствие runLog не ломает сохранение', () => {
+    const m = migrateMeta({ quotesUnlocked: {} })
+    expect(Array.isArray(m.runLog)).toBe(true)
+    expect(m.runLog).toEqual([])
   })
 })
 

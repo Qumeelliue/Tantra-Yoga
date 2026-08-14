@@ -36,6 +36,9 @@ export const EMPTY_META = () => ({
   // Призраки прошлых жизней (§10.3): следы смертей — урок на карте пути.
   // Знание переживает смерть; призрак указывает, что осталось непрожитым.
   deathLog: [],
+  // История забегов (§16.2, «Бэкенд — статистика», локально): последние 12 исходов
+  // для экрана «Статистика» (Duolingo/Balatro-паттерн «ещё один забег»).
+  runLog: [],
   // Аудиотека практики (§16.2, идея №33): звуки, «прожитые» и записанные в жизнь.
   // Звук, сыгранный в бою картой-носителем или дыхательной медитацией, остаётся
   // в аудиотеке — его можно слушать как практику (WebAudio). Собирается между жизнями.
@@ -160,6 +163,7 @@ export function migrateMeta(m) {
   delete m.varnaPoints
   if (!Array.isArray(m.unlockedCards)) m.unlockedCards = []
   if (!Array.isArray(m.citySpoken)) m.citySpoken = []
+  if (!Array.isArray(m.runLog)) m.runLog = []
   if (!m.varnaBranches || typeof m.varnaBranches !== 'object') m.varnaBranches = {}
   return m
 }
@@ -210,11 +214,23 @@ export function addAnchor(meta, anchor) {
   return false
 }
 
-export function recordRunEnd(meta, result) {
+export function recordRunEnd(meta, result, info = {}) {
   // runs считает startNewRun — здесь только исходы (иначе двойной счёт)
   if (result === 'death') meta.stats.deaths += 1
   if (result === 'victory') meta.stats.victories += 1
   if (result === 'awakening') meta.stats.awakened += 1
+  // История забегов (§16.2, «статистика» локально): последние 12 исходов
+  // с деталями для экрана статистики.
+  if (!Array.isArray(meta.runLog)) meta.runLog = []
+  meta.runLog.push({
+    result,
+    floor: info.floor ?? null,
+    pacified: info.pacified || 0,
+    kills: info.kills || 0,
+    awakened: result === 'awakening' ? 1 : 0,
+    at: Date.now(),
+  })
+  if (meta.runLog.length > 12) meta.runLog = meta.runLog.slice(-12)
 }
 
 // Записать смерть как «призрак» для карты пути (§10.3): где пал и от чего.
