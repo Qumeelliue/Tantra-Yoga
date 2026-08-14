@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived, gardenState, GARDEN_STAGES, recordDeath, recordSound, soundState } from '@webapp/js/core/save.js'
-import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel, AUDIO_LIBRARY, soundForCard } from '@webapp/js/core/data.js'
+import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived, gardenState, GARDEN_STAGES, recordDeath, recordSound, soundState, cityBlessingBonus, setVarnaBranch, varnaBranch } from '@webapp/js/core/save.js'
+import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS } from '@webapp/js/core/data.js'
 
 // Фейковый Telegram CloudStorage (callback-API) с проверкой чанков.
 function installFakeCloud() {
@@ -324,6 +324,81 @@ describe('Аудиотека практики (§16.2, идея №33): звук
     const st = soundState(meta, AUDIO_LIBRARY)
     expect(st.total).toBe(Object.keys(AUDIO_LIBRARY).length)
     expect(st.recorded.sort()).toEqual(['japa', 'omkara'])
+  })
+})
+
+describe('«Свет в Городе» (§14.1): учителя успокоенных владык', () => {
+  it('у каждого учителя есть владыка-босс с той же цитатой', () => {
+    for (const t of Object.values(CITY_TEACHERS)) {
+      const boss = ENEMIES[t.bossId]
+      expect(boss, `учитель ${t.id}: владыка ${t.bossId}`).toBeTruthy()
+      expect(boss.isBoss, `учитель ${t.id}: ${t.bossId} должен быть владыкой`).toBe(true)
+      expect(boss.quoteId).toBe(t.quoteId)
+      expect(QUOTES[t.quoteId], `цитата ${t.quoteId} учителя ${t.id}`).toBeTruthy()
+    }
+  })
+
+  it('все семь учителей соответствуют семи владыкам чакр', () => {
+    const bosses = Object.values(ENEMIES).filter((e) => e.isBoss)
+    const teacherBossIds = Object.values(CITY_TEACHERS).map((t) => t.bossId)
+    expect(teacherBossIds.sort()).toEqual(bosses.map((b) => b.id).sort())
+  })
+
+  it('cityBlessingBonus: +1 саттва за каждого поговорившего учителя (кап 7)', () => {
+    const meta = EMPTY_META()
+    expect(cityBlessingBonus(meta)).toBe(0)
+    meta.citySpoken = ['moha', 'kama_raja']
+    expect(cityBlessingBonus(meta)).toBe(2)
+    meta.citySpoken = Object.keys(CITY_TEACHERS)
+    expect(cityBlessingBonus(meta)).toBe(7)
+  })
+
+  it('миграция: отсутствие citySpoken не ломает сохранение', () => {
+    const m = migrateMeta({ quotesUnlocked: {} })
+    expect(Array.isArray(m.citySpoken)).toBe(true)
+    expect(m.citySpoken).toEqual([])
+    expect(cityBlessingBonus(m)).toBe(0)
+  })
+})
+
+describe('Варны-деревья (§12.1): ветви мастерства ментальностей', () => {
+  it('у каждой ментальности две ветви мастерства с id и описанием', () => {
+    for (const id of MENTALITY_ORDER) {
+      const branches = MENTALITIES[id].branches
+      expect(Array.isArray(branches), `ветви ${id}`).toBe(true)
+      expect(branches.length, `ветвей ${id}`).toBe(2)
+      for (const b of branches) {
+        expect(b.id).toBeTruthy()
+        expect(b.name).toBeTruthy()
+        expect(b.desc).toBeTruthy()
+      }
+    }
+  })
+
+  it('setVarnaBranch сохраняет выбор и возвращает true один раз', () => {
+    const meta = EMPTY_META()
+    expect(setVarnaBranch(meta, 'shudra', 'endurance')).toBe(true)
+    expect(meta.varnaBranches.shudra).toBe('endurance')
+    expect(setVarnaBranch(meta, 'shudra', 'endurance')).toBe(false)
+  })
+
+  it('setVarnaBranch игнорирует несуществующую ветвь или ментальность', () => {
+    const meta = EMPTY_META()
+    expect(setVarnaBranch(meta, 'shudra', 'nope')).toBe(false)
+    expect(setVarnaBranch(meta, 'jester', 'endurance')).toBe(false)
+    expect(meta.varnaBranches.shudra).toBeUndefined()
+  })
+
+  it('varnaBranch возвращает выбранную ветвь или null', () => {
+    const meta = EMPTY_META()
+    expect(varnaBranch(meta, 'vipra')).toBeNull()
+    setVarnaBranch(meta, 'vipra', 'seer')
+    expect(varnaBranch(meta, 'vipra').id).toBe('seer')
+  })
+
+  it('миграция добавляет пустой объект varnaBranches', () => {
+    const m = migrateMeta({ quotesUnlocked: {} })
+    expect(m.varnaBranches).toEqual({})
   })
 })
 

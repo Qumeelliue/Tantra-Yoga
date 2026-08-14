@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createRun, startCombatAtNode, finishCombat, currentNode, currentEnemyId, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic, doMeditate, meditateEffects, resolveEventChoice, challengeFulfilled } from '@webapp/js/core/run.js'
+import { createRun, startCombatAtNode, finishCombat, currentNode, currentEnemyId, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic, doMeditate, meditateEffects, resolveEventChoice, challengeFulfilled, shopDiscount } from '@webapp/js/core/run.js'
 import enemies from '@content/enemies.json'
 import { mulberry32, checkOutcome } from '@webapp/js/core/engine.js'
 import { EMPTY_META } from '@webapp/js/core/save.js'
@@ -476,5 +476,42 @@ describe('вызов учителя (§дофамин: событие-услов
     const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
     const combat = startCombatAtNode(run)
     expect(challengeFulfilled(run, combat)).toBe(false)
+  })
+})
+
+describe('варны-деревья (§12.1): ветви мастерства в забеге', () => {
+  it('шудра «Выносливость»: +8 макс ХП сверх шудры', () => {
+    const meta = EMPTY_META()
+    meta.varnas = { shudra: 18 }
+    meta.varnaBranches = { shudra: 'endurance' }
+    const run = createRun({ meta, rng: mulberry32(3) })
+    // 60 + шудра ур.3 (+12) + выносливость (+8) = 80
+    expect(run.maxHp).toBe(80)
+  })
+
+  it('вайшья «Щедрость»: +5 Праны на старте', () => {
+    const meta = EMPTY_META()
+    meta.varnas = { vaeshya: 18 }
+    meta.varnaBranches = { vaeshya: 'giver' }
+    const run = createRun({ meta, rng: mulberry32(3) })
+    expect(run.prana).toBe(5)
+  })
+
+  it('вайшья «Купец»: скидка лавки −4 (ур.3 + ветвь)', () => {
+    const meta = EMPTY_META()
+    meta.varnas = { vaeshya: 18 }
+    meta.varnaBranches = { vaeshya: 'merchant' }
+    const run = createRun({ meta, rng: mulberry32(3) })
+    expect(shopDiscount(run)).toBe(4)
+  })
+
+  it('ветви попадают в бой через opts.varnaBranches', () => {
+    const meta = EMPTY_META()
+    meta.varnas = { kshatriya: 18 }
+    meta.varnaBranches = { kshatriya: 'shield' }
+    const run = createRun({ meta, rng: mulberry32(3) })
+    const combat = startCombatAtNode(run)
+    expect(combat.branches).toBeTruthy()
+    expect(combat.branches.kshatriya).toBe('shield')
   })
 })

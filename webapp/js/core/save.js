@@ -1,7 +1,7 @@
 // Персистентность (localStorage) + синк через Telegram CloudStorage (фаза 2, §17.1).
 // Мета-прогресс: Грантха, дневник практики, статистика, стрики (§15), ежедневные вызовы (§16.2),
 // варны (§12.1 — социальный цикл: шудра → кшатрия → випра → вайшья).
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES, MENTALITY_ORDER, MENTALITY_LEVELS, mentalityLevel, SADVIPRA_MIN_LEVEL, TRIALS, TRIAL_REWARD_CARDS } from './data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES, MENTALITY_ORDER, MENTALITY_LEVELS, mentalityLevel, SADVIPRA_MIN_LEVEL, TRIALS, TRIAL_REWARD_CARDS, MENTALITIES } from './data.js'
 
 const KEY = 'tantra-yoga-save-v1'
 const CS_PREFIX = 'ty'
@@ -23,8 +23,14 @@ export const EMPTY_META = () => ({
   daily: { date: null, challengeId: null, progress: 0, done: false, claimed: false },
   // Четыре ментальности ума (§12): очки каждой растут параллельно от поступков.
   varnas: { shudra: 0, kshatriya: 0, vipra: 0, vaeshya: 0 },
+  // Ветви мастерства ментальностей (§12.1, варны-деревья): выбор направления
+  // на уровне 3 (зрелость). Хранится как { [ментальность]: idВетви }.
+  varnaBranches: {},
   sadvipraAnnounced: false,
   pacifiedBosses: [],
+  // «Свет в Городе» (§14.1): учителя, у которых игрок уже взял благословение
+  // (первый разговор с успокоенным владыкой даёт знание + саттву к следующему забегу).
+  citySpoken: [],
   nextLife: null,
   deathsInRow: 0,
   // Призраки прошлых жизней (§10.3): следы смертей — урок на карте пути.
@@ -153,6 +159,8 @@ export function migrateMeta(m) {
   }
   delete m.varnaPoints
   if (!Array.isArray(m.unlockedCards)) m.unlockedCards = []
+  if (!Array.isArray(m.citySpoken)) m.citySpoken = []
+  if (!m.varnaBranches || typeof m.varnaBranches !== 'object') m.varnaBranches = {}
   return m
 }
 
@@ -236,6 +244,13 @@ export function markLived(meta, quoteId) {
   if (meta.lived[quoteId]) return false
   meta.lived[quoteId] = true
   return true
+}
+
+// «Свет в Городе» (§14.1): благословение учителей — +1 саттва к старту забега
+// за каждого поговорившего с успокоенным владыкой (милость, копится между жизнями).
+export function cityBlessingBonus(meta) {
+  const spoken = Array.isArray(meta.citySpoken) ? meta.citySpoken : []
+  return Math.min(spoken.length, 7)
 }
 
 export function isLived(meta, quoteId) {
@@ -385,6 +400,27 @@ export function addVarnaPoints(meta, kind, n) {
   meta.varnas[kind] = (meta.varnas[kind] || 0) + n
   const after = mentalityLevel(meta.varnas[kind])
   return { leveled: after > before, kind, from: before, to: after }
+}
+
+// Выбор ветви мастерства ментальности (§12.1, варны-деревья): направление на
+// уровне 3. Возвращает true, если выбор новый (для звука/тоста).
+export function setVarnaBranch(meta, kind, branchId) {
+  if (!MENTALITY_ORDER.includes(kind)) return false
+  const m = MENTALITIES[kind]
+  const branches = Array.isArray(m && m.branches) ? m.branches : []
+  if (!branches.some((b) => b.id === branchId)) return false
+  meta.varnaBranches = { ...(meta.varnaBranches || {}) }
+  if (meta.varnaBranches[kind] === branchId) return false
+  meta.varnaBranches[kind] = branchId
+  return true
+}
+
+// Текущая ветвь мастерства ментальности (или null, если не выбрана / нет ур. 3).
+export function varnaBranch(meta, kind) {
+  const m = MENTALITIES[kind]
+  const branches = Array.isArray(m && m.branches) ? m.branches : []
+  const id = (meta.varnaBranches || {})[kind]
+  return branches.find((b) => b.id === id) || null
 }
 
 // ─────────────────────────────────────────────────────────────

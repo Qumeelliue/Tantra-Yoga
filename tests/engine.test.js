@@ -965,3 +965,54 @@ describe('Пратьяхара (отвод чувств, §7.2-подобные 
     expect(c.piles.hand).toContain('pratyahara')
   })
 })
+
+describe('Варны-деревья (§12.1): ветви мастерства применяются в бою', () => {
+  it('кшатрия «Щит смелости»: +3 блока на старте боя', () => {
+    const c = createCombat({
+      deck: ['first_effort'], enemies: [enemies.krodha], cards, enemyDefs: enemies, rng: seeded(),
+      opts: { autoResolve: true, mentalities: { kshatriya: 3 }, varnaBranches: { kshatriya: 'shield' } },
+    })
+    expect(c.player.block).toBeGreaterThanOrEqual(3)
+  })
+
+  it('кшатрия «Отвага»: первый удар боя смягчён на 2', () => {
+    const c = createCombat({
+      deck: ['first_effort'], enemies: [enemies.krodha], cards, enemyDefs: enemies, rng: seeded(),
+      // гуны не в праме (перекос) — чтобы урон шёл «чистым», без плюсов/минусов прамы
+      opts: { autoResolve: true, avidyaEnabled: false, gunaStart: { s: 3, r: 5, t: 2 }, mentalities: { kshatriya: 3 }, varnaBranches: { kshatriya: 'valour' } },
+    })
+    const dmg = damagePlayer(c, 10, { events: [] })
+    expect(dmg).toBe(8) // 10 − 2 отваги
+    const dmg2 = damagePlayer(c, 10, { events: [] })
+    expect(dmg2).toBe(10) // только первый удар
+  })
+
+  it('випра «Провидец»: в начале боя видно 2 верхние карты', () => {
+    const c = createCombat({
+      deck: ['ahimsa', 'tapah', 'kiirtana', 'seva', 'dhyana', 'upavasa', 'santosa', 'shaoca', 'svadhyaya', 'guru'], enemies: [enemies.krodha], cards, enemyDefs: enemies, rng: seeded(),
+      opts: { autoResolve: true, mentalities: { vipra: 3 }, varnaBranches: { vipra: 'seer' } },
+    })
+    expect(c.peek).toBeTruthy()
+    expect(c.peek.length).toBe(2)
+  })
+
+  it('випра «Ясность»: верх колоды виден каждый ход', () => {
+    const c = createCombat({
+      deck: ['ahimsa', 'tapah', 'kiirtana', 'seva', 'dhyana', 'upavasa', 'santosa', 'shaoca', 'svadhyaya', 'guru'], enemies: [enemies.krodha], cards, enemyDefs: enemies, rng: seeded(),
+      opts: { autoResolve: true, mentalities: { vipra: 3 }, varnaBranches: { vipra: 'clarity' } },
+    })
+    startPlayerTurn(c)
+    expect(c.peek).toBeTruthy()
+    expect(c.peek.length).toBe(1)
+  })
+
+  it('шудра «Терпение»: натиск авидьи растёт медленнее (resist +1)', () => {
+    const c = createCombat({
+      deck: ['first_effort'], enemies: [enemies.krodha], cards, enemyDefs: enemies, rng: seeded(),
+      opts: { autoResolve: true, avidyaMax: 50, mentalities: { shudra: 3 }, varnaBranches: { shudra: 'patience' } },
+    })
+    c.avidya = 0
+    endTurn(c)
+    expect(c.avidya).toBe(0) // 1 − 2 (шудра ур.3) − 1 (терпение) ≤ 0
+  })
+})

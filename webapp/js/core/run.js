@@ -47,11 +47,18 @@ export function createRun({ meta, rng, options = {} }) {
     for (const id of MENTALITY_ORDER) levels[id] = Math.min(3, (levels[id] || 0) + 1)
   }
   const shudraHp = (levels.shudra || 0) * 4 // выносливость присутствия (Human Society 2)
+  // Ветви мастерства (§12.1, варны-деревья): выбор направления на уровне 3.
+  // Применяются в run (ХП/прана) и в бою (через mentalities → engine).
+  const branches = { ...((meta && meta.varnaBranches) || {}) }
+  let hpBonus = 0
+  let pranaBonus = 0
+  if (branches.shudra === 'endurance') hpBonus += 8
+  if (branches.vaeshya === 'giver') pranaBonus += 5
   const run = {
     deck: starterDeckForFocus(focus),
-    hp: (options.hp || 60) + (f ? f.focusHp || 0 : 0) + shudraHp,
-    maxHp: (options.hp || 60) + (f ? f.focusHp || 0 : 0) + shudraHp,
-    prana: f ? f.focusPrana || 0 : 0,
+    hp: (options.hp || 60) + (f ? f.focusHp || 0 : 0) + shudraHp + hpBonus,
+    maxHp: (options.hp || 60) + (f ? f.focusHp || 0 : 0) + shudraHp + hpBonus,
+    prana: (f ? f.focusPrana || 0 : 0) + pranaBonus,
     relics: [],
     floors: [],
     done: [],
@@ -66,6 +73,7 @@ export function createRun({ meta, rng, options = {} }) {
     gunaStart: { s: 3, r: 3, t: 3 },
     unlocked: (meta && meta.unlockedCards) ? [...meta.unlockedCards] : [],
     mentalities: levels,
+    branches,
     rand,
   }
   buildMap(run)
@@ -157,6 +165,7 @@ export function startCombatAtNode(run) {
       playerHp: run.hp,
       gunaStart: run.gunaStart || { s: 3, r: 3, t: 3 },
       mentalities: run.mentalities,
+      varnaBranches: run.branches,
     },
   })
 }
@@ -375,7 +384,10 @@ export const SHOP_COSTS = { card: 8, remove: 6, relic: 20 }
 // мудрое распоряжение Праной — цены в лавке падают на уровень ментальности (до −3).
 export function shopDiscount(run) {
   const lv = (run && run.mentalities && run.mentalities.vaeshya) || 0
-  return Math.min(3, lv)
+  let disc = Math.min(3, lv)
+  // Ветвь вайшьи «Купец» (§12.1): мудрость торгуется с миром — ещё −1 ⚡.
+  if (run && run.branches && run.branches.vaeshya === 'merchant') disc += 1
+  return disc
 }
 
 export function shopPrice(run, kind) {

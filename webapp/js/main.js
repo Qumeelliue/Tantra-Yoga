@@ -5,7 +5,7 @@ import { setHaptics, haptics } from './ui/haptics.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard } from './core/data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS } from './core/data.js'
 import { computeSynergies } from './core/engine.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
@@ -19,6 +19,7 @@ import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, recordDeath, resetMeta, quoteById, cloudSync,
   markVisit, progressDaily, varnaState, addVarnaPoints, isSadvipra,
   unlockCard, trialsProgress, markLived, gardenState, recordSound, soundState,
+  cityBlessingBonus, setVarnaBranch,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -117,6 +118,22 @@ function showTitle() {
   const trialsBlock = trialsCard(meta)
   const gardenBlock = gardenCard(meta)
   const audioBlock = audioCard(meta)
+  const cityBlock = h('div', { class: 'varna-card garden-card audio-card city-card', onclick: () => showCity() },
+    h('div', { class: 'varna-head' },
+      h('div', {},
+        h('div', { class: 'varna-label' }, 'Город'),
+        h('div', { class: 'varna-name' }, `свет в площадях · ${(meta.pacifiedBosses || []).length}/${Object.keys(CITY_TEACHERS).length}`)),
+      h('div', { class: 'varna-next' }, 'войти →')),
+    h('div', { class: 'city-dots' },
+      Object.values(CITY_TEACHERS).map((t) => {
+        const bossName = ENEMIES[t.bossId] && ENEMIES[t.bossId].name
+        const on = bossName && (meta.pacifiedBosses || []).includes(bossName)
+        return h('div', { class: `city-mini ${on ? 'on' : ''}` }, on ? '✦' : '·')
+      })),
+    h('div', { class: 'varna-hint' },
+      (meta.pacifiedBosses || []).length === 0
+        ? 'Успокойте владык чакр — и они зажгут свет в Городе'
+        : 'Успокоенные владыки стали учителями — поговорите с ними'))
 
   // Прогресс-бары (§дофамин): тонкие полоски «ещё чуть-чуть» на титуле —
   // сколько владык успокоено до Пробуждения, сколько цитат до новой, сад.
@@ -163,6 +180,7 @@ function showTitle() {
     trialsBlock,
     gardenBlock,
     audioBlock,
+    cityBlock,
     progressBlock,
 
     h('div', { class: 'panel city-card' },
@@ -274,13 +292,23 @@ function varnaCard(meta) {
     const pct = Math.max(4, Math.min(100, (pts / 18) * 100))
     const skills = m.skills || []
     const skillText = skills[Math.min(skills.length - 1, lv)] || ''
+    const chosen = (meta.varnaBranches || {})[id]
+    const branchLabel = chosen
+      ? (m.branches || []).find((b) => b.id === chosen)?.desc || ''
+      : null
     return h('div', { class: 'varna-row' },
       h('div', { class: 'varna-row-head' },
         h('span', { class: 'varna-m-name', style: `color:${m.color}` }, `${m.name} · ${m.sanskrit}`),
         h('span', { class: 'varna-m-lv' }, `ур. ${lv}`)),
       h('div', { class: 'varna-bar' }, h('div', { class: 'varna-fill', style: `width:${pct}%;background:${m.color}` })),
       h('div', { class: 'varna-row-hint' }, `${m.focusDesc}`),
-      h('div', { class: 'varna-row-skill' }, skillText))
+      h('div', { class: 'varna-row-skill' }, skillText),
+      lv >= 3
+        ? h('div', { class: 'varna-branches', onclick: () => showBranchChoice(id) },
+            chosen
+              ? h('div', { class: 'varna-branch-pick' }, `✓ ${branchLabel}`)
+              : h('div', { class: 'varna-branch-pick hint-pick' }, 'выбрать направление мастерства →'))
+        : null)
   })
   return h('div', { class: 'varna-card' },
     h('div', { class: 'varna-head' },
@@ -292,6 +320,40 @@ function varnaCard(meta) {
         ? h('div', { class: 'varna-next done' }, 'садвипра ✓')
         : h('div', { class: 'varna-next' }, `зрелость: ур. ${vs.minLevel}+`)),
     h('div', { class: 'varna-rows' }, rows))
+}
+
+// Выбор ветви мастерства ментальности (§12.1, варны-деревья): направление на ур. 3.
+function showBranchChoice(kind) {
+  const m = MENTALITIES[kind]
+  const vs = varnaState(app.meta)
+  const chosen = (app.meta.varnaBranches || {})[kind]
+  const opts = (m.branches || []).map((b) => h('div', {
+    class: 'choice',
+    onclick: () => chooseBranch(kind, b.id),
+  },
+    h('div', { class: 'c-main' }, `${b.name}${chosen === b.id ? ' · ✓' : ''}`),
+    h('div', { class: 'c-sub' }, b.desc)))
+  show(h('div', { class: 'screen active node-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
+    h('div', { class: 'node-icon' }, m.sanskrit),
+    h('div', { class: 'node-title display' }, `${m.name} · мастерство`),
+    h('p', { class: 'node-text' },
+      `Ментальность ${m.name} достигла уровня 3. Зрелый ум выбирает направление — какой гранью мастерства воспользоваться в каждом забеге (Human Society Part 2: зрелость = осознанный выбор).`),
+    h('div', { class: 'choices' }, opts),
+    h('div', { class: 'hint center mt' }, 'Выбор постоянный. Пока не выбрали — навык уровня 3 действует как обычно.'),
+  ))
+}
+
+function chooseBranch(kind, branchId) {
+  const ok = setVarnaBranch(app.meta, kind, branchId)
+  if (ok) {
+    saveMeta(app.meta)
+    const m = MENTALITIES[kind]
+    const b = (m.branches || []).find((x) => x.id === branchId)
+    sfx.unlock()
+    toast(`${m.name}: мастерство «${b ? b.name : branchId}»`, 'hl')
+  }
+  showTitle()
 }
 
 // Дерево челленджей Ямы/Ниямы (§16.2, идея №16): испытания открывают карты-практики
@@ -456,6 +518,99 @@ function showAudioLibrary() {
   ))
 }
 
+// ─────────────────────────────────────────────────────────────
+// «Свет в Городе» (§14.1): экран города — семь площадей чакр.
+// Успокоенный владыка зажигает свет и становится учителем (Undertale: враг → друг).
+// Первый разговор с учителем даёт знание (цитата проживается) и благословение
+// (+1 саттва к следующему забегу, §9.5 мирный путь).
+// ─────────────────────────────────────────────────────────────
+
+function teacherByBossName(name) {
+  return Object.values(CITY_TEACHERS).find((t) => ENEMIES[t.bossId] && ENEMIES[t.bossId].name === name)
+}
+
+function showCity() {
+  const { meta } = app
+  const spoken = new Set(meta.citySpoken || [])
+  const pacified = new Set(meta.pacifiedBosses || [])
+
+  const areas = Object.values(CITY_TEACHERS).map((t) => {
+    const bossName = ENEMIES[t.bossId] && ENEMIES[t.bossId].name
+    const lit = bossName && pacified.has(bossName)
+    const talked = spoken.has(t.id)
+    const quoteLived = isQuoteLived(meta, t.quoteId)
+
+    const content = lit
+      ? h('div', { class: 'city-area-lit' },
+          h('div', { class: 'city-area-glyph', style: 'font-size:34px' }, t.glyph === 'mask' ? '◐' : t.glyph === 'crown' ? '👑' : t.glyph === 'eye' ? '👁' : t.glyph === 'greed' ? '👑' : t.glyph === 'heart' ? '♥' : '✦'),
+          h('div', { class: 'city-area-name' }, t.name),
+          h('div', { class: 'city-area-epithet' }, t.epithet),
+          talked
+            ? h('div', { class: 'city-area-talked' }, '✓ благословение взято')
+            : h('button', { class: 'btn small mt', onclick: () => talkToTeacher(t) }, 'Поговорить с учителем'))
+      : h('div', { class: 'city-area-dark' },
+          h('div', { class: 'city-area-glyph', style: 'font-size:34px' }, '·'),
+          h('div', { class: 'city-area-name' }, t.epithet.replace('Учитель', 'Владыка')),
+          h('div', { class: 'city-area-hint' }, 'площадь спит во тьме неведения'),
+          h('div', { class: 'city-area-hint' }, 'успокойте этого владыку — и здесь зажжётся свет'))
+
+    return h('div', { class: `city-area ${lit ? 'lit' : 'dark'} ${talked ? 'talked' : ''}` }, content)
+  })
+
+  const blessing = cityBlessingBonus(meta)
+  show(h('div', { class: 'screen active comp-screen' },
+    h('div', { class: 'btn-row' },
+      h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
+      h('div', { class: 'display chakra-title', style: 'flex:1;text-align:center' }, 'Город')),
+    h('div', { class: 'chakra-sub' }, 'внутренний путь отражается во внешнем мире'),
+    h('p', { class: 'hint center mt' },
+      'Семь чакр — семь площадей. Успокоенный владыка становится учителем и зажигает свет; его благословение (+1 саттва на забег) копится в Городе.'),
+    h('div', { class: 'city-grid' }, areas),
+    h('div', { class: 'panel mt' },
+      h('div', { class: 'row between' },
+        h('span', { class: 'hint' }, 'площадей освещено'),
+        h('span', { style: 'color:var(--sat);font-weight:800' }, `${(meta.pacifiedBosses || []).length}/${Object.keys(CITY_TEACHERS).length}`)),
+      h('div', { class: 'row between' },
+        h('span', { class: 'hint' }, 'благословение на следующий забег'),
+        h('span', { style: 'color:var(--gold-soft);font-weight:800' }, `+${blessing} саттвы`)),
+      h('div', { class: 'hint mt' }, 'Благословение применяется в начале забега, как милость учителей. Возьмите его, выбрав «Начать забег» на титуле.'))
+  ))
+}
+
+// Разговор с учителем: первый раз — цитата проживается (знание вручено) и
+// благословение записывается (+1 саттва к старту следующего забега).
+function talkToTeacher(t) {
+  const meta = app.meta
+  const spoken = meta.citySpoken || (meta.citySpoken = [])
+  if (spoken.includes(t.id)) return
+
+  const wasLived = isQuoteLived(meta, t.quoteId)
+  if (!wasLived) markLived(meta, t.quoteId)
+  if (meta.quotesUnlocked && !meta.quotesUnlocked[t.quoteId]) meta.quotesUnlocked[t.quoteId] = true
+  spoken.push(t.id)
+  saveMeta(meta)
+
+  const q = QUOTES[t.quoteId]
+  const quoteBlock = q
+    ? quoteBox(t.quoteId, { revealed: true })
+    : null
+  show(h('div', { class: 'screen active comp-screen' },
+    h('button', { class: 'btn ghost small', onclick: showCity }, '← Город'),
+    h('div', { class: 'display chakra-title' }, t.name),
+    h('div', { class: 'chakra-sub' }, t.epithet),
+    h('div', { class: 'panel mt city-story' },
+      h('p', { class: 'hint' }, t.story),
+      h('p', { class: 'hint mt', style: 'color:var(--gold-soft)' }, t.advice)),
+    quoteBlock,
+    h('div', { class: 'panel mt' },
+      h('div', { class: 'row between' },
+        h('span', { class: 'hint' }, 'благословение учителя'),
+        h('span', { style: 'color:var(--sat);font-weight:800' }, '+1 саттва к следующему забегу')),
+      h('button', { class: 'btn primary mt', onclick: showCity }, 'Вернуться в Город')),
+    h('div', { class: 'hint center mt' }, 'Знание вручено — оково больше не держит.'))
+  )
+}
+
 
 // ─────────────────────────────────────────────────────────────
 // Забег: карта
@@ -506,6 +661,14 @@ function beginRun(focusId) {
     const g = app.run.gunaStart
     app.run.gunaStart = { ...g, s: g.s + gBonus }
     toast(`Сад Знания цветёт: +${gBonus} саттва к началу этой жизни`, 'hl')
+  }
+  // «Свет в Городе» (§14.1): благословение успокоенных владык-учителей —
+  // +1 саттва за каждого поговорившего учителя (милость, как сад, но из Города).
+  const cBonus = cityBlessingBonus(app.meta)
+  if (cBonus > 0) {
+    const g = app.run.gunaStart
+    app.run.gunaStart = { ...g, s: g.s + cBonus }
+    toast(`Учителя города благословляют: +${cBonus} саттва к началу этой жизни`, 'hl')
   }
   // открываем врагов заранее в этом забеге нельзя — откроются при встрече
   // Сострадательный дизайн (§исследование): после трёх смертей подряд Путь мягче

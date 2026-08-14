@@ -1510,3 +1510,28 @@ body {
 
 /* Подпись владыки чакры (§4.5) */
 .enemy-chakra { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold-soft); margin-bottom: 4px; }
+
+/* «Свет в Городе» (§14.1): семь площадей чакр; успокоенный владыка зажигает свет */
+.city-card { cursor: pointer; }
+.city-dots { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.city-mini { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 11px; color: var(--muted-2); border: 1px solid var(--line-gold-soft); background: rgba(0, 0, 0, 0.2); transition: all 0.4s ease; }
+.city-mini.on { color: #1a1207; background: radial-gradient(circle at 38% 30%, #ffe9b3, var(--gold) 70%); border-color: rgba(255, 233, 179, 0.6); box-shadow: 0 0 10px rgba(242, 196, 109, 0.5); }
+
+.city-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+.city-area { border-radius: 14px; padding: 12px 10px; text-align: center; border: 1px solid var(--line-gold-soft); transition: all 0.4s ease; }
+.city-area.lit { background: linear-gradient(180deg, rgba(242, 196, 109, 0.16), rgba(242, 196, 109, 0.05)); box-shadow: 0 0 16px rgba(242, 196, 109, 0.18); }
+.city-area.dark { background: rgba(0, 0, 0, 0.25); opacity: 0.85; }
+.city-area.talked { opacity: 0.9; }
+.city-area-glyph { font-size: 30px; line-height: 1; margin-bottom: 6px; filter: drop-shadow(0 2px 6px rgba(242, 196, 109, 0.25)); }
+.city-area.dark .city-area-glyph { filter: none; opacity: 0.4; }
+.city-area-name { font-weight: 800; font-size: 13.5px; }
+.city-area-epithet { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-soft); margin-top: 2px; }
+.city-area-hint { font-size: 10.5px; color: var(--muted); margin-top: 4px; line-height: 1.35; }
+.city-area-talked { font-size: 11px; color: var(--sat); font-weight: 700; margin-top: 8px; }
+.city-story p { line-height: 1.55; }
+
+/* Ветви мастерства ментальностей (§12.1, варны-деревья) */
+.varna-branches { margin-top: 6px; cursor: pointer; }
+.varna-branch-pick { font-size: 11px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line-gold-soft); background: rgba(0, 0, 0, 0.2); color: var(--gold-soft); line-height: 1.4; }
+.varna-branch-pick.hint-pick { color: var(--muted); border-style: dashed; }
+.varna-branch-pick.hint-pick:hover { color: var(--gold-soft); border-style: solid; }

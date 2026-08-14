@@ -24,8 +24,9 @@ export const DEFAULT_OPTIONS = {
   avidyaMax: 12,
   avidyaGainPerTurn: 1,
   // Ментальности ума (§12.1): уровни 0..3 — навыки, а не классы.
-  // Слабая ментальность = недостающий навык (скрытые интенты, нет стойкости).
   mentalities: {},
+  // Ветви мастерства (§12.1, варны-деревья): выбор направления на уровне 3.
+  varnaBranches: {},
   // Владыки чакр «сопротивляются» спокойствию (§9.4): каждый ход босса снимает
   // накопленный calm — успокоить владыку труднее, чем обычную окову.
   bossCalmDecay: 2,
@@ -102,6 +103,8 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
     autoResolve: opts.autoResolve === true,
     // Ментальности ума (§12.1): уровни 0..3 — навыки, а не классы.
     mentalities: o.mentalities || {},
+    // Ветви мастерства (§12.1, варны-деревья): { ментальность: idВетви }.
+    branches: o.varnaBranches || {},
   }
   // Трекеры правил испытаний (§16.2): урон игроку, накопленный блок, scry
   state.player.damageTaken = 0
@@ -126,11 +129,16 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
   // Стартовый блок (Шаоча-майнджуса) и память (Дхрувасмрити) — после startPlayerTurn,
   // иначе он их обнулит (блок) или сотрёт (peek)
   if (relicMods.combatStartBlock) state.player.block += relicMods.combatStartBlock
+  // Ветвь кшатрии «Щит смелости» (§12.1): мужество встаёт перед первым ударом.
+  if (branch(state, 'kshatriya') === 'shield') state.player.block += 3
   // Видение випры (§12.1): зрелое знание (ур.2+) читает верх колоды в начале боя —
   // как реликвия Дхрувасмрити, но как навык ума.
-  state.peekStart = relicMods.peekStart || lvl(state, 'vipra') >= 2
+  const vipraSeer = branch(state, 'vipra') === 'seer'
+  const vipraClarity = branch(state, 'vipra') === 'clarity'
+  state.peekStart = relicMods.peekStart || lvl(state, 'vipra') >= 2 || vipraSeer || vipraClarity
   if (state.peekStart && state.piles.draw.length > 0) {
-    state.peek = state.piles.draw.slice(-1)
+    const n = vipraSeer ? Math.min(2, state.piles.draw.length) : 1
+    state.peek = state.piles.draw.slice(-n)
   }
   // Слабая випра (§12.1): неведение прячет намерение врага — UI показывает «?».
   state.hideIntents = lvl(state, 'vipra') < 1
@@ -140,6 +148,11 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
 // Уровень ментальности ума в бою (0..3). Отсутствие — уровень 0 (слабый навык).
 function lvl(state, id) {
   return (state.mentalities && state.mentalities[id]) || 0
+}
+
+// Имя выбранной ветви мастерства ментальности (§12.1, варны-деревья).
+function branch(state, id) {
+  return (state.branches && state.branches[id]) || null
 }
 
 // Первый ход врага не должен быть самым тяжёлым — даём игроку разогнаться.
@@ -261,6 +274,11 @@ export function startPlayerTurn(state) {
   }
 
   p.energy = p.maxEnergy + (p.inSamadhi ? 1 : 0)
+
+  // Ветвь випры «Ясность» (§12.1): разум удерживает верх колоды постоянно.
+  if (branch(state, 'vipra') === 'clarity' && state.piles.draw.length > 0) {
+    state.peek = state.piles.draw.slice(-1)
+  }
 
   const tamasPenalty = p.imbalance === 't' && !state.relicMods.tamasImmune && lvl(state, 'kshatriya') < 1
   // Дремота (drowsy): ум «спит» — рука на 1 карту меньше (тикает в конце хода, §9.1)
@@ -421,7 +439,9 @@ export function endTurn(state) {
   // надо гасить практиками, а не терпеть.
   // Стойкость шудры (§12.1): присутствие терпит неведение — натиск растёт медленнее.
   if (state.o.avidyaEnabled) {
-    const resist = lvl(state, 'shudra') >= 3 ? 2 : lvl(state, 'shudra') >= 2 ? 1 : 0
+    let resist = lvl(state, 'shudra') >= 3 ? 2 : lvl(state, 'shudra') >= 2 ? 1 : 0
+    // Ветвь шудры «Терпение» (§12.1): присутствие растворяет неведение ещё глубже.
+    if (branch(state, 'shudra') === 'patience') resist += 1
     state.avidya += Math.max(0, state.o.avidyaGainPerTurn - resist)
     if (state.avidya >= state.avidyaMax) {
       applySamskaraWave(state, events)
@@ -702,7 +722,12 @@ function effectiveDamageEnemy(state, base) {
 }
 
 export function damagePlayer(state, amount, ctx = { events: [] }) {
-  const dmg = effectiveDamagePlayer(state, amount, ctx.enemyIndex)
+  let dmg = effectiveDamagePlayer(state, amount, ctx.enemyIndex)
+  // Ветвь кшатрии «Отвага» (§12.1): первый удар боя смягчён на 2 — смелость
+  // не отступает перед первым натиском (считаем до урона, чтобы трекер был «до»).
+  if (branch(state, 'kshatriya') === 'valour' && !state.player.damageTaken) {
+    dmg = Math.max(0, dmg - 2)
+  }
   const absorbed = Math.min(state.player.block, dmg)
   state.player.block -= absorbed
   const hpLoss = Math.max(0, dmg - absorbed)
