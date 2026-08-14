@@ -502,7 +502,7 @@
     ],
     "guna": { "s": 1, "r": 0, "t": 0 },
     "rarity": "common",
-    "quoteId": "svadhyaya",
+    "quoteId": "viveka",
     "tags": ["practice", "defend"]
   },
   "tapasyah": {
@@ -710,6 +710,23 @@
     "guna": { "s": 1, "r": 0, "t": 0 },
     "rarity": "uncommon",
     "quoteId": "pratyahara",
+    "tags": ["practice", "defend"]
+  },
+  "kevala_bhakti": {
+    "id": "kevala_bhakti",
+    "name": "Кевала-бхакти",
+    "sanskrit": "केवला भक्ति",
+    "type": "practice",
+    "cost": 1,
+    "desc": "Чистая преданность: «хочу Тебя одного». +3 саттвы и 2 блока. Карта сгорает.",
+    "effects": [
+      { "kind": "guna", "amount": 3, "which": "s" },
+      { "kind": "block", "amount": 2 }
+    ],
+    "guna": { "s": 0, "r": 0, "t": 0 },
+    "rarity": "rare",
+    "quoteId": "kevala_bhakti",
+    "exhaust": true,
     "tags": ["practice", "defend"]
   }
 }
