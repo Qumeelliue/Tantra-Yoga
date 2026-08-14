@@ -620,5 +620,284 @@
     "quote": "Милость повсюду, как дождь; но над твоей головой зонт тщеславия — вот почему ты не промокаешь. Убери зонт тщеславия — и будешь омыт.",
     "original": "The Grace is everywhere, just like rainfall; there is an umbrella of vanity upon your head, that's why you are not drenched. Remove the umbrella of vanity and you will be drenched.",
     "source": "«Ánanda Vacanámrtam», ч. 12, «Shortening the Radius»"
+  },
+  "atman": {
+    "term": "Атман",
+    "sanskrit": "आत्मन्",
+    "meaning": "Душа — свидетель ума",
+    "life": "То, что смотрит на ум, не рождается и не умирает. Смерть — лишь перемена одежды; знание живёт дальше.",
+    "quote": "Знающий сам ум — это атман.",
+    "original": "The knower of the mind itself is the ātman.",
+    "source": "«Idea and Ideology», гл. «Ātman, Paramātman and Sādhanā»"
+  },
+  "brahma": {
+    "term": "Брахма",
+    "sanskrit": "ब्रह्म",
+    "meaning": "Космическая Сущность — Шива и Шакти вместе",
+    "life": "Мир — не «внешний фон»: вся пылинка — Брахма. Ум, колода и враги — всё это одна Сущность в разных формах.",
+    "quote": "Каждая пылинка — только Брахма.",
+    "original": "Every speck of dust is only Brahma.",
+    "source": "«Elementary Philosophy», гл. «What Is This World?»"
+  },
+  "prakrti": {
+    "term": "Пракрити",
+    "sanskrit": "प्रकृति",
+    "meaning": "Оперативный принцип — сила Шивы",
+    "life": "Сила, которая вяжет и расплетает гуны. Не отдельная богиня, а свойство самого Пуруши.",
+    "quote": "Пракрити — лишь свойство самого Пуруши.",
+    "original": "Prakrti is but the characteristic of Puruṣa Himself.",
+    "source": "«Ánanda Sútram», 1-2"
+  },
+  "purusa": {
+    "term": "Пуруша",
+    "sanskrit": "पुरुष",
+    "meaning": "Сознание — свидетель",
+    "life": "Пуруша — не деятель, а свидетель. Действует ум; наблюдает Сознание.",
+    "quote": "Свидетельство, покоящееся в каждой сущности, — это пуруша.",
+    "original": "The witness-ship that lies quiescent in every entity is the puruṣa.",
+    "source": "«Ánanda Sútram», 1-7"
+  },
+  "vidya_avidya": {
+    "term": "Видья и Авидья",
+    "sanskrit": "विद्या / अविद्या",
+    "meaning": "Две силы Пракрити: к Центру и прочь от него",
+    "life": "Авидья — центробежный выброс к грубости; видья — центростремительное притяжение к Тонкому. О чём думаешь — тем становишься.",
+    "quote": "Как ты думаешь, так ты и становишься.",
+    "original": "As you think, so you become.",
+    "source": "«Subhāṣita Saṃgraha 11», «The Intuitional Science of Tantra»"
+  },
+  "microvita": {
+    "term": "Микровиты",
+    "sanskrit": "microvitum",
+    "meaning": "Тонкие сущности между материей и идеей — милость Парама Пуруши",
+    "life": "Положительные микровиты приходят, когда доволен Гуру. Их нельзя «использовать» — ими милуют.",
+    "quote": "Даже микровит — не что иное, как милость Парама Пуруши.",
+    "original": "even microvitum is nothing but the grace of Parama Puruṣa",
+    "source": "«Subhāṣita Saṃgraha 18», «Cult, Inference and Propensity»"
+  },
+  "nama_nami": {
+    "term": "Нома и Нами",
+    "sanskrit": "नाम / नामी",
+    "meaning": "Имя и Именуемый",
+    "life": "Имя несёт идеацию. Звать Имя — значит пробуждать Его силу.",
+    "quote": "Имя — это не просто слово. Бхава, идеация, идёт вместе с именем.",
+    "original": "A name is not just a word. The bhāva, or ideation, for an object goes together with its name.",
+    "source": "«Subhāṣita Saṃgraha 21», «Nāma and Nāmī»"
+  },
+  "ota_prota_yoga": {
+    "term": "Ота-прота йога",
+    "sanskrit": "ओतप्रोत योग",
+    "meaning": "Связь Пурушоттамы с каждым и со всеми",
+    "life": "Он связан с каждой картой в колоде и со всем забегом разом. Не брошен ни на шаг.",
+    "quote": "Пурушоттама связан с каждой сущностью в отдельности и со всеми сущностями вместе.",
+    "original": "Puruṣottama is linked to each entity individually and to all entities collectively.",
+    "source": "«Ánanda Sútram», 2-10"
+  },
+  "citta": {
+    "term": "Читта",
+    "sanskrit": "चित्त",
+    "meaning": "Объективный ум — «сделанное Я»",
+    "life": "Память живёт в читте, а не в мозгу. Мозг — лишь машина припоминания.",
+    "quote": "Постоянное обиталище памяти — читта.",
+    "original": "the permanent abode of memory is the citta",
+    "source": "«Discourses on Neohumanist Education», гл. «Cerebral and Extra-Cerebral Memory»"
+  },
+  "buddhi": {
+    "term": "Буддхи",
+    "sanskrit": "बुद्धि",
+    "meaning": "Интеллект — суть ума",
+    "life": "Интеллект — величайшее сокровище. Догма его душит; разум надо освободить.",
+    "quote": "Величайшее сокровище человека — его психическая способность, или интеллект.",
+    "original": "The greatest treasure of human beings is their psychic faculty, or their intellect.",
+    "source": "«Neohumanism in a Nutshell», ч. 1, «Liberation from Staticity»"
+  },
+  "pancakosa": {
+    "term": "Панчакоша",
+    "sanskrit": "पञ्चकोष",
+    "meaning": "Пять слоёв ума — как цветок банана",
+    "life": "Снимай грубый слой — откроется тонкий. Ум многослоен; истина внутри.",
+    "quote": "Живое существо — соединение пяти кош, как цветок банана.",
+    "original": "The living being is the composite of five kośas, like a plantain flower.",
+    "source": "«Ánanda Sútram», 3-1"
+  },
+  "prana": {
+    "term": "Прана",
+    "sanskrit": "प्राण",
+    "meaning": "Жизненная энергия — результат трения факторов",
+    "life": "Прана держит тело вместе; дыхание — это разговор с ней.",
+    "quote": "Прана — вечная игра между Космической причиной и её грубейшим следствием.",
+    "original": "Prāṇa is the eternal game between the Cosmic cause and its crudest effect.",
+    "source": "«Idea and Ideology», гл. «Saincara and Prāṇāḥ»"
+  },
+  "yama_niyama": {
+    "term": "Яма и Нияма",
+    "sanskrit": "यम-नियम",
+    "meaning": "Десять правил нравственности — основа садханы",
+    "life": "Пока ум не омыт водой Ямы-Ниямы, жар садханы не очистит его. Сначала — нравственность, потом — практика.",
+    "quote": "Начальная борьба, которую садхака ведёт, твёрдо стоя на почве ямы и ниямы.",
+    "original": "the initial struggle that a sādhaka has to wage, standing firmly on the ground of yama and niyama",
+    "source": "«Subhāṣita Saṃgraha 5», «The Only Way to Salvation»"
+  },
+  "samgiita": {
+    "term": "Сангита",
+    "sanskrit": "साङ्गीत",
+    "meaning": "Песня, танец и инструменты вместе",
+    "life": "Музыка — не украшение, а садхана: звук, движение, жест.",
+    "quote": "Пение, игра на инструментах и танец вместе называются сангитой.",
+    "original": "Singing, the playing of instruments and dancing are together called 'saṃgīta'.",
+    "source": "«Discourses on Neohumanist Education», гл. «Talks on Education»"
+  },
+  "tandava": {
+    "term": "Тандава",
+    "sanskrit": "ताण्डव",
+    "meaning": "Танец борьбы со смертью",
+    "life": "Тандава — прыжок над землёй: жизнь против смерти. Не страх, а воля выжить.",
+    "quote": "Тандава представляет жизнь; Тантра — культ жизни, а не культ смерти.",
+    "original": "Tāṇḍava represents life; you know Tantra is a cult of life, it is not a cult of death.",
+    "source": "«Ánanda Vacanámrtam», ч. 12, «Dance, Mudrā and Tantra»"
+  },
+  "grades_of_samadhi": {
+    "term": "Бхава-самадхи",
+    "sanskrit": "भाव समाधि",
+    "meaning": "Самадхи преданности: одна мысль — Парама Пуруша",
+    "life": "Когда все силы ума отданы Ему, остаётся одна мысль: только Он существует.",
+    "quote": "В его уме властвовала лишь одна мысль — существует только Парама Пуруша и никакой иной сущности.",
+    "original": "only one thought was dominant in his mind – only Parama Puruṣa exists and no other entity",
+    "source": "«Tattva Kaomudii», ч. 3, «Bhāva Samādhi»"
+  },
+  "shreya_preya": {
+    "term": "Шрея и Прея",
+    "sanskrit": "श्रेय / प्रेय",
+    "meaning": "Благо и приятное",
+    "life": "Прея снимает боль на миг; шрея — навсегда. Выбор между ними — работа совести.",
+    "quote": "Шрея по сути благотворна, ибо снимает боль навсегда, и потому зовётся Парамартхой.",
+    "original": "Shreya is essentially benevolent, for it relieves pain forever and thus it is called Paramārtha.",
+    "source": "«Subhāṣita Saṃgraha 3», «Shreya and Preya»"
+  },
+  "neohumanism": {
+    "term": "Неогуманизм",
+    "sanskrit": "Neohumanism",
+    "meaning": "Любовь ко всем существам — живым и неживым",
+    "life": "Не только к людям: к животным, растениям, камню. Всё танцует под ритм Парама Пуруши.",
+    "quote": "Этот неогуманизм возвысит гуманизм до универсализма — культа любви ко всем созданиям вселенной.",
+    "original": "This Neohumanism will elevate humanism to universalism, the cult of love for all created beings of this universe.",
+    "source": "«Discourses on Neohumanist Education», гл. «Devotional Sentiment and Neohumanism»"
+  },
+  "prana_dharma": {
+    "term": "Прана-дхарма",
+    "sanskrit": "प्राण धर्म",
+    "meaning": "Жизненная дхарма — внутренняя дисциплина",
+    "life": "У каждого — своя внутренняя дисциплина. Отнять её — лучший способ вражды.",
+    "quote": "Лучший способ вражды против человека или народа — лишить их свободы взращивать свою прана-дхарму.",
+    "original": "The best way of enmity against a person or a race is to deprive the person or the race of the freedom to cultivate their prāṇa dharma.",
+    "source": "«Discourses on Neohumanist Education», гл. «Talks on Education»"
+  },
+  "struggle": {
+    "term": "Борьба",
+    "sanskrit": "संघर्ष",
+    "meaning": "Борьба — суть жизни",
+    "life": "Каждое движение встречает противодействие; преодоление препятствий и есть прогресс. Кто бежит борьбы — не продвинется.",
+    "quote": "Борьба — суть жизни.",
+    "original": "struggle is the essence of life",
+    "source": "«Subhāṣita Saṃgraha 11», «The Intuitional Science of Tantra»"
+  },
+  "sadvipra": {
+    "term": "Садвипра",
+    "sanskrit": "सद्विप्र",
+    "meaning": "Духовный революционер в центре социального цикла",
+    "life": "Тот, кто живёт по Яме-Нияме, стоит в центре колеса и направляет его.",
+    "quote": "Стоя в центре социального цикла, садвипры управляют социальным циклом.",
+    "original": "Located in the nucleus of the social cycle, sadvipras control the social cycle.",
+    "source": "«Ánanda Sútram», 5-2"
+  },
+  "four_vargas": {
+    "term": "Четыре варги",
+    "sanskrit": "चतुर्वर्ग",
+    "meaning": "Четыре цели жизни: кама, артха, дхарма, мокша",
+    "life": "Четыре плода — нужное, полезное, святое, свободное; и пятый — преданность, без которой не достичь остальных.",
+    "quote": "Пока не держишь этот плод в руке, тебе никогда не достичь остальных четырёх.",
+    "original": "Unless and until you hold this fruit in your hand, you will never be able to attain the other four.",
+    "source": "«Prout in a Nutshell», ч. 11, «The Four Vargas and Devotion»"
+  },
+  "artha_paramartha": {
+    "term": "Артха и Парамартха",
+    "sanskrit": "अर्थ · परमार्थ",
+    "meaning": "Временное и вечное избавление от боли",
+    "life": "Артха снимает боль на миг; парамартха — навсегда. Но сначала — хлеб голодному.",
+    "quote": "Бесполезно проповедовать евангелие Парамартхи человеку, у которого нет еды.",
+    "original": "It is useless to preach the gospels of Paramārtha to a person who has no food to eat.",
+    "source": "«Prout in a Nutshell», ч. 11, «Artha and Paramārtha»"
+  },
+  "doership": {
+    "term": "Картртва",
+    "sanskrit": "कर्तृत्व",
+    "meaning": "Делание и свидетельство",
+    "life": "Пуруша не делает действий, но свидетельствует их. Деятель — ахам; свидетель — Сознание.",
+    "quote": "Пуруша не совершает действий, но является свидетелем действий и реакций; находясь в центре Сагуна-Брахмы, Он управляет гунами.",
+    "original": "Puruṣa does no action (directly), but is the witnessing entity of actions and reactions; located at the nucleus of Saguṇa Brahma, He is the controller of the guṇas.",
+    "source": "«Ánanda Sútram», 2-15"
+  },
+  "samaja_cakra": {
+    "term": "Самаджа-чакра",
+    "sanskrit": "समाज चक्र",
+    "meaning": "Социальный цикл",
+    "life": "Мир движется; застой — смерть. Колесо смены ментальностей вращается вечно.",
+    "quote": "Застой означает смерть.",
+    "original": "Stagnancy means death.",
+    "source": "«Idea and Ideology», гл. «The Place of Sadvipras in the Samāja Cakra»"
+  },
+  "mudra": {
+    "term": "Мудра",
+    "sanskrit": "मुद्रा",
+    "meaning": "Жест — внешнее выражение чувства",
+    "life": "Мудра передаёт идею без слов: жест, поза, движение.",
+    "quote": "Передавать идеи через жест и позу называется мудрой.",
+    "original": "To communicate ideas through gesture and posture is called 'mudrā'.",
+    "source": "«Discourses on Neohumanist Education», гл. «Talks on Education»"
+  },
+  "memory": {
+    "term": "Память",
+    "sanskrit": "स्मृति",
+    "meaning": "Воссоздание воспринятого",
+    "life": "Память — не архив, а пересоздание. Вспомнить — значит заново прожить образ.",
+    "quote": "Воссоздание вещей, уже воспринятых умом, называется памятью.",
+    "original": "The re-creation of things already perceived by the mind is called memory.",
+    "source": "«Discourses on Neohumanist Education», гл. «Cerebral and Extra-Cerebral Memory»"
+  },
+  "tanmatra": {
+    "term": "Танматра",
+    "sanskrit": "तन्मात्र",
+    "meaning": "Тонкая сущность-впечатление фактора",
+    "life": "Пять танматр — звук, касание, форма, вкус, запах — связывают ум с миром.",
+    "quote": "Фактор узнаётся по танматрам, которые он несёт.",
+    "original": "A fundamental factor is recognized by the tanmātras it carries.",
+    "source": "«Ánanda Sútram», 2-23"
+  },
+  "liberation_from_staticity": {
+    "term": "Освобождение от статичности",
+    "sanskrit": "мукти от косности",
+    "meaning": "Освобождение нужно во всех сферах жизни",
+    "life": "Не только от смерти — от оков в жизни: экономических, психических, догматических.",
+    "quote": "В каждой сфере жизни необходимо освобождение; освобождение от оков статичности — обязательно.",
+    "original": "In every sphere of life liberation is necessary; liberation from the bondage of staticity is a must.",
+    "source": "«Neohumanism in a Nutshell», ч. 1, «Liberation from Staticity»"
+  },
+  "first_class_person": {
+    "term": "Человек первого класса",
+    "sanskrit": "A-class",
+    "meaning": "Единство мысли, слова и дела",
+    "life": "Первый класс — думает, говорит и делает одно. Не расходись с собой.",
+    "quote": "Что думают — то говорят, и что говорят — то делают.",
+    "original": "whatever they think, they speak, and whatever they speak, they do",
+    "source": "«Discourses on Neohumanist Education», гл. «Be a First-Class Person»"
+  },
+  "ananda": {
+    "term": "Ананда",
+    "sanskrit": "आनन्द",
+    "meaning": "Бесконечное счастье — сам Брахма",
+    "life": "Малое счастье конечно; ананда бесконечна, и это сама Сущность.",
+    "quote": "Бесконечное счастье — это ананда (блаженство).",
+    "original": "Infinite happiness is ānanda (bliss).",
+    "source": "«Ánanda Sútram», 2-3"
   }
 }
