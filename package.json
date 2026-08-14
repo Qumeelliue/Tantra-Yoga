@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:pages": "vite build --base=/Tantra-Yoga/",
     "preview": "vite preview",
     "test": "vitest run",
     "balance": "node --experimental-loader ./scripts/aliases.mjs scripts/balance.mjs"
