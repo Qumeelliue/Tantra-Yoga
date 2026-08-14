@@ -512,5 +512,113 @@
     "quote": "Вивека — это такое размышление, где есть сознательное усилие решить в пользу шреи (блага), когда перед умом стоят шрея и прея (прельщение).",
     "original": "Viveka is that kind of deliberation where there is a conscious endeavour to decide in favour of shreya (benevolence) when confronted with the two opposing ideas of shreya and preya (malevolence).",
     "source": "«Subháśita Saḿgraha», ч. 6, «The Five Kinds of Conscience (Viveka)»"
+  },
+  "kundalini": {
+    "term": "Кундалини",
+    "sanskrit": "कुण्डलिनी",
+    "meaning": "Свёрнутая змеёй сила, фундаментальная негативность",
+    "life": "В самой глубине — на дне грубого — дремлет сила, что держит ум привязанным. Подними её садханой вверх по чакрам — и она станет силой возвращения к Сознанию.",
+    "quote": "В высшей стадии огрубления эта сила дремлет — она называется кундалини, «свёрнутая змеёй».",
+    "original": "In the ultimate state of crudification she lies dormant — this is the kuṇḍalinī, the coiled serpentine; the force of fundamental negativity.",
+    "source": "«Ānanda Sūtram», 4-7, 4-8"
+  },
+  "bhakti": {
+    "term": "Бхакти",
+    "sanskrit": "भक्ति",
+    "meaning": "Преданность как постоянная мысль о Высшем",
+    "life": "Бхакти — это не славословие и не обряд: это ум, растворённый в мысли о Нём. Молитва и ритуал без любви — лесть.",
+    "quote": "Бхакти — идеация о Боге, пребывание в постоянной мысли о Нём, а не гимны и не обрядовое поклонение.",
+    "original": "Bhaktir bhagavad-bhāvanā na stutir nārcanā — devotion is ideation on God, remaining merged in the constant thought of Him, not the chanting of hymns or ritualistic worship.",
+    "source": "«Ānanda Sūtram», 3-12"
+  },
+  "ishta": {
+    "term": "Ишта",
+    "sanskrit": "इष्ट",
+    "meaning": "Личный Бог, избранный объект идеации",
+    "life": "Выбери своего — личного Бога, которому можно открыть радость и боль. Ум принимает форму того, о чём думает: где дхарма, там ишта; где ишта — там победа.",
+    "quote": "Где есть дхарма, там есть ишта, а где есть ишта — там победа.",
+    "original": "Yato dharma tato iṣṭah, yato iṣṭa tato jayah — where there is dharma there is iṣṭa, and where there is iṣṭa there is victory.",
+    "source": "«Subháśita Saḿgraha», ч. 12, «Ādarsha and Iṣṭa»"
+  },
+  "moksha": {
+    "term": "Мокша",
+    "sanskrit": "मोक्ष",
+    "meaning": "Освобождение от оков Пракрити",
+    "life": "Мукти — слияние с проявленным: единица возвращается в колесо. Мокша — касательное освобождение: садхана как полная сдача себя в Не-проявленное, за пределы цикла.",
+    "quote": "Те, кто стремится к мокше, где садхана есть полная сдача себя в То, выходят из этого колеса Брахмы касательным касанием.",
+    "original": "Those who aim at mokṣa, where sādhana is the complete surrender of self into That (Nirguṇa Brahma, the Objectless Consciousness), get out of this Brahma Cakra by a tangential touch.",
+    "source": "«Idea and Ideology», ч. II-6 «Ātman, Paramātman and Sādhanā»"
+  },
+  "tantra": {
+    "term": "Тантра",
+    "sanskrit": "तन्त्र",
+    "meaning": "Наука освобождения от косности",
+    "life": "Та — звук косности, тра — освободитель. Тантра расширяет: избавляет от вялости на физическом, психическом и духовном плане. Борьба — суть жизни.",
+    "quote": "То, что избавляет и освобождает от оков косности, называется тантрой.",
+    "original": "Taṃ jāḍyāt tārayet yastu sah tantrah parikiirtitah — that which redeems and emancipates from the bondages of staticity is Tantra.",
+    "source": "«Subháśita Saḿgraha», ч. 11, «The Intuitional Science of Tantra»"
+  },
+  "sadhana": {
+    "term": "Садхана",
+    "sanskrit": "साधना",
+    "meaning": "Духовная практика, плавка золота ума",
+    "life": "Садхана — не ритуал для избранных: это право рождения каждого. Борьба идёт против неделимой Пракрити, поэтому практика нелегка; концентрация ума и есть садхана.",
+    "quote": "Садхана — нелёгкое дело; концентрация ума есть не что иное, как садхана.",
+    "original": "Sādhana is no easy task; concentration of mind is nothing else but sādhana.",
+    "source": "«Elementary Philosophy», гл. 8 «Intuitional Practice and Its Necessity»"
+  },
+  "karma": {
+    "term": "Карма",
+    "sanskrit": "कर्म",
+    "meaning": "Действие, преобразующее ум",
+    "life": "Каждое действие искажает ум-читту, а воздаяние возвращает его в исходное состояние. Рай и ад — не места, а состояния, которые ты сам создаёшь здесь.",
+    "quote": "Воздаяние — это когда искажённая читта вновь достигает своего прежнего состояния.",
+    "original": "Vikṛtacittasya pūrvāvasthāprāptirphalabhogah — the requital of karma is the distorted citta re-attaining its previous state.",
+    "source": "«Ānanda Sūtram», 2-19"
+  },
+  "heaven_hell": {
+    "term": "Рай и ад",
+    "sanskrit": "स्वर्ग-नरक",
+    "meaning": "Состояния ума, а не места",
+    "life": "Нет ни ада внизу, ни рая вверху: когда творишь добро и вкушаешь его плоды — вокруг рай; зло — вокруг ад. Всё — твоё собственное состояние здесь.",
+    "quote": "Нет ни рая, ни ада; когда человек совершает добрый поступок и вкушает его плоды, среда вокруг становится раем.",
+    "original": "Na svargo na rasātalah — there is neither heaven nor hell; when one does a virtuous act and enjoys its fruits, the surrounding environment becomes heaven.",
+    "source": "«Ānanda Sūtram», 2-20"
+  },
+  "three_species": {
+    "term": "Три вида людей",
+    "sanskrit": "पशु-वीर-देव",
+    "meaning": "Пашу, вира, дева — ступени ума",
+    "life": "Среди людей три вида: пашу — ум животного в теле человека; вира — борец против оков ума; дева — бог в человеческом теле. Тантра поднимает по этим ступеням.",
+    "quote": "Пашу — это всегда движущийся, чтобы есть, пить и спать; вира — борется с оковами ума; дева — выражение Высшего в человеческом теле.",
+    "original": "Pashu — moving in order to eat, drink or sleep; viira — fighting against the fetters of mind; deva — an expression of Parama Puruṣa in human structure.",
+    "source": "«Discourses on Tantra», т. 2, дискурс 29 «The Three Species of Human Being»"
+  },
+  "yoga_unification": {
+    "term": "Йога — объединение",
+    "sanskrit": "संयोग",
+    "meaning": "Слияние единичного сознания с Верховным",
+    "life": "Йога — не сложение и не пустой ум: это объединение, как сахар в воде. Единичное сознание теряет свою отдельность, сливаясь с Верховным — река впадает в море.",
+    "quote": "Объединение единичного сознания с Верховным Сознанием называется йогой.",
+    "original": "Saṃyoga yoga ityukto jīvātmā Paramātmanah — the unification of unit consciousness with Supreme Consciousness is yoga.",
+    "source": "«Discourses on Tantra», т. 2, дискурс 29 «The Three Species of Human Being»"
+  },
+  "dharma": {
+    "term": "Дхарма",
+    "sanskrit": "धर्म",
+    "meaning": "Тоска по Великому, природа существа",
+    "life": "Дхарма — не религия и не долг извне: это природа, тяга к Великому. Не подстраивайся под чужие правила — ищи своё естественное устремление.",
+    "quote": "Тосковать и бежать за Великим — это дхарма.",
+    "original": "Bṛhadeṣaṇā-praṇidhānaṃ ca dharmah — to long for and run after the Great is dharma.",
+    "source": "«Ānanda Sūtram», 2-6"
+  },
+  "krpa": {
+    "term": "Крипа",
+    "sanskrit": "कृपा",
+    "meaning": "Божественная милость, нисходящее действие",
+    "life": "Милость льётся на всех поровну, как дождь. Не получит её лишь тот, кто держит над головой зонт тщеславия. Убери зонт — и будешь омыт.",
+    "quote": "Милость повсюду, как дождь; но над твоей головой зонт тщеславия — вот почему ты не промокаешь. Убери зонт тщеславия — и будешь омыт.",
+    "original": "The Grace is everywhere, just like rainfall; there is an umbrella of vanity upon your head, that's why you are not drenched. Remove the umbrella of vanity and you will be drenched.",
+    "source": "«Ánanda Vacanámrtam», ч. 12, «Shortening the Radius»"
   }
 }
