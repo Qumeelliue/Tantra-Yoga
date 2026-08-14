@@ -1,7 +1,7 @@
 // Экран боя: HUD, гуны, враг, рука, анимации.
 import { h, mount, clear } from '../dom.js'
 import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter, avidyaMeter, microvitaBadge } from '../widgets.js'
-import { burst, floatNum, setTint, setGunaAudio, sfx, kiirtanaWave, microvitaFx } from '../fx.js'
+import { burst, floatNum, setTint, setGunaAudio, sfx, kiirtanaWave, microvitaFx, flash } from '../fx.js'
 import { haptics } from '../haptics.js'
 import { CARDS } from '../../core/data.js'
 import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome, kiirtanaRhythmBonus, samadhiPacify } from '../../core/engine.js'
@@ -57,6 +57,21 @@ export function combatScreen(app) {
   function render() {
     const p = combat.player
     const e = combat.enemies[0]
+
+    // Вспышки-«щелчки» (§дофамин): момент силы должен быть виден и слышен.
+    // 1) Старт с активным потоком (ум собрал школу) — ум уже силён.
+    // 2) Враг в фазе успокоения (HP ≤ 50%) — окову можно освободить.
+    const s = combat.synergies || {}
+    const streamReady = s.ahimsa || s.kiirtana || s.yama || s.seva
+    if (streamReady && !combat._streamCelebrated) {
+      combat._streamCelebrated = true
+      sfx.flow()
+      flash('rgba(255,233,179,0.18)', 0.7)
+    }
+    if (e && !e.dead && !e.pacified && e.hp <= e.maxHp / 2 && !combat._pacifyPhaseCelebrated) {
+      combat._pacifyPhaseCelebrated = true
+      flash('rgba(255,233,179,0.12)', 0.8)
+    }
 
     // HUD
     const hpPct = Math.max(0, (p.hp / p.maxHp) * 100)
@@ -232,6 +247,7 @@ export function combatScreen(app) {
         haptics.notify('success')
         const pos = posOf(enemyZone)
         burst(pos.x, pos.y, '#ffe9b3', 26)
+        flash('rgba(255,233,179,0.3)', 1.0)
         toast(ev.message, 'good')
       } else if (ev.type === 'pacify_gain') {
         floatNum(innerWidth / 2, innerHeight / 2 + 70, `+${ev.calm} спокойствие`, 'sat')
@@ -257,6 +273,7 @@ export function combatScreen(app) {
       } else if (ev.type === 'samadhi') {
         sfx.samadhi()
         haptics.notify('success')
+        flash('rgba(190,230,255,0.18)', 0.9)
         toast(ev.message, 'hl')
       } else if (ev.type === 'kiirtana_rhythm') {
         const parts = []

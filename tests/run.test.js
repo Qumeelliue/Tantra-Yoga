@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createRun, startCombatAtNode, finishCombat, currentNode, currentEnemyId, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic, doMeditate, meditateEffects } from '@webapp/js/core/run.js'
+import { createRun, startCombatAtNode, finishCombat, currentNode, currentEnemyId, isNodeDone, floorComplete, advanceFloor, rollShop, buyShopCard, buyShopRemove, buyShopRelic, doMeditate, meditateEffects, resolveEventChoice, challengeFulfilled } from '@webapp/js/core/run.js'
 import enemies from '@content/enemies.json'
 import { mulberry32, checkOutcome } from '@webapp/js/core/engine.js'
 import { EMPTY_META } from '@webapp/js/core/save.js'
@@ -438,5 +438,43 @@ describe('ментальности в забеге (§12.1): слабая мен
     const run = createRun({ meta: metaWith({ vipra: 10 }), rng: mulberry32(1) })
     const combat = startCombatAtNode(run)
     expect(combat.mentalities.vipra).toBe(2)
+  })
+})
+
+describe('вызов учителя (§дофамин: событие-условие на следующий бой)', () => {
+  it('принятие вызова записывает условие в run.challenge', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    const res = resolveEventChoice(run, 'teacher', 0)
+    expect(res.challenge).toBe(true)
+    expect(run.challenge).toEqual({ rule: 'practice_3', rewardCard: 'kevala_bhakti' })
+  })
+
+  it('отказ от вызова не записывает условие', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    const res = resolveEventChoice(run, 'teacher', 1)
+    expect(res.challenge).toBeUndefined()
+    expect(run.challenge).toBeUndefined()
+  })
+
+  it('исполнение вызова: 3 практики в бою — challengeFulfilled true', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.challenge = { rule: 'practice_3', rewardCard: 'kevala_bhakti' }
+    const combat = startCombatAtNode(run)
+    combat.practicePlayed = 3
+    expect(challengeFulfilled(run, combat)).toBe(true)
+  })
+
+  it('неисполнение вызова: меньше 3 практик — false', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    run.challenge = { rule: 'practice_3', rewardCard: 'kevala_bhakti' }
+    const combat = startCombatAtNode(run)
+    combat.practicePlayed = 2
+    expect(challengeFulfilled(run, combat)).toBe(false)
+  })
+
+  it('без вызова — false (не ломает обычные бои)', () => {
+    const run = createRun({ meta: EMPTY_META(), rng: mulberry32(5) })
+    const combat = startCombatAtNode(run)
+    expect(challengeFulfilled(run, combat)).toBe(false)
   })
 })

@@ -13,6 +13,7 @@ import {
   eventOptions, resolveEventChoice, isNodeDone, markNodeDone,
   floorComplete, advanceFloor, CHAKRAS, LEPESTKI,
   rollShop, buyShopCard, buyShopRemove, buyShopRelic, SHOP_COSTS, shopPrice, shopDiscount,
+  challengeFulfilled,
 } from './core/run.js'
 import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, recordDeath, resetMeta, quoteById, cloudSync,
@@ -117,6 +118,21 @@ function showTitle() {
   const gardenBlock = gardenCard(meta)
   const audioBlock = audioCard(meta)
 
+  // Прогресс-бары (§дофамин): тонкие полоски «ещё чуть-чуть» на титуле —
+  // сколько владык успокоено до Пробуждения, сколько цитат до новой, сад.
+  const bosses = (meta.pacifiedBosses || []).length
+  const quotesHave = Object.keys(meta.quotesUnlocked || {}).length
+  const progressBlock = h('div', { class: 'panel progress-panel' },
+    h('div', { class: 'progress-row' },
+      h('span', { class: 'progress-lbl' }, `владык успокоено ${bosses}/7`),
+      h('div', { class: 'progress-track' },
+        h('div', { class: 'progress-fill', style: `width:${(bosses / 7) * 100}%` }))),
+    h('div', { class: 'progress-row' },
+      h('span', { class: 'progress-lbl' }, `Грантха ${quotesHave}/${Object.keys(QUOTES).length}`),
+      h('div', { class: 'progress-track' },
+        h('div', { class: 'progress-fill', style: `width:${(quotesHave / Object.keys(QUOTES).length) * 100}%` }))),
+  )
+
   const bootEvent = app.bootEvent
   app.bootEvent = null
   if (bootEvent && bootEvent.kind === 'increase') {
@@ -147,6 +163,7 @@ function showTitle() {
     trialsBlock,
     gardenBlock,
     audioBlock,
+    progressBlock,
 
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
@@ -713,6 +730,20 @@ function onCombatEnd(combat) {
   const isFinalBoss = node.type === 'boss' && run.floor === run.floors.length - 1
   const result = finishCombat(run, combat)
 
+  // Вызов учителя (§дофамин): условие исполнено в этом бою? Награда — редкая карта.
+  if (!result.dead && run.challenge && challengeFulfilled(run, combat)) {
+    const rewardId = run.challenge.rewardCard
+    if (rewardId && CARDS[rewardId]) {
+      takeCardReward(run, rewardId)
+      app.trialUnlockToast = `Вызов исполнен: учитель дарит карту «${CARDS[rewardId].name}».`
+      sfx.unlock()
+    }
+    run.challenge = null
+  } else if (!result.dead && run.challenge) {
+    run.challenge = null
+    app.trialUnlockToast = 'Вызов учителя не исполнен: дисциплина требует усилия. Учитель ушёл.'
+  }
+
   // «Наставник» после боя (образование через инсайт): закрываем момент термином
   app.lastCombat = {
     name: combat.enemies[0] ? combat.enemies[0].name : '',
@@ -870,8 +901,38 @@ function showRewards(result) {
 
     h('div', { class: 'hint center' }, 'Выберите карту в колоду (ум)'),
     h('div', { class: 'reward-cards' },
-      result.cardChoices.map((id) => cardEl(CARDS[id], { onPlay: () => pickRewardCard(id) }))),
+      result.cardChoices.map((id) => cardEl(CARDS[id], { onPlay: () => pickRewardCard(id), glow: CARDS[id].rarity === 'rare', hint: rewardSynergyHint(id) }))),
   ))
+}
+
+// Подсказка синергии при выборе карты (§дофамин): если карта приближает/добирает
+// поток ума (ахимса/кииртан/яма/служение) — показать «в колоде уже X из N»,
+// чтобы сбор синергий был осознанным и вкусным (как Balatro-подсказки).
+function rewardSynergyHint(cardId) {
+  const run = app.run
+  if (!run) return null
+  const deck = run.deck || []
+  const c = CARDS[cardId]
+  if (!c) return null
+  const counts = { ahimsa: 0, kiirtana: 0, practice: 0, seva: 0 }
+  for (const id of [...deck, cardId]) {
+    const cc = CARDS[id]
+    if (!cc) continue
+    if (cc.id === 'ahimsa' || (cc.tags && cc.tags.includes('pacify'))) counts.ahimsa++
+    if (cc.type === 'kiirtana') counts.kiirtana++
+    if (cc.type === 'practice') counts.practice++
+    if (cc.type === 'seva') counts.seva++
+  }
+  const hints = []
+  if (counts.ahimsa >= 3) hints.push('☯ поток ахимсы')
+  else if (counts.ahimsa >= 2) hints.push(`☯ ахимса ${counts.ahimsa}/3`)
+  if (counts.kiirtana >= 3) hints.push('◉ поток кииртана')
+  else if (counts.kiirtana >= 2) hints.push(`◉ кииртан ${counts.kiirtana}/3`)
+  if (counts.practice >= 4) hints.push('🕉 поток ямы')
+  else if (counts.practice >= 3) hints.push(`🕉 яма ${counts.practice}/4`)
+  if (counts.seva >= 3) hints.push('✋ поток служения')
+  else if (counts.seva >= 2) hints.push(`✋ сева ${counts.seva}/3`)
+  return hints.length > 0 ? `в колоде уже: ${hints.join(' · ')}` : null
 }
 
 // Результат испытания Ямы/Ниямы (узел «Испытание»): правило дисциплины соблюдено?
@@ -1010,6 +1071,9 @@ function pickEvent(id, choiceIndex) {
   const quoteToShow = res.knowledge > 0 ? unlockRandomQuote() : null
   sfx.unlock()
   markNodeDone(run)
+  if (res.challenge) {
+    toast('Вызов учителя принят: 3 практики в следующем бою.', 'hl')
+  }
   if (quoteToShow) {
     show(h('div', { class: 'screen active node-screen' },
       quoteBox(quoteToShow, { onClose: afterNode })))
@@ -1059,10 +1123,22 @@ const SAMSKARA_CHOICES = [
 
 function showDeath(result) {
   setTint('t')
+  const meta = app.meta
+  // «Смерть = прогресс»: показываем, что из забега осталось с игроком, и даём
+  // сразу переродиться — дофамин «знание не пропало», хочется ещё один забег.
+  const qid = result.killedById && ENEMIES[result.killedById] ? ENEMIES[result.killedById].quoteId : null
+  const keptQuote = qid && meta.quotesUnlocked && meta.quotesUnlocked[qid]
+    ? QUOTES[qid]
+    : null
+  const knowledgeLine = keptQuote
+    ? `Ты извлёк знание: «${keptQuote.term}» — ${keptQuote.meaning}.`
+    : `Ты извлёк знание: ${Object.keys(meta.quotesUnlocked || {}).length} из ${Object.keys(QUOTES).length} цитат Грантхи.`
   show(h('div', { class: 'screen active end-screen' },
     h('div', { class: 'end-om' }, 'ॐ'),
     h('div', { class: 'game-title', style: 'font-size:30px' }, 'Перерождение'),
     h('p', { class: 'node-text' }, 'Тело ушло — ум унёс свои самскары. В следующей жизни сохранится только знание.'),
+    h('div', { class: 'knowledge-kept' },
+      h('div', { class: 'k-chip', style: 'color:var(--sat)' }, `✓ ${knowledgeLine}`)),
     h('div', { class: 'samskar-card' },
       h('div', { class: 's-title' }, 'Дневник самскар'),
       h('div', { class: 's-line' }, `Вы пали в битве с <b>${result.killedBy}</b>${result.lastIntent ? ` (${result.lastIntent})` : ''}.`),
@@ -1074,9 +1150,13 @@ function showDeath(result) {
           h('div', { class: 'c-main' }, `${c.title} · ${c.sanskrit}`),
           h('div', { class: 'c-sub' }, c.bonus)))),
     h('div', { class: 'knowledge-kept' },
-      h('div', { class: 'k-chip' }, `Грантха: <b>${Object.keys(app.meta.compendium.cards).length}</b>`),
-      h('div', { class: 'k-chip' }, `цитат: <b>${Object.keys(app.meta.quotesUnlocked).length}</b>`),
-      h('div', { class: 'k-chip' }, `якорей: <b>${app.meta.practiceDiary.length}</b>`)),
+      h('div', { class: 'k-chip' }, `Грантха: <b>${Object.keys(meta.compendium.cards).length}</b>`),
+      h('div', { class: 'k-chip' }, `цитат: <b>${Object.keys(meta.quotesUnlocked).length}</b>`),
+      h('div', { class: 'k-chip' }, `якорей: <b>${meta.practiceDiary.length}</b>`)),
+    h('button', { class: 'btn primary mt', onclick: () => { setTint(null); startNewRun() } },
+      'Переродиться — новый забег ▶'),
+    h('button', { class: 'btn ghost small mt', style: 'width:auto;align-self:center', onclick: () => { setTint(null); showTitle() } },
+      'Вернуться в Город'),
   ))
 }
 

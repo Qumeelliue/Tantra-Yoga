@@ -304,6 +304,25 @@ body {
 .gauge .num { font-size: 20px; font-weight: 800; color: var(--gold-soft); font-variant-numeric: tabular-nums; }
 .gauge .lbl { font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 2px; }
 
+/* Прогресс-бары на титуле (§дофамин): «ещё чуть-чуть» до цели */
+.progress-panel { display: grid; gap: 6px; }
+.progress-row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; }
+.progress-lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+.progress-track {
+  width: 110px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold), #ffe9b3);
+  box-shadow: 0 0 8px rgba(242, 196, 109, 0.6);
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* ─────────────────────────────────────────────────────────────
    Стрики (§15) и ежедневный вызов (§16.2)
    ───────────────────────────────────────────────────────────── */
@@ -977,6 +996,30 @@ body {
 }
 .card .c-guna { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; font-size: 9px; font-weight: 700; }
 
+/* Редкая карта в награде «сияет» (§дофамин): золотое свечение, как редкость в StS. */
+.card.glow {
+  box-shadow: 0 0 14px rgba(255, 233, 179, 0.55), 0 0 32px rgba(242, 196, 109, 0.28);
+  border-color: var(--gold);
+  animation: glowPulse 1.6s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(255, 233, 179, 0.45), 0 0 24px rgba(242, 196, 109, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(255, 233, 179, 0.7), 0 0 42px rgba(242, 196, 109, 0.38); }
+}
+
+/* Подсказка синергии на карте награды (§дофамин): «в колоде уже есть поток» */
+.card .c-hint {
+  position: absolute;
+  bottom: 34px;
+  left: 3px;
+  right: 3px;
+  font-size: 7.5px;
+  line-height: 1.15;
+  text-align: center;
+  color: var(--gold-soft);
+  pointer-events: none;
+}
+
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(16px) scale(0.92); }
   to { opacity: 1; transform: none; }
@@ -1080,6 +1123,24 @@ body {
 @keyframes kiirtanaRing {
   from { transform: scale(0.2); opacity: 1; }
   to { transform: scale(14); opacity: 0; }
+}
+
+/* вспышка-заливка (§дофамин): момент силы — поток открыт, окову почти освободили */
+.screen-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 6;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.screen-flash.on {
+  opacity: 1;
+  animation: flashFade var(--fdur, 0.6s) ease-out forwards;
+}
+@keyframes flashFade {
+  0% { opacity: 0.9; }
+  100% { opacity: 0; }
 }
 
 /* печать отречения (сожжение) */

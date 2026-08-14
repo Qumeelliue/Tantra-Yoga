@@ -4,13 +4,13 @@ import { CARDS, QUOTES, quoteLiveHint } from '../core/data.js'
 import { avidyaFill } from '../core/engine.js'
 import { CHAKRAS } from '../core/run.js'
 
-export function cardEl(card, { cost, compact = false, onPlay } = {}) {
+export function cardEl(card, { cost, compact = false, onPlay, glow = false, hint = null } = {}) {
   const c = typeof card === 'string' ? CARDS[card] : card
   const effCost = cost != null ? cost : c.cost
   return h(
     'div',
     {
-      class: `card c-${c.type}`,
+      class: `card c-${c.type}${glow ? ' glow' : ''}${hint ? ' has-hint' : ''}`,
       onclick: onPlay ? () => onPlay(c.id) : null,
       style: compact ? 'flex:0 0 96px;width:96px;height:146px;' : null,
     },
@@ -19,7 +19,8 @@ export function cardEl(card, { cost, compact = false, onPlay } = {}) {
     h('div', { class: 'c-sanscr sanscr' }, c.sanskrit || ''),
     h('div', { class: 'c-desc' }, c.desc || ''),
     h('div', { class: 'c-type' }, typeLabel(c.type)),
-    gunaLine(c.guna)
+    gunaLine(c.guna),
+    hint ? h('div', { class: 'c-hint' }, hint) : null
   )
 }
 

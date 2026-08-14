@@ -350,8 +350,19 @@ export function resolveEventChoice(run, eventId, choiceIndex) {
     else if (fx.kind === 'guna') results.sattvaGain = (results.sattvaGain || 0) + fx.amount
     else if (fx.kind === 'knowledge') results.knowledge += fx.amount
     else if (fx.kind === 'anchor') results.anchors.push(fx)
+    // Вызов учителя (§дофамин): условие на следующий бой, награда при исполнении
+    else if (fx.kind === 'challenge') {
+      run.challenge = { rule: fx.rule, rewardCard: fx.rewardCard }
+      results.challenge = true
+    }
   }
   return results
+}
+
+// Вызов учителя (§дофамин): исполнен в бою? Проверяется в onCombatEnd ПОСЛЕ боя.
+export function challengeFulfilled(run, combat) {
+  if (!run.challenge || !run.challenge.rule) return false
+  return trialRulePassed(combat, run.challenge.rule)
 }
 
 // ─────────────────────────────────────────────────────────────

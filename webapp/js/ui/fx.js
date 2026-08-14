@@ -130,6 +130,22 @@ export function floatNum(x, y, text, cls = 'dmg') {
   setTimeout(() => el.remove(), 950)
 }
 
+// Вспышка-заливка экрана (§дофамин): короткий цветной флеш в момент силы —
+// поток открыт, окову почти освободили. Даёт мгновенный «щелчок» награды.
+let flashEl = null
+export function flash(color = 'rgba(255,233,179,0.22)', dur = 0.6) {
+  if (!flashEl) {
+    flashEl = document.createElement('div')
+    flashEl.className = 'screen-flash'
+    document.body.append(flashEl)
+  }
+  flashEl.style.background = color
+  flashEl.classList.remove('on')
+  void flashEl.offsetWidth // перезапуск анимации
+  flashEl.style.setProperty('--fdur', dur + 's')
+  flashEl.classList.add('on')
+}
+
 // Тонировка экрана по состоянию гун
 const TINT = {
   s: 'radial-gradient(70% 50% at 50% 30%, rgba(255, 233, 179, 0.5), transparent 70%), rgba(255, 240, 210, 0.18)',
@@ -276,6 +292,9 @@ export const sfx = {
   // положительных микровитов), отрицательный — тяжёлый низкий гул (тьма вниз).
   microvitaPos() { tone(880, 0.18, 'sine', 0.035); tone(1318, 0.26, 'sine', 0.025, 0.07) },
   microvitaNeg() { tone(165, 0.2, 'triangle', 0.04); tone(110, 0.28, 'triangle', 0.03, 0.05) },
+  // Активация потока-синергии (§дофамин): восходящий «искрящийся» мотив —
+  // ум собрал школу, состояние ума стало силой.
+  flow() { tone(659, 0.14, 'sine', 0.045); tone(784, 0.14, 'sine', 0.045, 0.08); tone(988, 0.16, 'sine', 0.045, 0.16); tone(1318, 0.4, 'sine', 0.04, 0.24) },
 }
 
 // ── Аудиотека практики (§16.2, идея №33): проигрывание собранных звуков ──
