@@ -10,6 +10,8 @@ import {
   recomputeGunas,
   kiirtanaRhythmBonus,
   samadhiPacify,
+  setSamadhiFocus,
+  samadhiLandscape,
   avidyaFill,
   mulberry32,
 } from '@webapp/js/core/engine.js'
@@ -393,6 +395,55 @@ describe('самадхи-успокоение (§8.4)', () => {
     const s = combatWith(['first_effort'])
     samadhiPacify(s, 0)
     expect(s.enemies[0].pacified).toBe(false)
+  })
+})
+
+describe('самадхи-ландшафт (идея №19): мосты из света', () => {
+  it('в самадхи можно выбрать мост силы — +1 энергия каждый ход', () => {
+    const s = combatWith(['first_effort'])
+    s.player.inSamadhi = true
+    s.player.samadhiTurns = 3
+    expect(setSamadhiFocus(s, 'power')).toBe(true)
+    expect(samadhiLandscape(s)).toBe('power')
+    startPlayerTurn(s)
+    expect(s.player.energy).toBeGreaterThanOrEqual(s.player.maxEnergy + 1)
+  })
+
+  it('мост знания — верх колоды виден каждый ход самадхи', () => {
+    const s = combatWith(['first_effort', 'first_effort', 'first_effort', 'first_effort', 'first_effort', 'first_effort', 'first_effort'])
+    s.player.inSamadhi = true
+    s.player.samadhiTurns = 3
+    setSamadhiFocus(s, 'seer')
+    startPlayerTurn(s)
+    expect(s.peek).toBeTruthy()
+    expect(s.peek.length).toBe(1)
+  })
+
+  it('мост освобождения — успокоение приходит с неполного счётчика', () => {
+    const s = combatWith(['first_effort'])
+    s.enemies[0].calm = s.enemies[0].calmMax - 1
+    s.enemies[0].hp = Math.floor(s.enemies[0].maxHp / 2)
+    s.player.inSamadhi = true
+    s.player.samadhiTurns = 3
+    setSamadhiFocus(s, 'release')
+    const ev = samadhiPacify(s, 0)
+    expect(ev.some((e) => e.type === 'pacified')).toBe(true)
+  })
+
+  it('вне самадхи выбрать мост нельзя', () => {
+    const s = combatWith(['first_effort'])
+    expect(setSamadhiFocus(s, 'power')).toBe(false)
+    expect(samadhiLandscape(s)).toBeNull()
+  })
+
+  it('мост сбрасывается, когда самадхи кончается', () => {
+    const s = combatWith(['first_effort'])
+    s.player.inSamadhi = true
+    s.player.samadhiTurns = 1
+    setSamadhiFocus(s, 'power')
+    startPlayerTurn(s) // самадхи истекло
+    expect(s.player.inSamadhi).toBe(false)
+    expect(samadhiLandscape(s)).toBeNull()
   })
 })
 

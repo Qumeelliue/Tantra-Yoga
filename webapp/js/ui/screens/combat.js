@@ -4,7 +4,7 @@ import { cardEl, gunaOrbs, badges, enemyCard, intentChip, samadhiMeter, avidyaMe
 import { burst, floatNum, setTint, setGunaAudio, sfx, kiirtanaWave, microvitaFx, flash } from '../fx.js'
 import { haptics } from '../haptics.js'
 import { CARDS } from '../../core/data.js'
-import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome, kiirtanaRhythmBonus, samadhiPacify } from '../../core/engine.js'
+import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome, kiirtanaRhythmBonus, samadhiPacify, setSamadhiFocus, samadhiLandscape } from '../../core/engine.js'
 import { kirtanRhythmOverlay } from '../minigames.js'
 
 export function combatScreen(app) {
@@ -86,7 +86,11 @@ export function combatScreen(app) {
     )
 
     mount(gunaEl, gunaOrbs(p.guna, { lead: p.imbalance, prama: p.prama }))
-    mount(badgeEl, badges({ prama: p.prama, imbalance: p.imbalance, samadhi: p.inSamadhi, passive: synergyBadges(combat.synergies), mentalities: combat.mentalities }))
+    const bridge = samadhiLandscape(combat)
+    const bridgeBadges = bridge
+      ? ['◈ мост знания', '✦ мост силы', '☯ мост освобождения'][{ seer: 0, power: 1, release: 2 }[bridge]]
+      : null
+    mount(badgeEl, badges({ prama: p.prama, imbalance: p.imbalance, samadhi: p.inSamadhi, passive: bridgeBadges ? synergyBadges(combat.synergies).concat([bridgeBadges]) : synergyBadges(combat.synergies), mentalities: combat.mentalities }))
     mount(meterEl,
       samadhiMeter(p.samadhiGain, combat.o.samadhiThreshold),
       avidyaMeter(combat),
@@ -275,6 +279,12 @@ export function combatScreen(app) {
         haptics.notify('success')
         flash('rgba(190,230,255,0.18)', 0.9)
         toast(ev.message, 'hl')
+        // Самадхи-ландшафт (идея №19): «программировать ландшафт» — ум выбирает
+        // мост из света на время ясности (один раз за бой).
+        if (!combat._samadhiBridgeShown) {
+          combat._samadhiBridgeShown = true
+          showSamadhiLandscape()
+        }
       } else if (ev.type === 'kiirtana_rhythm') {
         const parts = []
         if (ev.sattva > 0) parts.push(`+${ev.sattva} саттвы`)
@@ -342,6 +352,51 @@ export function combatScreen(app) {
     burst(pos.x, pos.y, '#ffe9b3', 18)
     if (combat.outcome) finish()
     else { render(); busy = false }
+  }
+
+  // Самадхи-ландшафт (идея №19): «программировать ландшафт» — на время ясности
+  // ум прокладывает один мост из света. Выбор не мешает бою: можно «Не сейчас»,
+  // и классическое самадхи (практики бесплатны) действует как прежде.
+  function showSamadhiLandscape() {
+    if (!combat.player.inSamadhi) return
+    const bridges = [
+      { id: 'seer', icon: '◈', name: 'Мост знания', desc: 'Верх колоды виден каждый ход ясности — ум читает своё будущее.' },
+      { id: 'power', icon: '✦', name: 'Мост силы', desc: '+1 энергия каждый ход ясности — ясность питает действие.' },
+      { id: 'release', icon: '☯', name: 'Мост освобождения', desc: 'Успокоение в самадхи мягче: +1 спокойствие окове.' },
+    ]
+    const overlay = h(
+      'div',
+      { class: 'burn-overlay' },
+      h(
+        'div',
+        { class: 'burn-panel' },
+        h('div', { class: 'display', style: 'font-size:22px' }, 'Самадхи — ландшафт света'),
+        h('p', { class: 'hint mt' }, 'Ум вошёл в ясность. Куда проложить мост из света на время самадхи?'),
+        h(
+          'div',
+          { class: 'burn-options' },
+          bridges.map((b) =>
+            h('div', { class: 'burn-item', onclick: () => chooseBridge(b.id, overlay) },
+              h('span', {}, `${b.icon} ${b.name}`),
+              h('span', { class: 'sanscr' }, b.desc))
+          ),
+          h('button', { class: 'btn ghost small', style: 'width:auto;align-self:center', onclick: () => overlay.remove() }, 'Не сейчас')
+        )
+      )
+    )
+    document.body.append(overlay)
+  }
+
+  function chooseBridge(id, overlay) {
+    const ok = setSamadhiFocus(combat, id)
+    overlay.remove()
+    if (ok) {
+      sfx.med()
+      const label = { seer: 'Мост знания', power: 'Мост силы', release: 'Мост освобождения' }[id]
+      toast(`Самадхи: ${label} проложен`, 'hl')
+      flash('rgba(190,230,255,0.22)', 0.8)
+      render()
+    }
   }
 
   function toast(text, cls = '') {

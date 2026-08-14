@@ -82,6 +82,8 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rng
     practicePlayed: 0,
     healUsed: false,
     samadhiReached: false,
+    // Самадхи-ландшафт (идея №19): выбранный «мост из света» на время самадхи.
+    samadhiFocus: null,
     playedCards: [],
     bossPacified: false,
     // Авидья (§9.1a): шкала натиска неведения. Растёт каждый ход врага и резко
@@ -270,13 +272,21 @@ export function startPlayerTurn(state) {
 
   if (p.inSamadhi) {
     p.samadhiTurns -= 1
-    if (p.samadhiTurns <= 0) p.inSamadhi = false
+    if (p.samadhiTurns <= 0) {
+      p.inSamadhi = false
+      state.samadhiFocus = null
+    }
   }
 
-  p.energy = p.maxEnergy + (p.inSamadhi ? 1 : 0)
+  // Самадхи-ландшафт (идея №19): «мост силы» — ясность даёт дополнительную энергию.
+  const powerBonus = p.inSamadhi && state.samadhiFocus === 'power' ? 1 : 0
+  p.energy = p.maxEnergy + (p.inSamadhi ? 1 : 0) + powerBonus
 
   // Ветвь випры «Ясность» (§12.1): разум удерживает верх колоды постоянно.
-  if (branch(state, 'vipra') === 'clarity' && state.piles.draw.length > 0) {
+  const clarityPeek = branch(state, 'vipra') === 'clarity'
+  // Самадхи-ландшафт (идея №19): «мост знания» — во время самадхи ум видит
+  // верх колоды каждый ход (программирование ландшафта из света).
+  if ((clarityPeek || (p.inSamadhi && state.samadhiFocus === 'seer')) && state.piles.draw.length > 0) {
     state.peek = state.piles.draw.slice(-1)
   }
 
@@ -802,9 +812,32 @@ export function samadhiPacify(state, i = 0) {
   const e = state.enemies[i]
   if (!state.player.inSamadhi) return events
   if (!e || e.dead || e.pacified || e.def.isBoss) return events
+  // Самадхи-ландшафт (идея №19): «мост освобождения» — ясность мягче отпускает окову:
+  // прибавляет 1 спокойствие, чтобы успокоение наступало с неполного счётчика.
+  if (state.samadhiFocus === 'release') {
+    e.calm = Math.min(e.calmMax, e.calm + 1)
+  }
   pacifyEnemy(state, i, events)
   checkOutcome(state, events)
   return events
+}
+
+// Самадхи-ландшафт (идея №19): «программировать ландшафт» — при вхождении в самадхи
+// ум выбирает один из мостов из света на время ясности. Варианты:
+//   seer    — Мост знания: верх колоды виден каждый ход самадхи.
+//   power   — Мост силы: +1 энергия каждый ход самадхи.
+//   release — Мост освобождения: успокоение в самадхи вдвойне мягкое (+1 calm).
+// Не выбрал (null) — классическое самадхи: практики бесплатны, обычное успокоение.
+export function setSamadhiFocus(state, focus) {
+  if (!state.player.inSamadhi) return false
+  if (!['seer', 'power', 'release'].includes(focus)) return false
+  state.samadhiFocus = focus
+  return true
+}
+
+// Достигнуто ли самадхи прямо сейчас и какой мост активен (для UI).
+export function samadhiLandscape(state) {
+  return state.player.inSamadhi ? state.samadhiFocus : null
 }
 
 function checkEnemies(state, events) {
