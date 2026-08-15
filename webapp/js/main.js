@@ -823,33 +823,33 @@ function showMap() {
   const deathsByFloor = {}
   for (const d of (app.meta.deathLog || [])) deathsByFloor[d.floor] = d
 
-  // ── мир: пейзаж чакры + тропа, по которой идёт садхака ─────────────────
+  // ── мир: гора-путь вверх по чакрам ────────────────────────────────────
   const sceneEl = h('div', { class: 'world-scene' })
   const sunEl = h('div', { class: 'world-sun' })
-  // Декорации: силуэты камней и деревьев, чтобы пейзаж читался как место
   const decor = []
   for (let k = 0; k < 5; k++) {
     const dx = Math.round((0.06 + Math.random() * 0.86) * 100)
-    const dy = Math.round((0.14 + Math.random() * 0.74) * 100)
+    const dy = Math.round((0.10 + Math.random() * 0.80) * 100)
     decor.push(h('div', { class: `w-dec w-dec-${k % 3}`, style: `left:${dx}%;top:${dy}%` }))
   }
+  const worldEl = h('div', { class: 'world world-map' })
   const pathEl = h('div', { class: 'world-path' })
   const sadhu = sadhuEl()
   pathEl.append(sadhu)
 
-  // Подсказка первого входа: что делать в мире (пока не войдено ни в одно место)
+  // Подсказка первого входа: что это за место и что делать
   run._worldHinted = run._worldHinted || false
   const showHint = !run._worldHinted
   let hintEl = null
   if (showHint) {
     hintEl = h('div', { class: 'w-hint' },
-      h('span', {}, 'Тапни по светящемуся месту силы — садхака пойдёт туда. Мерцающий ✦ откроет знание.'),
+      h('span', {}, 'Перед тобой гора-путь: внизу Муладхара, вверху — Сахасрара. Тапни по светящемуся месту силы — садхака пойдёт туда. Мерцающий ✦ откроет знание.'),
       h('button', { class: 'btn ghost small w-hint-ok', onclick: () => { run._worldHinted = true; hintEl.remove() } }, 'Понятно'))
   }
   const arrowEl = h('div', { class: 'w-arrow', style: 'display:none' }, '▼')
   pathEl.append(arrowEl)
 
-  // Свободная ходьба: тап по любому свободному месту — садхака идёт туда
+  // Свободная ходьба: тап по свободному месту — садхака идёт туда
   pathEl.addEventListener('click', (e) => {
     if (app._walkBusy) return
     if (e.target.closest('.w-node') || e.target.closest('.w-spark')) return
@@ -862,23 +862,31 @@ function showMap() {
 
   const markers = {}
   run.floors.forEach((floor, f) => {
-    if (f > run.floor) return
-    const row = h('div', { class: 'world-floor' })
+    const future = f > run.floor
+    const row = h('div', { class: `world-floor ${future ? 'future' : ''}` },
+      h('div', { class: 'w-floor-tag' },
+        future
+          ? `этаж ${f + 1} · впереди`
+          : run.floor > f
+            ? `этаж ${f + 1} · пройдено`
+            : `этаж ${f + 1} · ${CHAKRAS[f]}`),
+      h('div', { class: 'world-floor-row' }))
+    const rowBox = row.children[1]
     floor.forEach((node, i) => {
       const done = run.floor > f || isNodeDone(run, i)
       const available = f === run.floor && !done
       const mk = h('div', {
-        class: `w-node ${done ? 'done' : ''} ${available ? 'available' : ''} ${node.type === 'boss' ? 'boss' : ''}`,
+        class: `w-node ${done ? 'done' : ''} ${available ? 'available' : ''} ${node.type === 'boss' ? 'boss' : ''} ${future ? 'future' : ''}`,
         onclick: available ? () => walkTo(mk, i) : null,
       },
-        h('span', { class: 'w-glyph' }, NODE_GLYPH[node.type]),
-        h('span', { class: 'w-label' }, NODE_LABEL[node.type]))
+        h('span', { class: 'w-glyph' }, future ? '·' : NODE_GLYPH[node.type]),
+        h('span', { class: 'w-label' }, future ? '' : NODE_LABEL[node.type]))
       markers[f + '_' + i] = mk
-      row.append(mk)
+      rowBox.append(mk)
     })
     const ghost = deathsByFloor[f]
     if (ghost && f === run.floor) {
-      row.append(h('div', { class: 'ghost w-ghost', onclick: () => showGhostLesson(ghost) }, '👻'))
+      rowBox.append(h('div', { class: 'ghost w-ghost', onclick: () => showGhostLesson(ghost) }, '👻'))
     }
     pathEl.append(row)
   })
@@ -887,7 +895,7 @@ function showMap() {
   // Нашёл — открыл цитату из Шастр (как спрятанные сутры в A Short Hike).
   run._found = run._found || {}
   const sparkles = []
-  const SPARK_X = [0.16, 0.84, 0.5]
+  const SPARK_X = [0.06, 0.94]
   const sparkCount = 1 + (Math.random() < 0.6 ? 1 : 0)
   for (let k = 0; k < sparkCount; k++) {
     const key = run.floor + '_' + k
@@ -911,12 +919,13 @@ function showMap() {
       h('div', { class: 'chip' }, `колода <span class="gold">${run.deck.length}</span>`),
       h('div', { class: 'chip' }, `реликвии <span class="gold">${run.relics.length}</span>`)),
     hintEl,
-    h('div', { class: `world biome-${biome}` }, sceneEl, sunEl, ...decor, pathEl),
+    worldEl,
     runSynergiesLine(run),
     run.relics.length > 0 ? h('div', { class: 'hint center mt' }, 'реликвии: ' + run.relics.map((r) => RELICS[r].name).join(' · ')) : null,
   ))
+  worldEl.append(sceneEl, sunEl, ...decor, pathEl)
 
-  // позиции после монтирования: садхака встаёт у следующего доступного места
+  // позиции после монтирования: садхака у текущего этажа, гора показывает путь вверх
   requestAnimationFrame(() => {
     const pathRect = pathEl.getBoundingClientRect()
     let target = null
@@ -935,13 +944,17 @@ function showMap() {
       arrowEl.style.left = (tr.left - pathRect.left + tr.width / 2 - 8) + 'px'
       arrowEl.style.top = (tr.top - pathRect.top - 28) + 'px'
     }
-    const rowEl = pathEl.children[pathEl.children.length - 1]
-    const rr = (rowEl && rowEl.getBoundingClientRect()) || pathRect
+    // спрятанные слоги — вдоль ряда текущего этажа
+    const curFloorEl = markers[run.floor + '_0'] ? markers[run.floor + '_0'].closest('.world-floor-row') : null
+    const rr = (curFloorEl && curFloorEl.getBoundingClientRect()) || pathRect
     for (const { sp, x } of sparkles) {
       sp.style.left = (rr.left - pathRect.left + rr.width * x - 10) + 'px'
-      sp.style.top = (rr.top - pathRect.top + rr.height / 2 - 12) + 'px'
+      sp.style.top = (rr.top - pathRect.top - 36) + 'px'
     }
+    // текущий этаж — внизу видимой области, гора возвышается вверх
+    worldEl.scrollTop = worldEl.scrollHeight
   })
+  setTimeout(() => { worldEl.scrollTop = worldEl.scrollHeight }, 120)
 
   function walkTo(mk, i) {
     if (app._walkBusy) return
