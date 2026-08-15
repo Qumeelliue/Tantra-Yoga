@@ -186,6 +186,17 @@ function showTitle() {
           : `Лучший забег: ${best.pacified} мирных освобождений.`)
     : null
 
+  // Мета-прогресс (стрики, ментальности, испытания, сад, город…) — под аккордеон,
+  // чтобы титул не выглядел «стеной окон»: разворачивается по желанию.
+  const metaBodyEl = h('div', { class: 'meta-fold-body' },
+    streakBlock, challengeBlock, varnaBlock, trialsBlock, gardenBlock, audioBlock, cityBlock, statsBlock)
+  const metaHeadEl = h('button', { class: 'meta-fold-head', onclick: () => {
+    const open = metaBodyEl.style.display !== 'block'
+    metaBodyEl.style.display = open ? 'block' : 'none'
+    metaHeadEl.textContent = open ? 'Прогресс садхаки ▴' : 'Прогресс садхаки ▾'
+  } }, 'Прогресс садхаки ▾')
+  const metaFoldBlock = h('div', { class: 'meta-fold' }, metaHeadEl, metaBodyEl)
+
   show(h('div', { class: 'screen active title-screen' },
     h('div', { class: 'mandala-wrap' },
       h('div', { class: 'mandala' }),
@@ -197,16 +208,9 @@ function showTitle() {
     cityDots,
     teachers,
 
-    streakBlock,
-    challengeBlock,
-    varnaBlock,
-    trialsBlock,
-    gardenBlock,
-    audioBlock,
-    cityBlock,
-    statsBlock,
     progressBlock,
 
+    metaFoldBlock,
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
         h('span', {}, 'путь города'),
@@ -822,9 +826,39 @@ function showMap() {
   // ── мир: пейзаж чакры + тропа, по которой идёт садхака ─────────────────
   const sceneEl = h('div', { class: 'world-scene' })
   const sunEl = h('div', { class: 'world-sun' })
+  // Декорации: силуэты камней и деревьев, чтобы пейзаж читался как место
+  const decor = []
+  for (let k = 0; k < 5; k++) {
+    const dx = Math.round((0.06 + Math.random() * 0.86) * 100)
+    const dy = Math.round((0.14 + Math.random() * 0.74) * 100)
+    decor.push(h('div', { class: `w-dec w-dec-${k % 3}`, style: `left:${dx}%;top:${dy}%` }))
+  }
   const pathEl = h('div', { class: 'world-path' })
   const sadhu = sadhuEl()
   pathEl.append(sadhu)
+
+  // Подсказка первого входа: что делать в мире (пока не войдено ни в одно место)
+  run._worldHinted = run._worldHinted || false
+  const showHint = !run._worldHinted
+  let hintEl = null
+  if (showHint) {
+    hintEl = h('div', { class: 'w-hint' },
+      h('span', {}, 'Тапни по светящемуся месту силы — садхака пойдёт туда. Мерцающий ✦ откроет знание.'),
+      h('button', { class: 'btn ghost small w-hint-ok', onclick: () => { run._worldHinted = true; hintEl.remove() } }, 'Понятно'))
+  }
+  const arrowEl = h('div', { class: 'w-arrow', style: 'display:none' }, '▼')
+  pathEl.append(arrowEl)
+
+  // Свободная ходьба: тап по любому свободному месту — садхака идёт туда
+  pathEl.addEventListener('click', (e) => {
+    if (app._walkBusy) return
+    if (e.target.closest('.w-node') || e.target.closest('.w-spark')) return
+    const pr = pathEl.getBoundingClientRect()
+    const x = Math.min(Math.max(e.clientX - pr.left - sadhu.offsetWidth / 2, 0), pr.width - sadhu.offsetWidth)
+    const y = Math.min(Math.max(e.clientY - pr.top - sadhu.offsetHeight, 0), pr.height - sadhu.offsetHeight)
+    sadhu.style.left = x + 'px'
+    sadhu.style.top = y + 'px'
+  })
 
   const markers = {}
   run.floors.forEach((floor, f) => {
@@ -854,7 +888,7 @@ function showMap() {
   run._found = run._found || {}
   const sparkles = []
   const SPARK_X = [0.16, 0.84, 0.5]
-  const sparkCount = 1 + (run.rand() < 0.6 ? 1 : 0)
+  const sparkCount = 1 + (Math.random() < 0.6 ? 1 : 0)
   for (let k = 0; k < sparkCount; k++) {
     const key = run.floor + '_' + k
     const sp = h('div', {
@@ -876,7 +910,8 @@ function showMap() {
       h('div', { class: 'chip' }, `Прана <span class="gold">${run.prana}</span>`),
       h('div', { class: 'chip' }, `колода <span class="gold">${run.deck.length}</span>`),
       h('div', { class: 'chip' }, `реликвии <span class="gold">${run.relics.length}</span>`)),
-    h('div', { class: `world biome-${biome}` }, sceneEl, sunEl, pathEl),
+    hintEl,
+    h('div', { class: `world biome-${biome}` }, sceneEl, sunEl, ...decor, pathEl),
     runSynergiesLine(run),
     run.relics.length > 0 ? h('div', { class: 'hint center mt' }, 'реликвии: ' + run.relics.map((r) => RELICS[r].name).join(' · ')) : null,
   ))
@@ -894,6 +929,12 @@ function showMap() {
       if (!target) target = markers[run.floor + '_0'] || null
     }
     if (target) placeSadhu(sadhu, target, pathRect)
+    if (showHint && target) {
+      const tr = target.getBoundingClientRect()
+      arrowEl.style.display = 'block'
+      arrowEl.style.left = (tr.left - pathRect.left + tr.width / 2 - 8) + 'px'
+      arrowEl.style.top = (tr.top - pathRect.top - 28) + 'px'
+    }
     const rowEl = pathEl.children[pathEl.children.length - 1]
     const rr = (rowEl && rowEl.getBoundingClientRect()) || pathRect
     for (const { sp, x } of sparkles) {
@@ -904,6 +945,9 @@ function showMap() {
 
   function walkTo(mk, i) {
     if (app._walkBusy) return
+    run._worldHinted = true
+    if (hintEl) hintEl.remove()
+    arrowEl.style.display = 'none'
     app._walkBusy = true
     const pathRect = pathEl.getBoundingClientRect()
     placeSadhu(sadhu, mk, pathRect)
