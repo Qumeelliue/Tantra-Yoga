@@ -816,95 +816,93 @@ const NODE_LABEL = { combat: 'бой', elite: 'элита', meditate: 'меди�
 function showMap() {
   const run = app.run
   if (!run) return showTitle()
-  const chakra = CHAKRAS[Math.min(run.floor, CHAKRAS.length - 1)]
-  const biome = Math.min(run.floor, CHAKRAS.length - 1)
+  const floor = run.floor
+  const chakra = CHAKRAS[Math.min(floor, CHAKRAS.length - 1)]
+  const biome = Math.min(floor, CHAKRAS.length - 1)
 
   // Призраки прошлых жизней (§10.3): последняя смерть на этаже оставляет урок
   const deathsByFloor = {}
   for (const d of (app.meta.deathLog || [])) deathsByFloor[d.floor] = d
 
-  // ── мир: гора-путь вверх по чакрам ────────────────────────────────────
+  // ── локация этой чакры: цели на карте, дорога между ними ─────────────
+  // (в % от сцены: вход внизу, владыка далеко вверху — «мир как в Героях»)
+  const POS = [
+    { i: 0, x: 28, y: 62 },   // бой / элита
+    { i: 1, x: 72, y: 68 },   // второй узел (медитация/событие/реликвия/воспоминание/испытание)
+    { i: 2, x: 50, y: 13 },   // владыка чакры
+  ]
+  const START = { x: 50, y: 90 }
+
   const sceneEl = h('div', { class: 'world-scene' })
   const sunEl = h('div', { class: 'world-sun' })
+  const road = h('svg', { class: 'w-road', viewBox: '0 0 100 100', preserveAspectRatio: 'none' },
+    h('path', {
+      d: 'M50 96 C 40 86, 22 76, 28 62 C 32 52, 62 74, 72 68 C 80 63, 60 40, 50 13',
+      fill: 'none', stroke: 'rgba(242,196,109,0.32)', 'stroke-width': 1.6, 'stroke-dasharray': '2 3',
+    }))
   const decor = []
-  for (let k = 0; k < 5; k++) {
-    const dx = Math.round((0.06 + Math.random() * 0.86) * 100)
-    const dy = Math.round((0.10 + Math.random() * 0.80) * 100)
+  for (let k = 0; k < 6; k++) {
+    const dx = Math.round((0.05 + Math.random() * 0.9) * 100)
+    const dy = Math.round((0.06 + Math.random() * 0.9) * 100)
     decor.push(h('div', { class: `w-dec w-dec-${k % 3}`, style: `left:${dx}%;top:${dy}%` }))
   }
-  const worldEl = h('div', { class: 'world world-map' })
-  const pathEl = h('div', { class: 'world-path' })
+  const worldEl = h('div', { class: `world world-map biome-${biome}` }, sceneEl, sunEl, road, ...decor)
   const sadhu = sadhuEl()
-  pathEl.append(sadhu)
+  worldEl.append(sadhu)
+  const entrance = h('div', { class: 'w-entrance', style: `left:${START.x}%;top:${START.y}%` }, 'ты здесь')
+  worldEl.append(entrance)
 
-  // Подсказка первого входа: что это за место и что делать
+  // Подсказка первого входа
   run._worldHinted = run._worldHinted || false
   const showHint = !run._worldHinted
   let hintEl = null
   if (showHint) {
     hintEl = h('div', { class: 'w-hint' },
-      h('span', {}, 'Перед тобой гора-путь: внизу Муладхара, вверху — Сахасрара. Тапни по светящемуся месту силы — садхака пойдёт туда. Мерцающий ✦ откроет знание.'),
+      h('span', {}, 'Перед тобой — земля этой чакры. Тапни в любую точку — садхака пойдёт туда. Подойди к светящейся цели или к мерцающему ✦ — и произойдёт встреча.'),
       h('button', { class: 'btn ghost small w-hint-ok', onclick: () => { run._worldHinted = true; hintEl.remove() } }, 'Понятно'))
   }
-  const arrowEl = h('div', { class: 'w-arrow', style: 'display:none' }, '▼')
-  pathEl.append(arrowEl)
 
-  // Свободная ходьба: тап по свободному месту — садхака идёт туда
-  pathEl.addEventListener('click', (e) => {
-    if (app._walkBusy) return
-    if (e.target.closest('.w-node') || e.target.closest('.w-spark')) return
-    const pr = pathEl.getBoundingClientRect()
-    const x = Math.min(Math.max(e.clientX - pr.left - sadhu.offsetWidth / 2, 0), pr.width - sadhu.offsetWidth)
-    const y = Math.min(Math.max(e.clientY - pr.top - sadhu.offsetHeight, 0), pr.height - sadhu.offsetHeight)
-    sadhu.style.left = x + 'px'
-    sadhu.style.top = y + 'px'
+  // Цели на карте: бой, второй узел, владыка
+  const objs = {}
+  const curNodes = run.floors[floor]
+  POS.forEach((p) => {
+    const node = curNodes && curNodes[p.i]
+    if (!node) return
+    const done = isNodeDone(run, p.i)
+    const available = !done
+    const isBoss = node.type === 'boss'
+    const mk = h('div', {
+      class: `w-node w-obj ${isBoss ? 'boss' : ''} ${done ? 'done' : ''} ${available ? 'available' : ''}`,
+      style: `left:${p.x}%;top:${p.y}%`,
+      onclick: available ? () => walkToObj(p.i) : null,
+    },
+      h('span', { class: 'w-glyph' }, NODE_GLYPH[node.type]),
+      h('span', { class: 'w-label' }, NODE_LABEL[node.type]))
+    objs[p.i] = { el: mk, x: p.x, y: p.y, available }
+    worldEl.append(mk)
   })
 
-  const markers = {}
-  run.floors.forEach((floor, f) => {
-    const future = f > run.floor
-    const row = h('div', { class: `world-floor ${future ? 'future' : ''}` },
-      h('div', { class: 'w-floor-tag' },
-        future
-          ? `этаж ${f + 1} · впереди`
-          : run.floor > f
-            ? `этаж ${f + 1} · пройдено`
-            : `этаж ${f + 1} · ${CHAKRAS[f]}`),
-      h('div', { class: 'world-floor-row' }))
-    const rowBox = row.children[1]
-    floor.forEach((node, i) => {
-      const done = run.floor > f || isNodeDone(run, i)
-      const available = f === run.floor && !done
-      const mk = h('div', {
-        class: `w-node ${done ? 'done' : ''} ${available ? 'available' : ''} ${node.type === 'boss' ? 'boss' : ''} ${future ? 'future' : ''}`,
-        onclick: available ? () => walkTo(mk, i) : null,
-      },
-        h('span', { class: 'w-glyph' }, future ? '·' : NODE_GLYPH[node.type]),
-        h('span', { class: 'w-label' }, future ? '' : NODE_LABEL[node.type]))
-      markers[f + '_' + i] = mk
-      rowBox.append(mk)
-    })
-    const ghost = deathsByFloor[f]
-    if (ghost && f === run.floor) {
-      rowBox.append(h('div', { class: 'ghost w-ghost', onclick: () => showGhostLesson(ghost) }, '👻'))
-    }
-    pathEl.append(row)
-  })
+  const ghost = deathsByFloor[floor]
+  if (ghost) {
+    const g = h('div', { class: 'ghost w-ghost', style: 'left:12%;top:46%', onclick: () => showGhostLesson(ghost) }, '👻')
+    worldEl.append(g)
+  }
 
-  // Спрятанные слоги (§16.2): на текущем этаже в мире мерцают знаки знания.
-  // Нашёл — открыл цитату из Шастр (как спрятанные сутры в A Short Hike).
+  // Спрятанные слоги — по углам локации
   run._found = run._found || {}
   const sparkles = []
-  const SPARK_X = [0.06, 0.94]
+  const SPARK_XY = [{ x: 6, y: 30 }, { x: 94, y: 42 }, { x: 50, y: 84 }]
   const sparkCount = 1 + (Math.random() < 0.6 ? 1 : 0)
   for (let k = 0; k < sparkCount; k++) {
-    const key = run.floor + '_' + k
+    const key = floor + '_' + k
+    const pos = SPARK_XY[k % SPARK_XY.length]
     const sp = h('div', {
       class: `w-spark ${run._found[key] ? 'found' : ''}`,
+      style: `left:${pos.x}%;top:${pos.y}%`,
       onclick: () => findSparkle(key, sp),
     }, '✦')
-    sparkles.push({ sp, x: SPARK_X[k % SPARK_X.length] })
-    pathEl.append(sp)
+    sparkles.push(sp)
+    worldEl.append(sp)
   }
 
   show(h('div', { class: 'screen active map-screen' },
@@ -923,51 +921,60 @@ function showMap() {
     runSynergiesLine(run),
     run.relics.length > 0 ? h('div', { class: 'hint center mt' }, 'реликвии: ' + run.relics.map((r) => RELICS[r].name).join(' · ')) : null,
   ))
-  worldEl.append(sceneEl, sunEl, ...decor, pathEl)
 
-  // позиции после монтирования: садхака у текущего этажа, гора показывает путь вверх
+  // после монтирования: садхака у входа в локацию
   requestAnimationFrame(() => {
-    const pathRect = pathEl.getBoundingClientRect()
-    let target = null
-    const curRow = run.floors[run.floor]
-    if (curRow) {
-      for (let i = 0; i < curRow.length; i++) {
-        const mk = markers[run.floor + '_' + i]
-        if (mk && !isNodeDone(run, i)) { target = mk; break }
-      }
-      if (!target) target = markers[run.floor + '_0'] || null
-    }
-    if (target) placeSadhu(sadhu, target, pathRect)
-    if (showHint && target) {
-      const tr = target.getBoundingClientRect()
-      arrowEl.style.display = 'block'
-      arrowEl.style.left = (tr.left - pathRect.left + tr.width / 2 - 8) + 'px'
-      arrowEl.style.top = (tr.top - pathRect.top - 28) + 'px'
-    }
-    // спрятанные слоги — вдоль ряда текущего этажа
-    const curFloorEl = markers[run.floor + '_0'] ? markers[run.floor + '_0'].closest('.world-floor-row') : null
-    const rr = (curFloorEl && curFloorEl.getBoundingClientRect()) || pathRect
-    for (const { sp, x } of sparkles) {
-      sp.style.left = (rr.left - pathRect.left + rr.width * x - 10) + 'px'
-      sp.style.top = (rr.top - pathRect.top - 36) + 'px'
-    }
-    // текущий этаж — внизу видимой области, гора возвышается вверх
-    worldEl.scrollTop = worldEl.scrollHeight
+    const wr = worldEl.getBoundingClientRect()
+    sadhu.style.left = (wr.width * START.x / 100 - sadhu.offsetWidth / 2) + 'px'
+    sadhu.style.top = (wr.height * START.y / 100 - sadhu.offsetHeight) + 'px'
   })
-  setTimeout(() => { worldEl.scrollTop = worldEl.scrollHeight }, 120)
 
-  function walkTo(mk, i) {
+  // свободная ходьба по карте: тап по любой точке — садхака идёт; подошёл к цели — встреча
+  worldEl.addEventListener('click', (e) => {
+    if (app._walkBusy) return
+    if (e.target.closest('.w-obj') || e.target.closest('.w-spark')) return
+    const wr = worldEl.getBoundingClientRect()
+    const px = e.clientX - wr.left
+    const py = e.clientY - wr.top
+    walkToPoint(px, py, () => maybeEnterNearby(px, py))
+  })
+
+  function objCenter(i) {
+    const o = objs[i]
+    if (!o) return null
+    const wr = worldEl.getBoundingClientRect()
+    return { x: wr.width * o.x / 100, y: wr.height * o.y / 100 }
+  }
+
+  function walkToPoint(px, py, then) {
+    if (app._walkBusy) return
+    app._walkBusy = true
+    sadhu.style.left = (px - sadhu.offsetWidth / 2) + 'px'
+    sadhu.style.top = (py - sadhu.offsetHeight) + 'px'
+    setTimeout(() => { app._walkBusy = false; if (then) then() }, 480)
+  }
+
+  function walkToObj(i) {
     if (app._walkBusy) return
     run._worldHinted = true
     if (hintEl) hintEl.remove()
-    arrowEl.style.display = 'none'
-    app._walkBusy = true
-    const pathRect = pathEl.getBoundingClientRect()
-    placeSadhu(sadhu, mk, pathRect)
-    setTimeout(() => {
-      app._walkBusy = false
-      enterNode(i)
-    }, 520)
+    const p = objCenter(i)
+    if (!p) return enterNode(i)
+    walkToPoint(p.x, p.y, () => enterNode(i))
+  }
+
+  function maybeEnterNearby(px, py) {
+    for (const key in objs) {
+      const o = objs[key]
+      if (!o.available) continue
+      const p = objCenter(Number(key))
+      if (p && Math.hypot(px - p.x, py - p.y) < 48) {
+        run._worldHinted = true
+        if (hintEl) hintEl.remove()
+        enterNode(Number(key))
+        return
+      }
+    }
   }
 }
 
