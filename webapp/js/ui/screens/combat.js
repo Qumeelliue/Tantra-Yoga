@@ -5,6 +5,7 @@ import { burst, floatNum, setTint, setGunaAudio, sfx, kiirtanaWave, microvitaFx,
 import { haptics } from '../haptics.js'
 import { CARDS } from '../../core/data.js'
 import { playCard, endTurn, resolveRemoval, effectiveCost, checkOutcome, kiirtanaRhythmBonus, samadhiPacify, setSamadhiFocus, samadhiLandscape } from '../../core/engine.js'
+import { CHAKRAS } from '../../core/run.js'
 import { kirtanRhythmOverlay } from '../minigames.js'
 
 export function combatScreen(app) {
@@ -17,6 +18,14 @@ export function combatScreen(app) {
   const badgeEl = h('div', {})
   const meterEl = h('div', {})
   const enemyZone = h('div', { class: 'enemy-zone' })
+  // Арена «Поле Ума» (§арена): бой — не драка, а мандала цвета чакры,
+  // где окову успокаивают практиками. Мир чакры окрашивает арену.
+  const biome = Math.min((run && run.floor) || 0, CHAKRAS.length - 1)
+  const chakraName = CHAKRAS[biome]
+  const arenaEl = h('div', { class: `arena biome-${biome}` },
+    h('div', { class: 'arena-ring' }),
+    h('div', { class: 'arena-title' }, `Поле Ума · ${chakraName}`),
+    enemyZone)
   const samadhiBtn = h('button', { class: 'btn ghost small', style: 'width:auto;margin:6px auto;display:none', onclick: doSamadhiPacify }, '◉ Успокоить (самадхи)')
   const pilesEl = h('div', { class: 'piles-row' })
   const handEl = h('div', { class: 'hand' })
@@ -28,7 +37,7 @@ export function combatScreen(app) {
     root,
     hudEl,
     h('div', { class: 'panel', style: 'padding:10px 12px' }, gunaEl, badgeEl, meterEl),
-    enemyZone,
+    arenaEl,
     samadhiBtn,
     peekEl,
     h('div', { class: 'hand-wrap' }, handEl, pilesEl),

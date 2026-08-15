@@ -6,6 +6,7 @@ import eventsData from '@content/events.json'
 import quotesData from '@content/quotes.json'
 import challengesData from '@content/challenges.json'
 import trialsData from '@content/trials.json'
+import worldsData from '@content/worlds.json'
 
 export const CARDS = cardsData
 export const ENEMIES = enemiesData
@@ -15,6 +16,13 @@ export const QUOTES = quotesData
 export const CHALLENGES = Object.fromEntries(
   Object.entries(challengesData).filter(([k]) => !k.startsWith('_'))
 )
+
+// Лор семи миров-чакр (§16.2a): философия Ананда Марги, «герой идёт по миру».
+export const WORLDS = Object.fromEntries(
+  Object.entries(worldsData).filter(([k]) => !k.startsWith('_'))
+)
+// Рамка космологии: санчара → пратисанчара (вступление пути).
+export const WORLD_PATH = worldsData._path || null
 
 // Дерево челленджей Ямы/Ниямы (§16.2, идея №16): испытание открывает карту-практику
 // навсегда (мета-прогресс). Каждое испытание — поведенческое правило боя; пройдено →

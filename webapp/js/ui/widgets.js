@@ -130,7 +130,7 @@ export function enemyCard(e, { calmHint = true } = {}) {
       h(
         'div',
         { class: 'enemy-hp-lbl' },
-        h('span', {}, 'ХП'),
+        h('span', {}, 'устойчивость'),
         h('span', {}, `${Math.max(0, Math.ceil(e.hp))} / ${e.maxHp}`)
       ),
       h('div', { class: 'enemy-hp-bar' }, h('div', { class: 'enemy-hp-fill', style: `width:${hpPct}%` }))
@@ -140,6 +140,7 @@ export function enemyCard(e, { calmHint = true } = {}) {
       { class: 'calm-bar' },
       calmDots
     ),
+    h('div', { class: 'calm-hint' }, `покой ${e.calm}/${e.calmMax}`),
     calmHint ? h('div', { class: 'calm-hint' },
       e.def.calmCard
         ? `освобождается: ${CARDS[e.def.calmCard]?.name || ''} · ахимса`

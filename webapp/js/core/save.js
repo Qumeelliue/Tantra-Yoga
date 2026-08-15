@@ -47,6 +47,7 @@ export const EMPTY_META = () => ({
   unlockedCards: [],
   settings: { haptics: true },
   letter: { text: '', at: 0, shownAt: 0 },
+  onboarded: false,
   savedAt: 0,
 })
 

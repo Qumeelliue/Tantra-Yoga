@@ -8,9 +8,9 @@
   --bg-1: #171023;
   --bg-2: #221738;
   --ink: #f4e9d6;
-  --ink-dim: #cbbfa8;
-  --muted: #8e7fa6;
-  --muted-2: #6c5f85;
+  --ink-dim: #d8cdba;
+  --muted: #a99dbf;
+  --muted-2: #8b7ea6;
 
   --gold: #f2c46d;
   --gold-soft: #ffdca0;
@@ -126,7 +126,7 @@ body {
   opacity: 0.85;
 }
 
-.hint { color: var(--muted); font-size: 13px; line-height: 1.45; }
+.hint { color: var(--muted); font-size: 13px; line-height: 1.55; }
 .small { font-size: 12px; }
 .med { font-size: 14px; }
 
@@ -192,7 +192,7 @@ body {
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 14px;
+  gap: 18px;
   padding: 24px 0;
 }
 
@@ -328,11 +328,12 @@ body {
    ───────────────────────────────────────────────────────────── */
 
 .streak-card {
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid var(--line-gold-soft);
+  background: rgba(38, 28, 58, 0.55);
+  border: 1px solid var(--line-gold);
   border-radius: 14px;
   padding: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  width: 100%;
 }
 .streak-head {
   display: flex;
@@ -367,12 +368,13 @@ body {
 .streak-freeze { font-size: 11px; color: var(--muted); }
 
 .challenge-card {
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid var(--line-gold-soft);
+  background: rgba(38, 28, 58, 0.55);
+  border: 1px solid var(--line-gold);
   border-radius: 14px;
   padding: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   text-align: center;
+  width: 100%;
 }
 .challenge-term { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .challenge-name { font-size: 16px; font-weight: 800; margin-top: 2px; }
@@ -385,11 +387,12 @@ body {
    ───────────────────────────────────────────────────────────── */
 
 .varna-card {
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid var(--line-gold-soft);
+  background: rgba(38, 28, 58, 0.55);
+  border: 1px solid var(--line-gold);
   border-radius: 14px;
   padding: 12px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  width: 100%;
 }
 .varna-head {
   display: flex;
@@ -504,13 +507,284 @@ body {
 }
 .chakra-sub { color: var(--muted); font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 14px; }
 
-.path {
+/* ─────────────────────────────────────────────────────────────
+   Мир забега: 7 пейзажей-чакр, по которым идёт садхака (§16.2 «герой идёт»)
+   ───────────────────────────────────────────────────────────── */
+
+/* палитры биомов: каждая чакра — свой уютный пейзаж */
+.biome-0 { --sky-a: #2a1416; --sky-b: #5a2f24; --sky-c: #1b0d12; } /* Муладхара — долина корней */
+.biome-1 { --sky-a: #2a1a12; --sky-b: #7a4a26; --sky-c: #14201e; } /* Свадхистхана — воды */
+.biome-2 { --sky-a: #33170f; --sky-b: #8a4a1e; --sky-c: #1a0c0a; } /* Манипура — огненное плато */
+.biome-3 { --sky-a: #0f2417; --sky-b: #2f5a33; --sky-c: #0a160d; } /* Анахата — храмовый сад */
+.biome-4 { --sky-a: #0f1f33; --sky-b: #2f5a7a; --sky-c: #0a1320; } /* Вишуддха — небесный простор */
+.biome-5 { --sky-a: #191033; --sky-b: #4a2f6a; --sky-c: #0e0a1a; } /* Аджна — звёздная высь */
+.biome-6 { --sky-a: #33281a; --sky-b: #8a6a3c; --sky-c: #3a2d1c; } /* Сахасрара — вершина света */
+
+.world {
   position: relative;
-  padding: 10px 0;
+  border-radius: 22px;
+  overflow: hidden;
+  min-height: 380px;
+  border: 1px solid var(--line-gold-soft);
+  box-shadow: var(--shadow-card);
+  margin-bottom: 12px;
+}
+.world-scene {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--sky-a) 0%, var(--sky-b) 52%, var(--sky-c) 100%);
+}
+.world-scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(120% 60% at 50% 0%, rgba(255, 255, 255, 0.05), transparent 55%);
+}
+.world::before {
+  content: '';
+  position: absolute;
+  left: -8%;
+  right: -8%;
+  bottom: -6%;
+  height: 44%;
+  border-radius: 50% 50% 0 0 / 30% 30% 0 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.4));
+  z-index: 1;
+}
+.world-sun {
+  position: absolute;
+  top: 24px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #fff6dd, #f2c46d 70%);
+  opacity: 0.85;
+  box-shadow: 0 0 44px rgba(242, 196, 109, 0.5);
+  z-index: 1;
+}
+.world-path {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 22px;
+  padding: 30px 10px 20px;
+  min-height: 380px;
+}
+.world-floor {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  position: relative;
+}
+
+.w-node {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  background: radial-gradient(circle at 50% 32%, rgba(40, 28, 60, 0.92), rgba(16, 10, 28, 0.96));
+  border: 1.5px solid var(--line-gold-soft);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+}
+.w-node.boss { width: 70px; height: 70px; }
+.w-node .w-glyph { font-size: 22px; line-height: 1; filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5)); }
+.w-node.boss .w-glyph { font-size: 27px; }
+.w-node .w-label {
+  position: absolute;
+  bottom: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.w-node.available {
+  border-color: rgba(242, 196, 109, 0.7);
+  box-shadow: 0 0 0 1px rgba(242, 196, 109, 0.2), 0 0 26px rgba(242, 196, 109, 0.3), 0 4px 18px rgba(0, 0, 0, 0.4);
+  animation: nodePulse 2.6s ease-in-out infinite;
+}
+.w-node.available:hover { transform: scale(1.07); }
+.w-node:active { transform: scale(0.94); }
+.w-node.done { opacity: 0.38; cursor: default; filter: grayscale(0.4); }
+.w-node.done:hover { transform: none; }
+
+/* садхака в охряной робе */
+.sadhu {
+  position: absolute;
+  z-index: 6;
+  width: 30px;
+  height: 44px;
+  pointer-events: none;
+  left: 0;
+  top: 0;
+  transition: left 0.55s cubic-bezier(0.22, 1, 0.36, 1), top 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.sadhu-body {
+  position: absolute;
+  left: 0;
+  bottom: 2px;
+  width: 30px;
+  height: 40px;
+  border-radius: 46% 46% 40% 40% / 42% 42% 58% 58%;
+  background: linear-gradient(180deg, #f2c46d 0%, #d9a254 55%, #a8722f 100%);
+  box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.3);
+  animation: walkBob 0.8s ease-in-out infinite;
+}
+.sadhu-body::before {
+  content: '';
+  position: absolute;
+  top: -13px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 17px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 32%, #f2d2ae, #d9a272 80%);
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, 0.18);
+}
+.sadhu-body::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 3px;
+  width: 10px;
+  height: 15px;
+  border-radius: 4px 50% 50% 4px;
+  background: rgba(242, 196, 109, 0.65);
+  transform: rotate(-12deg);
+}
+.sadhu-shadow {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.4);
+}
+@keyframes walkBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* спрятанные слоги знания */
+.w-spark {
+  position: absolute;
+  z-index: 5;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--gold-soft);
+  background: radial-gradient(circle at 40% 32%, rgba(255, 233, 179, 0.25), rgba(242, 196, 109, 0.08));
+  border: 1px solid rgba(242, 196, 109, 0.5);
+  cursor: pointer;
+  animation: sparkPulse 2s ease-in-out infinite;
+  box-shadow: 0 0 14px rgba(242, 196, 109, 0.35);
+  transition: transform 0.15s ease, opacity 0.3s ease;
+}
+.w-spark:hover { transform: scale(1.15); }
+.w-spark.found { opacity: 0.3; animation: none; cursor: default; }
+@keyframes sparkPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(242, 196, 109, 0.25); }
+  50% { box-shadow: 0 0 20px rgba(255, 233, 179, 0.6); }
+}
+.w-ghost { position: relative; margin: 0; }
+
+/* скрижаль лора мира */
+.world-mini { min-height: 120px; height: 120px; margin-bottom: 0; }
+.world-mini-title {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 18px;
+  padding-top: 44px;
+  color: var(--gold-soft);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.w-elements { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.w-el { font-size: 11.5px; color: var(--ink-dim); background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line-gold-soft); border-radius: 999px; padding: 5px 12px; }
+.w-block-lbl { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); }
+.w-deeper {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid var(--gold);
+  background: linear-gradient(180deg, rgba(242, 196, 109, 0.12), rgba(0, 0, 0, 0.12));
+  text-align: center;
+}
+.w-deeper-lbl { font-size: 10.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold-soft); margin-bottom: 8px; }
+.w-deeper-text { font-family: var(--font-display); font-style: italic; font-size: 16px; line-height: 1.5; color: var(--sat); }
+.w-path { border-color: var(--line-gold); }
+
+/* ─────────────────────────────────────────────────────────────
+   Арена «Поле Ума»: бой — мандала цвета чакры (§арена)
+   ───────────────────────────────────────────────────────────── */
+
+.arena {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid var(--line-gold-soft);
+  box-shadow: var(--shadow-card);
+  background: linear-gradient(180deg, var(--sky-a) 0%, var(--sky-b) 52%, var(--sky-c) 100%);
+}
+.arena-title {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--gold-soft);
+  padding: 10px 0 2px;
+}
+.arena-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 280px;
+  height: 280px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  pointer-events: none;
+  opacity: 0.5;
+  background:
+    conic-gradient(from 0deg,
+      rgba(242, 196, 109, 0.18) 0deg 24deg, transparent 24deg 48deg,
+      rgba(255, 233, 179, 0.12) 48deg 72deg, transparent 72deg 96deg,
+      rgba(242, 196, 109, 0.16) 96deg 120deg, transparent 120deg 144deg,
+      rgba(255, 233, 179, 0.12) 144deg 168deg, transparent 168deg 192deg,
+      rgba(242, 196, 109, 0.18) 192deg 216deg, transparent 216deg 240deg,
+      rgba(255, 233, 179, 0.12) 240deg 264deg, transparent 264deg 288deg,
+      rgba(242, 196, 109, 0.16) 288deg 312deg, transparent 312deg 336deg,
+      rgba(255, 233, 179, 0.12) 336deg 360deg);
+  -webkit-mask: radial-gradient(circle, transparent 42%, #000 42.5%, #000 52%, transparent 52.5%, transparent 68%, #000 68.5%, #000 78%, transparent 78.5%);
+  mask: radial-gradient(circle, transparent 42%, #000 42.5%, #000 52%, transparent 52.5%, transparent 68%, #000 68.5%, #000 78%, transparent 78.5%);
+  animation: spin 80s linear infinite;
+}
+.arena .enemy-zone { flex: none; min-height: 210px; position: relative; z-index: 2; }
+
+.path {
+  position: relative;
+  padding: 12px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
 }
 
 .node {
@@ -1467,7 +1741,24 @@ body {
 }
 .rhythm-dots .r-dot.on { background: var(--gold); border-color: var(--gold); box-shadow: 0 0 10px rgba(242, 196, 109, 0.6); }
 
-/* Четыре лепестка чакры (§5.3): Кама → Артха → Дхарма → Мокша */
+/* ── первый запуск: обучение ──────────────────────────────── */
+
+.onboard-steps { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.onboard-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line-gold);
+  background: rgba(38, 28, 58, 0.5);
+  text-align: left;
+}
+.onboard-e { font-size: 26px; line-height: 1.1; min-width: 32px; text-align: center; }
+.onboard-t { font-weight: 800; font-size: 14px; color: var(--gold-soft); }
+.onboard-d { font-size: 12.5px; color: var(--ink-dim); line-height: 1.45; margin-top: 3px; }
+
+/* ── Четыре лепестка чакры (§5.3): Кама → Артха → Дхарма → Мокша */
 .petals-wrap { display: flex; flex-direction: column; align-items: center; margin: 8px 0 4px; }
 .petals { display: flex; gap: 12px; justify-content: center; }
 .petal { display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 10px; color: var(--muted); opacity: 0.4; transition: all 0.3s ease; }

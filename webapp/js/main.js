@@ -5,7 +5,7 @@ import { setHaptics, haptics } from './ui/haptics.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS } from './core/data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS, WORLDS, WORLD_PATH } from './core/data.js'
 import { computeSynergies } from './core/engine.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
@@ -43,7 +43,7 @@ function boot() {
   if (event && (event.kind === 'increase' || event.kind === 'break' || event.kind === 'grace')) {
     app.bootEvent = event
   }
-  showTitle()
+  showHome()
   // фаза 2 (§17.1): синк через Telegram CloudStorage — побеждает свежее сохранение
   cloudSync(app.meta).then((fresh) => {
     if (fresh) {
@@ -51,9 +51,15 @@ function boot() {
       const { event: e2 } = markVisit(app.meta)
       if (e2 && e2.kind !== 'none') app.bootEvent = e2
       saveMeta(app.meta)
-      showTitle()
+      showHome()
     }
   })
+}
+
+// Первый запуск показывает обучение; дальше — титульный экран.
+function showHome() {
+  if (!app.meta.onboarded) showOnboarding()
+  else showTitle()
 }
 
 function show(node) {
@@ -251,6 +257,38 @@ function showHowto() {
         'Каждая карта и враг — подлинный термин Шастры. Первая встреча открывает карточку в Грантхе. Знание переживает смерть.'),
     ),
     h('button', { class: 'btn primary mt', onclick: startNewRun }, 'Понятно, начнём'),
+  ))
+}
+
+// ── Первый запуск (§онбординг): короткий рассказ о том, что за игра и где геймплей.
+// Показывается один раз, до первого забега. Язык — игровой, без жаргона.
+
+const ONBOARDING_STEPS = [
+  { e: '🗺', t: 'Путь — вверх по 7 чакрам', d: 'На карте забега кликайте узлы: бой, медитация, событие, воспоминание. В конце каждого этажа — владыка чакры. Узлы сверкают — они ждут вашего шага.' },
+  { e: '🃏', t: 'Колода — это ваш ум', d: 'Карты-практики (медитация, мантра, кииртан, сева) — инструменты. Оковки (лень, гнев, жадность) — мусор: они кормят неведение. В бою просто нажимайте карту, чтобы сыграть её.' },
+  { e: '☯', t: 'Вместо маны — три гуны', d: 'Саттва (ясность), раджас (действие), тамас (покой). Держите их в равновесии — прама даёт бонусы. Перекос — штраф. Следите за тремя кружками над врагом.' },
+  { e: '🕊', t: 'Врага можно не убивать', d: 'Соберите 3+ карты Ахимсы и успокойте врага, когда его ХП ≤ 50%: окову освобождают, а не давят. Мирный путь — истинный финал (как прощение в Undertale).' },
+  { e: '♻️', t: 'Смерть — это перерождение', d: 'Знание (цитаты в Грантхе) переживает смерть и остаётся навсегда. Каждый забег делает ум мудрее — так и растёт ваш «хаб» между жизнями.' },
+]
+
+function showOnboarding() {
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, 'ॐ'),
+    h('div', { class: 'node-title display' }, 'Тантра — путь ума'),
+    h('p', { class: 'node-text' }, 'Это рогалик о том, как ум поднимается из неведения к ясности. Коротко, что вы будете делать:'),
+    h('div', { class: 'onboard-steps' },
+      ONBOARDING_STEPS.map((s) =>
+        h('div', { class: 'onboard-step' },
+          h('div', { class: 'onboard-e' }, s.e),
+          h('div', {},
+            h('div', { class: 'onboard-t' }, s.t),
+            h('div', { class: 'onboard-d' }, s.d))))),
+    h('div', { class: 'hint center mt' }, 'Подсказка «?» на титуле — всегда под рукой.'),
+    h('button', { class: 'btn primary mt', onclick: () => {
+      app.meta.onboarded = true
+      saveMeta(app.meta)
+      startNewRun()
+    } }, 'Понятно — в путь ▶'),
   ))
 }
 
@@ -775,46 +813,193 @@ function showMap() {
   const run = app.run
   if (!run) return showTitle()
   const chakra = CHAKRAS[Math.min(run.floor, CHAKRAS.length - 1)]
+  const biome = Math.min(run.floor, CHAKRAS.length - 1)
 
   // Призраки прошлых жизней (§10.3): последняя смерть на этаже оставляет урок
   const deathsByFloor = {}
   for (const d of (app.meta.deathLog || [])) deathsByFloor[d.floor] = d
 
-  const nodes = []
+  // ── мир: пейзаж чакры + тропа, по которой идёт садхака ─────────────────
+  const sceneEl = h('div', { class: 'world-scene' })
+  const sunEl = h('div', { class: 'world-sun' })
+  const pathEl = h('div', { class: 'world-path' })
+  const sadhu = sadhuEl()
+  pathEl.append(sadhu)
+
+  const markers = {}
   run.floors.forEach((floor, f) => {
     if (f > run.floor) return
-    nodes.push(h('div', { class: 'floor-lbl' }, f < run.floor ? 'пройденный этаж' : `этаж ${f + 1} · ${f === run.floors.length - 1 ? 'вершина' : ''}`))
-    nodes.push(h('div', { class: 'row', style: 'justify-content:center;gap:18px;margin:6px 0' },
-      floor.map((node, i) => {
-        const done = run.floor > f || isNodeDone(run, i)
-        const available = f === run.floor && !done
-        return h('div', { class: `node ${done ? 'done' : ''} ${available ? 'available' : ''}`,
-            onclick: available ? () => enterNode(i) : null },
-          h('span', { class: 'glyph' }, NODE_GLYPH[node.type]),
-          h('span', { class: 'node-label' }, NODE_LABEL[node.type]))
-      })))
+    const row = h('div', { class: 'world-floor' })
+    floor.forEach((node, i) => {
+      const done = run.floor > f || isNodeDone(run, i)
+      const available = f === run.floor && !done
+      const mk = h('div', {
+        class: `w-node ${done ? 'done' : ''} ${available ? 'available' : ''} ${node.type === 'boss' ? 'boss' : ''}`,
+        onclick: available ? () => walkTo(mk, i) : null,
+      },
+        h('span', { class: 'w-glyph' }, NODE_GLYPH[node.type]),
+        h('span', { class: 'w-label' }, NODE_LABEL[node.type]))
+      markers[f + '_' + i] = mk
+      row.append(mk)
+    })
     const ghost = deathsByFloor[f]
-    if (ghost) {
-      nodes.push(h('div', { class: 'ghost', onclick: () => showGhostLesson(ghost) },
-        `👻 здесь ты пал: ${ghost.killedBy} · нажми — урок`))
+    if (ghost && f === run.floor) {
+      row.append(h('div', { class: 'ghost w-ghost', onclick: () => showGhostLesson(ghost) }, '👻'))
     }
-    if (f < run.floors.length - 1 && f < run.floor) nodes.push(h('div', { class: 'connector' }))
+    pathEl.append(row)
   })
 
+  // Спрятанные слоги (§16.2): на текущем этаже в мире мерцают знаки знания.
+  // Нашёл — открыл цитату из Шастр (как спрятанные сутры в A Short Hike).
+  run._found = run._found || {}
+  const sparkles = []
+  const SPARK_X = [0.16, 0.84, 0.5]
+  const sparkCount = 1 + (run.rand() < 0.6 ? 1 : 0)
+  for (let k = 0; k < sparkCount; k++) {
+    const key = run.floor + '_' + k
+    const sp = h('div', {
+      class: `w-spark ${run._found[key] ? 'found' : ''}`,
+      onclick: () => findSparkle(key, sp),
+    }, '✦')
+    sparkles.push({ sp, x: SPARK_X[k % SPARK_X.length] })
+    pathEl.append(sp)
+  }
+
   show(h('div', { class: 'screen active map-screen' },
-    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
+    h('div', { class: 'btn-row', style: 'justify-content:space-between' },
+      h('button', { class: 'btn ghost small', onclick: showTitle }, '← Город'),
+      h('button', { class: 'btn ghost small', onclick: showWorldLore }, '📜 о мире')),
     h('div', { class: 'display chakra-title mt' }, chakra),
     h('div', { class: 'chakra-sub' }, 'восхождение'),
-    petalsBlock(run),
-    sageTrace(run),
     h('div', { class: 'run-bar' },
       h('div', { class: 'chip' }, `ХП <span class="gold">${run.hp}</span>`),
       h('div', { class: 'chip' }, `Прана <span class="gold">${run.prana}</span>`),
       h('div', { class: 'chip' }, `колода <span class="gold">${run.deck.length}</span>`),
       h('div', { class: 'chip' }, `реликвии <span class="gold">${run.relics.length}</span>`)),
-    h('div', { class: 'path' }, nodes),
+    h('div', { class: `world biome-${biome}` }, sceneEl, sunEl, pathEl),
     runSynergiesLine(run),
     run.relics.length > 0 ? h('div', { class: 'hint center mt' }, 'реликвии: ' + run.relics.map((r) => RELICS[r].name).join(' · ')) : null,
+  ))
+
+  // позиции после монтирования: садхака встаёт у следующего доступного места
+  requestAnimationFrame(() => {
+    const pathRect = pathEl.getBoundingClientRect()
+    let target = null
+    const curRow = run.floors[run.floor]
+    if (curRow) {
+      for (let i = 0; i < curRow.length; i++) {
+        const mk = markers[run.floor + '_' + i]
+        if (mk && !isNodeDone(run, i)) { target = mk; break }
+      }
+      if (!target) target = markers[run.floor + '_0'] || null
+    }
+    if (target) placeSadhu(sadhu, target, pathRect)
+    const rowEl = pathEl.children[pathEl.children.length - 1]
+    const rr = (rowEl && rowEl.getBoundingClientRect()) || pathRect
+    for (const { sp, x } of sparkles) {
+      sp.style.left = (rr.left - pathRect.left + rr.width * x - 10) + 'px'
+      sp.style.top = (rr.top - pathRect.top + rr.height / 2 - 12) + 'px'
+    }
+  })
+
+  function walkTo(mk, i) {
+    if (app._walkBusy) return
+    app._walkBusy = true
+    const pathRect = pathEl.getBoundingClientRect()
+    placeSadhu(sadhu, mk, pathRect)
+    setTimeout(() => {
+      app._walkBusy = false
+      enterNode(i)
+    }, 520)
+  }
+}
+
+// Спрятанный слог: открывает цитату или даёт Прану (уже открытый — награда поменьше).
+function findSparkle(key, sp) {
+  const run = app.run
+  if (!run) return
+  if (run._found[key]) return
+  run._found[key] = true
+  const qid = unlockRandomQuote()
+  if (qid && QUOTES[qid]) {
+    sfx.unlock()
+    toast(`Ты нашёл слог мудрости: «${QUOTES[qid].term}» — ${QUOTES[qid].meaning}. Знание в Грантхе.`, 'hl')
+  } else {
+    run.prana += 2
+    sfx.peace()
+    toast('Слог уже раскрыт — Прана +2.', 'good')
+  }
+  sp.classList.add('found')
+  saveMeta(app.meta)
+}
+
+// Фигурка садхаки в охряной робе: стоит на месте силы, качается на ходу.
+function sadhuEl() {
+  return h('div', { class: 'sadhu' },
+    h('div', { class: 'sadhu-shadow' }),
+    h('div', { class: 'sadhu-body' }))
+}
+
+// Поставить садхаку «ногами» в центр маркера (или в центр, если foot=false).
+function placeSadhu(sadhu, target, containerRect) {
+  const tr = target.getBoundingClientRect()
+  const x = tr.left - containerRect.left + tr.width / 2 - sadhu.offsetWidth / 2
+  const y = tr.top - containerRect.top + tr.height / 2 - sadhu.offsetHeight
+  sadhu.style.left = x + 'px'
+  sadhu.style.top = y + 'px'
+}
+
+// ─────────────────────────────────────────────────────────────
+// Лор мира (§16.2a): «скрижаль» чакры — земля, что она держит, чему учит.
+// Глубокая правда (deeper) открывается, когда владыка успокоен — знание как ключ.
+// ─────────────────────────────────────────────────────────────
+
+function showWorldLore() {
+  const run = app.run
+  if (!run) return showTitle()
+  const w = Object.values(WORLDS).find((x) => x.floor === run.floor) || Object.values(WORLDS)[0]
+  const lord = w && w.lordId && ENEMIES[w.lordId] ? ENEMIES[w.lordId] : null
+  const pacified = lord ? (app.meta.pacifiedBosses || []).includes(lord.name) : false
+  const biome = Math.min(run.floor, 6)
+
+  const elementChip = h('div', { class: 'w-elements' },
+    h('div', { class: 'w-el' }, `${w.elementIcon} ${w.element}`),
+    h('div', { class: 'w-el' }, `◈ ${w.vrttis}`))
+
+  const deeper = pacified && w.deeper
+    ? h('div', { class: 'w-deeper fade-in' },
+        h('div', { class: 'w-deeper-lbl' }, `освобождённый владыка · ${lord.name}`),
+        h('p', { class: 'w-deeper-text' }, `«${w.deeper}»`),
+        quoteBox(lord.quoteId, { revealed: true }))
+    : h('div', { class: 'hint center', style: 'font-size:12px' },
+        `Владыка ${lord ? lord.name : ''} ещё держит этот мир. Успокойте его — и он откроет тайну (ахимса — единственный ключ).`)
+
+  const pathIntro = run.floor === 0 && WORLD_PATH
+    ? h('div', { class: 'panel mt w-path' },
+        h('div', { class: 'hint', style: 'font-weight:800;color:var(--gold-soft);font-size:12px' }, WORLD_PATH.title),
+        h('p', { class: 'hint mt' }, WORLD_PATH.intro))
+    : null
+
+  show(h('div', { class: 'screen active comp-screen' },
+    h('div', { class: 'btn-row' },
+      h('button', { class: 'btn ghost small', onclick: showMap }, '← Путь'),
+      h('div', { class: 'display chakra-title', style: 'flex:1;text-align:center' }, w.chakra)),
+    h('div', { class: 'chakra-sub' }, `${w.name} · ${w.sanskrit}`),
+    h('div', { class: `world world-mini biome-${biome}` },
+      h('div', { class: 'world-scene' }),
+      h('div', { class: 'world-sun' }),
+      h('div', { class: 'world-mini-title' }, `${w.elementIcon} ${w.name}`)),
+    h('p', { class: 'node-text center mt' }, w.land),
+    elementChip,
+    h('div', { class: 'panel mt' },
+      h('div', { class: 'w-block-lbl' }, 'что держит этот мир'),
+      h('p', { class: 'hint mt' }, w.hold)),
+    h('div', { class: 'panel mt' },
+      h('div', { class: 'w-block-lbl' }, 'чему учит'),
+      h('p', { class: 'hint mt' }, w.teach)),
+    deeper,
+    pathIntro,
+    h('p', { class: 'hint center mt', style: 'font-size:11px;font-style:italic' }, w.cosmos),
   ))
 }
 
@@ -966,7 +1151,7 @@ function enterCombat() {
   // враг узла фиксируется при входе: markSeen и бой должны совпадать
   const node = currentNode(run)
   if (!node.enemyId) node.enemyId = currentEnemyId(run)
-  markSeen('enemies', node.enemyId)
+  markSeen(app.meta, 'enemies', node.enemyId)
   // «Мир помнит» (§исследование, Undertale): счётчик встреч в прошлых жизнях
   app.meta.encounters = app.meta.encounters || {}
   app.meta.encounters[node.enemyId] = (app.meta.encounters[node.enemyId] || 0) + 1
@@ -1071,7 +1256,7 @@ function onCombatEnd(combat) {
   // Дерево Ямы/Ниямы (§16.2): пройденное испытание открывает карту навсегда
   if (result.trialReward) {
     if (unlockCard(app.meta, result.trialReward)) {
-      markSeen('cards', result.trialReward)
+      markSeen(app.meta, 'cards', result.trialReward)
       const c = CARDS[result.trialReward]
       app.trialUnlockToast = c ? `Карта открыта: ${c.name} — она теперь в наградах` : null
       sfx.unlock()
@@ -1080,7 +1265,7 @@ function onCombatEnd(combat) {
   // §9.2: мирное освобождение дарит «память»-реликвию
   if (result.relic) {
     gainRelic(run, result.relic)
-    markSeen('relics', result.relic)
+    markSeen(app.meta, 'relics', result.relic)
     if (RELICS[result.relic]) markLived(app.meta, RELICS[result.relic].quoteId)
   }
 
@@ -1248,7 +1433,7 @@ function pickRewardCard(id) {
   const before = computeSynergies(app.run.deck, CARDS)
   takeCardReward(app.run, id)
   notifySynergy(before, computeSynergies(app.run.deck, CARDS))
-  markSeen('cards', id)
+  markSeen(app.meta, 'cards', id)
   saveMeta(app.meta)
   sfx.unlock()
   markNodeDone(app.run)
@@ -1294,7 +1479,7 @@ function showMeditation() {
 
 function showEvent() {
   const { id, event } = eventOptions(app.run)
-  markSeen('events', id)
+  markSeen(app.meta, 'events', id)
   saveMeta(app.meta)
   show(h('div', { class: 'screen active node-screen' },
     h('div', { class: 'node-icon' }, '✧'),
@@ -1352,7 +1537,7 @@ function showRelic() {
 
 function takeRelic(id) {
   gainRelic(app.run, id)
-  markSeen('relics', id)
+  markSeen(app.meta, 'relics', id)
   if (RELICS[id]) markLived(app.meta, RELICS[id].quoteId) // реликвия прожита: она теперь с вами
   saveMeta(app.meta)
   sfx.unlock()
@@ -1756,8 +1941,8 @@ function doBuy(fn, id) {
   }
   sfx.buy()
   notifySynergy(before, computeSynergies(app.run.deck, CARDS))
-  markSeen('cards', id)
-  markSeen('relics', id)
+  markSeen(app.meta, 'cards', id)
+  markSeen(app.meta, 'relics', id)
   // Вайшья-ментальность (мудрость ресурсов): осознанная трата Праны — навык,
   // а не накопление (Human Society Part 2: vaeshya = деньги как мера всего).
   gainMentality('vaeshya', 1)
