@@ -184,7 +184,7 @@ function showTitle() {
       h('div', { class: 'mandala' }),
       h('div', { class: 'mandala core' }),
       h('div', { class: 'om-glyph', style: 'position:absolute' }, 'ॐ')),
-    h('div', { class: 'game-title' }, 'Tantra Yoga'),
+    h('div', { class: 'game-title' }, 'Tantra: The Game'),
     h('div', { class: 'game-sub' }, 'игра-учение · колода — это ум'),
     h('p', { class: 'hint', style: 'max-width:300px' }, cityText),
     cityDots,

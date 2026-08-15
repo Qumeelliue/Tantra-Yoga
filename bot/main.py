@@ -1,5 +1,5 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Tantra Yoga — Telegram-бот-обёртка («дверь» в мини-апп)
+# Tantra: The Game — Telegram-бот-обёртка («дверь» в мини-апп)
 # Источник паттерна: design/bot-door-pattern-reference.py (Galaxica, адаптировано).
 # Для игры: /start → приветствие + одна WebApp-кнопка; нижняя кнопка меню — мини-апп.
 # НЕ переносим из референса: кошелёк, рефералы, managed-боты, оплаты.
@@ -29,7 +29,7 @@ TOKEN = os.environ["TANTRA_BOT_TOKEN"]
 WEBAPP_URL = os.environ.get("TANTRA_WEBAPP_URL", "https://your-host/tantra-yoga/index.html")
 
 WELCOME = (
-    "🕉 *Tantra Yoga* — рогалик-колодостроитель, где колода — это ум.\n\n"
+    "🕉 *Tantra: The Game* — рогалик-колодостроитель, где колода — это ум.\n\n"
     "Вместо маны — три гуны (саттва/раджас/тамас). "
     "Каждого врага-Акову можно убить… или успокоить ахимсой — мирный путь даёт истинный финал. "
     "Знание из 218 книг Шастры переживает смерть.\n\n"
@@ -42,7 +42,7 @@ def door_kb() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🕉 Открыть Tantra Yoga",
+                    text="🕉 Открыть Tantra: The Game",
                     web_app=WebAppInfo(url=WEBAPP_URL),
                 )
             ]
@@ -71,13 +71,13 @@ async def main() -> None:
     try:
         await bot.set_my_commands(
             [
-                BotCommand(command="start", description="Открыть Tantra Yoga"),
+                BotCommand(command="start", description="Открыть Tantra: The Game"),
                 BotCommand(command="help", description="Как играть"),
             ]
         )
         await bot.set_chat_menu_button(
             menu_button=MenuButtonWebApp(
-                text="🕉 Tantra Yoga", web_app=WebAppInfo(url=WEBAPP_URL)
+                text="🕉 Tantra: The Game", web_app=WebAppInfo(url=WEBAPP_URL)
             )
         )
         await dp.start_polling(bot)

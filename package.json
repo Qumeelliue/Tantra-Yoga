@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "type": "module",
-  "description": "Tantra Yoga — рогалик-колодостроитель в Telegram (фаза 0: прототип ядра)",
+  "description": "Tantra: The Game — рогалик-колодостроитель в Telegram (фаза 0: прототип ядра)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

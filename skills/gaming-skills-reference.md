@@ -2,7 +2,7 @@
 
 > **Источник:** перенесено из `galaxica/docs/reference/openclaw-skills/catalog/gaming.md`
 > (2026-08-11), каталог OpenClaw (~5200 скиллов). Это **справочник ссылок** на внешние
-> скиллы — НЕ код и НЕ готовые файлы. Для Tantra Yoga полезны концепции: RPG-XP-движок,
+> скиллы — НЕ код и НЕ готовые файлы. Для Tantra: The Game полезны концепции: RPG-XP-движок,
 > sprite-sheet (ассеты), game-серверы. Внешние скиллы подключаем только по правилу
 > supply-chain gate (см. `design/reverse-skill-extract.md` §7) и по явной команде автора.
 

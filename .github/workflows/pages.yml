@@ -1,4 +1,4 @@
-name: Deploy Tantra Yoga to GitHub Pages
+name: Deploy Tantra: The Game to GitHub Pages
 
 on:
   push:

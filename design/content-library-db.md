@@ -1,7 +1,7 @@
 # Библиотека контента: не генерировать дважды (общий кэш в базе)
 
 > **Источник:** перенесено из `galaxica/docs/design/CONTENT_LIBRARY_DB.md` (2026-08-11).
-> **Для Tantra Yoga это:** принцип «write-once/read-many» для контента из 218 книг
+> **Для Tantra: The Game это:** принцип «write-once/read-many» для контента из 218 книг
 > Шастры: цитаты, карточки терминов, примеры — подготавливаем один раз (сверка с
 > `notes/shastra/skill-index.md` и `sources/`), храним в общей базе, игра только читает.
 > Таблицы `content_word`/`content_association` → у нас `content_term` (термин + перевод +
