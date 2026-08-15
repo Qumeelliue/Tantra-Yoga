@@ -36,6 +36,7 @@ function boot() {
     window.Telegram?.WebApp?.expand()
   } catch {}
   app = { meta: loadMeta(), run: null, combat: null }
+  app.onCombatEnd = onCombatEnd
   setHaptics(app.meta.settings?.haptics !== false)
   const { event } = markVisit(app.meta)
   saveMeta(app.meta)
@@ -1787,8 +1788,6 @@ function toast(text, cls) {
 function typeRu(card) {
   return { curse: 'мусор', vritti: 'овка', practice: 'практика', mantra: 'мантра', kiirtana: 'кииртан', seva: 'служение' }[card.type]
 }
-
-app.onCombatEnd = onCombatEnd
 
 window.addEventListener('load', boot)
 if (document.readyState === 'complete' || document.readyState === 'interactive') boot()
