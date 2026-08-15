@@ -557,7 +557,8 @@ body {
   z-index: 1;
   pointer-events: none;
 }
-.w-obj { position: absolute; }
+.w-obj { position: absolute; z-index: 4; }
+.w-node.w-obj { position: absolute; z-index: 4; }
 .w-obj.boss { width: 76px; height: 76px; }
 .w-obj.boss .w-glyph { font-size: 27px; }
 .w-entrance {
@@ -592,6 +593,7 @@ body {
   border-radius: 50% 50% 0 0 / 30% 30% 0 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.04), rgba(0, 0, 0, 0.4));
   z-index: 1;
+  pointer-events: none;
 }
 .world-sun {
   position: absolute;
