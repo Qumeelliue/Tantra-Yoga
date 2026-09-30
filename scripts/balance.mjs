@@ -42,6 +42,12 @@ function simFight(run, pacifist = false) {
   return combat
 }
 
+/** Сколько урона наносит карта. Считаем из контента, а не по списку id. */
+function cardDamage(card) {
+  if (!card || !Array.isArray(card.effects)) return 0
+  return card.effects.reduce((a, x) => a + (x.kind === 'damage' ? (x.amount || 0) : 0), 0)
+}
+
 function score(card, combat, p, e, pacifist = false) {
   // меньше = лучше (приоритет)
   let s = 1000
@@ -81,10 +87,28 @@ function score(card, combat, p, e, pacifist = false) {
   if (pacifist && card.id === 'ishvara_pranidhana') {
     return p.imbalance ? 3 : 9000
   }
-  // пасифист: не добиваем, копим ахимсу
+  // Пасифист: не добиваем, копим ахимсу.
+  //
+  // Правило «не добивать» держится на УРОНЕ карты, а не на списке id.
+  // Раньше здесь стояло `if (card.id === 'tapah' || card.id === 'krodha')` —
+  // то есть охранялись ровно две карты, а `first_effort` (3 урона),
+  // `samyama` (8), `tandava` (5), `tapasyah` (4) и `dvesha` (5) проходили
+  // свободно. Бот, который «играет за мир», из 56 провалов 29 закончил
+  // тем, что УБИЛ владыку в первой чакре: «осталось 0 % жизни».
+  // Любая новая карта с уроном пробивала бы правило снова, поэтому
+  // проверка идёт по сумме урона, а не по именам.
   if (pacifist) {
     if (card.id === 'ahimsa' && e.hp <= e.maxHp * 0.55) return 0
-    if ((card.id === 'tapah' || card.id === 'krodha') && e.hp <= e.maxHp * 0.55) return 9000 // не бьём добивающим
+    // Условие успокоения — HP ≤ половины (engine.js `pacifyReady`). Ниже
+    // этой отметки бить нельзя: либо ока не дойдёт до порога, либо её
+    // нечем будет успокаивать. Выше — можно, это и есть «снимать понемногу».
+    //
+    // Урон считаем ВСЕМ, что карта реально наносит. Кроме самого эффекта
+    // есть «Дар Тапаха» (+1 урона к любой практике, engine.js:409) — он бьёт
+    // даже карту без урона в контенте, и без него проверка по карте была бы
+    // дырявой: бот «за мир» всё равно убивал владыку (6 провалов).
+    const hits = cardDamage(card) + (combat.boonMods && combat.boonMods.tapahDamage > 0 && card.type === 'practice' ? combat.boonMods.tapahDamage : 0)
+    if (hits > 0 && e.hp - hits < e.maxHp / 2) return 9000
     return s + 30
   }
   if (card.id === 'first_effort' || card.id === 'santosa') {
@@ -146,7 +170,7 @@ function runOnce(seed, pacifist = false) {
         const combat = simFight(run, pacifist)
         agg.fightPacified += combat.pacified
         agg.fightKills += combat.kills
-        if (node.type === 'boss' && pacifist) {
+        if (node.type === 'boss') {
           const e = combat.enemies[0]
           if (combat.outcome !== 'defeat') {
             bossStats.total++
@@ -154,9 +178,17 @@ function runOnce(seed, pacifist = false) {
             bossStats.hpPct.push(Math.round((e.hp / e.maxHp) * 100))
             bossStats.ahimsaInDeck += run.deck.filter((id) => id === 'ahimsa').length
             if (e.pacified) bossStats.pacified++
+            else if (pacifist) bossStats.failed.push({ floor: run.floor + 1, name: e.name, hp: Math.round((e.hp / e.maxHp) * 100), calm: e.calm, ahimsa: run.deck.filter((id) => id === 'ahimsa').length, kills: combat.kills, deck: run.deck.length })
           }
         }
+        const killsBefore = agg.fightKills
         const res = finishCombat(run, combat)
+        // ГДЕ именно бот кого-то убил. Раньше было видно только «убито за забег
+        // 1», и нельзя было понять, в бою с владыкой это или с обычной окой.
+        if (pacifist && agg.fightKills > killsBefore && node.type !== 'boss') {
+          agg.peaceSlip = agg.peaceSlip || []
+          agg.peaceSlip.push({ floor: run.floor + 1, type: node.type, name: e.name, hp: Math.round((e.hp / e.maxHp) * 100), ahimsa: run.deck.filter((id) => id === 'ahimsa').length })
+        }
         agg.minHp = Math.min(agg.minHp, hpPct())
         if (res.dead) return { status: 'dead', floor: run.floor, hp: run.hp, killer: res.killedBy, ...agg }
         agg.boons.push(pickBoon(run, pacifist))
@@ -231,7 +263,7 @@ function closeness(results) {
 // ── СИЛА: агрессивный бот, который не играет ахимсу ───────────────────────
 let wins = 0, deaths = 0, pacified = 0
 const deathBy = {}
-const bossStats = { total: 0, calm: 0, hpPct: [], pacified: 0, ahimsaInDeck: 0 }
+const bossStats = { total: 0, calm: 0, hpPct: [], pacified: 0, ahimsaInDeck: 0, failed: [] }
 const strengthRuns = []
 for (let s = 1; s <= N; s++) {
   const r = runOnce(s * 100 + 7)
@@ -244,12 +276,13 @@ for (let s = 1; s <= N; s++) {
   }
   if (r.pacified) pacified++
 }
-console.log(`[сила] Игр: ${N} | побед: ${wins} (${Math.round((wins / N) * 100)}%) | смертей: ${deaths}`)
+console.log(`[сила] Игр: ${N} | побед: ${wins} (${Math.round((wins / N) * 100)}%) | смертей: ${deaths} | мирных финалов: ${pacified}`)
 console.log(closeness(strengthRuns))
 console.log('Смерти по этажам/врагам:', deathBy)
 
 // Проверяем, достижим ли мирный путь (ахимса): пасифистская стратегия
 let pWins = 0, pPac = 0, pDead = 0, pFightPac = 0, pKills = 0
+const pDeathBy = {}
 const peaceRuns = []
 for (let s = 1; s <= N; s++) {
   const r = runOnce(s * 100 + 7, true)
@@ -259,10 +292,27 @@ for (let s = 1; s <= N; s++) {
   if (r.status === 'victory') {
     pWins++
     if (r.pacified) pPac++
-  } else if (r.status === 'dead') pDead++
+  } else if (r.status === 'dead') { pDead++; pDeathBy[`этаж${r.floor + 1}:${r.killer}`] = (pDeathBy[`этаж${r.floor + 1}:${r.killer}`] || 0) + 1 }
 }
 const avgHp = bossStats.hpPct.length ? Math.round(bossStats.hpPct.reduce((a, b) => a + b, 0) / bossStats.hpPct.length) : '-'
 console.log(`[ахимса] Игр: ${N} | побед: ${pWins} (${Math.round((pWins / N) * 100)}%) | мирных финалов: ${pPac} | смертей: ${pDead}`)
 console.log(closeness(peaceRuns))
 console.log(`  успокоенных врагов за все забеги: ${pFightPac} | убитых: ${pKills}`)
+console.log(`  мирных финалов: ${pPac} из ${pWins} побед (${pWins ? Math.round((pPac / pWins) * 100) : 0} %) — это бот, который ИГРАЕТ ЗА МИР`)
+console.log(`  смерти пасифиста по этажам:`, pDeathBy)
 console.log(`  босс: боёв=${bossStats.total} | успокоен=${bossStats.pacified} | сред. calm=${bossStats.total ? (bossStats.calm / bossStats.total).toFixed(2) : '-'}/${'3'} | сред. hp% на конце=${avgHp} | ахимса в колоде в среднем=${bossStats.total ? (bossStats.ahimsaInDeck / bossStats.total).toFixed(1) : '-'}`)
+const slips = peaceRuns.reduce((a, r) => a.concat(r.peaceSlip || []), [])
+if (slips.length) {
+  console.log(`  бот-пасифист УБИЛ обычную оку: ${slips.length} раз — мирный путь сорван не у владыки`)
+  for (const s of slips.slice(0, 5)) console.log(`    чакра ${s.floor} ${s.type} ${s.name}: осталось ${s.hp}% жизни, ахимсы ${s.ahimsa}`)
+}
+if (bossStats.failed.length) {
+  // Где именно мирный путь ломается. Без этого «59 % мирных финалов» —
+  // просто число, и не видно, что мешает оставшимся 41 %.
+  const byFloor = {}
+  for (const f of bossStats.failed) byFloor[f.floor] = (byFloor[f.floor] || 0) + 1
+  console.log(`  НЕ успокоен (пасифист): ${bossStats.failed.length} — по чакрам ${JSON.stringify(byFloor)}`)
+  for (const f of bossStats.failed.slice(0, 6)) {
+    console.log(`    чакра ${f.floor} ${f.name}: осталось ${f.hp}% жизни, спокойствие ${f.calm}, ахимсы ${f.ahimsa}, убито за забег ${f.kills}, колода ${f.deck}`)
+  }
+}
