@@ -1,5 +1,5 @@
 // Баланс-прогон: умный ИИ играет N забегов, считаем винрейт и статистику.
-import { createRun, startCombatAtNode, finishCombat, currentNode, floorComplete, advanceFloor, resolveEventChoice, rollShop, buyShopCard, buyShopRemove } from '../webapp/js/core/run.js'
+import { createRun, startCombatAtNode, finishCombat, currentNode, floorComplete, advanceFloor, resolveEventChoice, rollBoonChoices, rollShop, buyShopCard, buyShopRemove } from '../webapp/js/core/run.js'
 import { mulberry32, playCard, endTurn, resolveRemoval, effectiveCost } from '../webapp/js/core/engine.js'
 import { CARDS, EVENTS, RELICS, TRIAL_REWARD_CARDS } from '../webapp/js/core/data.js'
 import { EMPTY_META } from '../webapp/js/core/save.js'
@@ -93,6 +93,24 @@ function score(card, combat, p, e, pacifist = false) {
   return s
 }
 
+/**
+ * Выбор дара после боя — ровно как на экране (`main.js`: `rollBoonChoices` →
+ * `pickBoon`). Раньше этого шага в замере не было вовсе: симулятор звал
+ * `finishCombat` напрямую и никогда не выбирал дар, хотя игра предлагает
+ * три после каждого боя. То есть замер шёл по колоде без единого дара.
+ */
+const BOON_PREFERENCE_PEACE = ['ahimsa', 'seva', 'satya', 'aparigraha', 'svadhyaya', 'kiirtana', 'mantra', 'pranayama']
+const BOON_PREFERENCE_FORCE = ['kiirtana', 'tapah', 'svadhyaya', 'mantra', 'pranayama', 'seva', 'ahimsa', 'aparigraha']
+
+function pickBoon(run, pacifist = false) {
+  const choices = rollBoonChoices(run, run.rand)
+  if (!choices.length) return null
+  const order = pacifist ? BOON_PREFERENCE_PEACE : BOON_PREFERENCE_FORCE
+  for (const id of order) if (choices.includes(id)) { run.boons.push(id); return id }
+  run.boons.push(choices[0])
+  return choices[0]
+}
+
 function pickReward(run, choices, pacifist = false) {
   if (pacifist) {
     // Микровиты (§9.1b): девайоны vidyadhara/siddha — второй путь успокоения.
@@ -110,8 +128,13 @@ function pickReward(run, choices, pacifist = false) {
 
 function runOnce(seed, pacifist = false) {
   const run = createRun({ meta: simMeta(), rng: mulberry32(seed) })
-  const agg = { fightPacified: 0, fightKills: 0 }
+  // «Насколько близко» — то, чего в отчёте не было вообще. Винрейт сам по
+  // себе ничего не значит: 98 % могут означать и «прошёл невредимым», и «умер
+  // на седьмом владыке и дотянул». Поэтому запоминаем самое низкое здоровье
+  // за забег и здоровье перед каждым владыкой.
+  const agg = { fightPacified: 0, fightKills: 0, minHp: 100, bossHp: [], boons: [] }
   let guard = 0
+  const hpPct = () => Math.round((run.hp / run.maxHp) * 100)
   while (run.status === 'active' && guard < 40) {
     const floorNodes = run.floors[run.floor]
     for (let i = 0; i < floorNodes.length; i++) {
@@ -119,6 +142,7 @@ function runOnce(seed, pacifist = false) {
       if (run.done[run.floor][i]) continue
       const node = currentNode(run)
       if (node.type === 'combat' || node.type === 'boss' || node.type === 'elite' || node.type === 'trial') {
+        if (node.type === 'boss') agg.bossHp[run.floor] = hpPct()
         const combat = simFight(run, pacifist)
         agg.fightPacified += combat.pacified
         agg.fightKills += combat.kills
@@ -133,7 +157,9 @@ function runOnce(seed, pacifist = false) {
           }
         }
         const res = finishCombat(run, combat)
+        agg.minHp = Math.min(agg.minHp, hpPct())
         if (res.dead) return { status: 'dead', floor: run.floor, hp: run.hp, killer: res.killedBy, ...agg }
+        agg.boons.push(pickBoon(run, pacifist))
         if (res.cardChoices && res.cardChoices.length) run.deck.push(pickReward(run, res.cardChoices, pacifist))
         run.done[run.floor][i] = true
         if (node.type === 'boss') break
@@ -175,12 +201,41 @@ function runOnce(seed, pacifist = false) {
   return { status: run.status, floor: run.floor, pacified: run.outcome === 'awakening', ...agg }
 }
 
-const N = 50
+const N = Number(process.argv[2] || 50)
+
+/**
+ * «Насколько близко» — то, чего в отчёте не было. Один винрейт ничего не
+ * значит: 98 % — это и «прошёл невредимым», и «умер на седьмом владыке».
+ * Читается только рядом с тем, где кончалось здоровье.
+ */
+function closeness(results) {
+  const mins = results.map((r) => r.minHp).filter((n) => Number.isFinite(n))
+  if (!mins.length) return '  насколько близко: нет данных'
+  const avg = mins.reduce((a, b) => a + b, 0) / mins.length
+  const low30 = mins.filter((n) => n < 30).length
+  const low50 = mins.filter((n) => n < 50).length
+  const out = [`  насколько близко: средний минимум жизни за забег ${Math.round(avg)}% · падало ниже 30 %: ${low30} забегов · ниже 50 %: ${low50} (из ${mins.length})`]
+  const maxFloor = results.reduce((m, r) => Math.max(m, (r.bossHp || []).length - 1), 0)
+  const boons = results.reduce((a, r) => a + (r.boons || []).filter(Boolean).length, 0)
+  const out2 = [`  даров за забег: ${results.length ? Math.round((boons / results.length) * 10) / 10 : 0} (игра предлагает три после каждого боя)`]
+  const byFloor = []
+  for (let f = 0; f <= maxFloor; f++) {
+    const vals = results.map((r) => (r.bossHp || [])[f]).filter((n) => Number.isFinite(n))
+    if (vals.length) byFloor.push(`${f + 1}ч ${Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)}%`)
+  }
+  if (byFloor.length) out.push('  жизнь перед владыкой: ' + byFloor.join(' · '))
+  out.push(...out2)
+  return out.join('\n')
+}
+
+// ── СИЛА: агрессивный бот, который не играет ахимсу ───────────────────────
 let wins = 0, deaths = 0, pacified = 0
 const deathBy = {}
 const bossStats = { total: 0, calm: 0, hpPct: [], pacified: 0, ahimsaInDeck: 0 }
+const strengthRuns = []
 for (let s = 1; s <= N; s++) {
   const r = runOnce(s * 100 + 7)
+  strengthRuns.push(r)
   if (r.status === 'victory') wins++
   else if (r.status === 'dead') {
     deaths++
@@ -190,12 +245,15 @@ for (let s = 1; s <= N; s++) {
   if (r.pacified) pacified++
 }
 console.log(`[сила] Игр: ${N} | побед: ${wins} (${Math.round((wins / N) * 100)}%) | смертей: ${deaths}`)
+console.log(closeness(strengthRuns))
 console.log('Смерти по этажам/врагам:', deathBy)
 
 // Проверяем, достижим ли мирный путь (ахимса): пасифистская стратегия
 let pWins = 0, pPac = 0, pDead = 0, pFightPac = 0, pKills = 0
+const peaceRuns = []
 for (let s = 1; s <= N; s++) {
   const r = runOnce(s * 100 + 7, true)
+  peaceRuns.push(r)
   pFightPac += r.fightPacified
   pKills += r.fightKills
   if (r.status === 'victory') {
@@ -205,5 +263,6 @@ for (let s = 1; s <= N; s++) {
 }
 const avgHp = bossStats.hpPct.length ? Math.round(bossStats.hpPct.reduce((a, b) => a + b, 0) / bossStats.hpPct.length) : '-'
 console.log(`[ахимса] Игр: ${N} | побед: ${pWins} (${Math.round((pWins / N) * 100)}%) | мирных финалов: ${pPac} | смертей: ${pDead}`)
+console.log(closeness(peaceRuns))
 console.log(`  успокоенных врагов за все забеги: ${pFightPac} | убитых: ${pKills}`)
 console.log(`  босс: боёв=${bossStats.total} | успокоен=${bossStats.pacified} | сред. calm=${bossStats.total ? (bossStats.calm / bossStats.total).toFixed(2) : '-'}/${'3'} | сред. hp% на конце=${avgHp} | ахимса в колоде в среднем=${bossStats.total ? (bossStats.ahimsaInDeck / bossStats.total).toFixed(1) : '-'}`)

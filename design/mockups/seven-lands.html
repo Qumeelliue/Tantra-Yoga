@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Семь локаций — как они выглядят</title>
+<style>
+/* Семь локаций. Стихии — из content/worlds.json:
+   Земля · Вода · Огонь · Воздух · Эфир · Ум · Сознание.
+   Стиль тот же: тушь пером + неоновые акценты (Hades). */
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --ink-0:#08070c;--ink-line:#2b2438;--edge:#3d3350;
+    --sattva:#f2f0e8;--rajas:#ff2d2d;
+    --gold:#ffcf4a;--cyan:#4fe8ff;--lime:#9dff5a;
+    --paper:#e8e2d4;--dim:#a89f8e;
+    --fd:'Cormorant Garamond',Georgia,serif;
+    --fu:'Inter',-apple-system,system-ui,sans-serif;
+  }
+  body{background:#000;color:var(--paper);font-family:var(--fu);
+    display:flex;flex-wrap:wrap;gap:30px;padding:30px 24px 70px;
+    align-items:flex-start;justify-content:center}
+  .lbl{text-align:center;margin-bottom:10px;width:236px}
+  .lbl b{display:block;font-family:var(--fd);font-size:16px;color:var(--gold);letter-spacing:.03em}
+  .lbl i{display:block;font-style:normal;font-size:10px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--dim);margin-top:3px}
+  .lbl em{display:block;font-style:normal;font-size:10.5px;color:#7d7291;margin-top:4px;
+    line-height:1.4;height:42px;overflow:hidden}
+
+  .ph{width:236px;height:400px;position:relative;background:var(--ink-0);
+    border:2px solid #241d33;border-radius:4px;overflow:hidden;flex:none;
+    box-shadow:0 0 0 1px #000,0 18px 44px rgba(0,0,0,.85)}
+
+  /* небо стихии */
+  .sky{position:absolute;inset:0}
+  .hatch{position:absolute;inset:0;opacity:.5;
+    background:repeating-linear-gradient(58deg,rgba(255,255,255,.028) 0 1px,transparent 1px 7px)}
+  .dust{position:absolute;inset:0;opacity:.7}
+  .dust i{position:absolute;width:2.2px;height:2.2px;border-radius:50%;
+    background:rgba(255,235,190,.5)}
+
+  /* изометрический пол */
+  .floor{position:absolute;left:-25%;right:-25%;top:32%;bottom:-10%;
+    transform:perspective(420px) rotateX(57deg);transform-origin:50% 0}
+  .tile{position:absolute;border:1px solid rgba(255,255,255,.05)}
+  .floorline{position:absolute;left:8%;right:8%;top:32%;height:2px}
+
+  /* силуэты-ориентиры */
+  .prop{position:absolute}
+  .prop.tree .tr{position:absolute;left:50%;transform:translateX(-50%);
+    width:6px;background:rgba(10,7,6,.95)}
+  .prop.tree .cr{position:absolute;left:50%;transform:translateX(-50%);
+    border-radius:50%;background:rgba(8,6,5,.96)}
+  .prop.reeds .rd{position:absolute;bottom:0;background:rgba(8,14,16,.95)}
+  .prop.spire .sp{position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+    background:rgba(18,6,4,.96);clip-path:polygon(0 100%,50% 0,100% 100%)}
+  .prop.column .cl{position:absolute;left:50%;transform:translateX(-50%);
+    background:rgba(10,16,14,.95)}
+  .prop.column .cap{position:absolute;left:50%;transform:translateX(-50%);
+    background:rgba(12,20,17,.98)}
+  .prop.arch .ar{position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+    border-radius:50% 50% 0 0;background:transparent}
+  .prop.obelisk .ob{position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+    background:rgba(8,11,18,.96);clip-path:polygon(0 100%,16% 12%,50% 0,84% 12%,100% 100%)}
+  .prop.crown .cr2{position:absolute;left:50%;bottom:0;transform:translateX(-50%);
+    border-radius:50% 50% 0 0;background:rgba(18,15,10,.96)}
+
+  /* узор земли */
+  .mot{position:absolute;inset:0}
+
+  /* ока + садхака */
+  .foe{position:absolute;width:44px;height:48px}
+  .foe .body{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:44px;height:48px;background:#120d18;box-shadow:0 0 0 1.5px #000;
+    clip-path:polygon(50% 0,72% 18%,96% 30%,88% 56%,70% 72%,50% 100%,30% 72%,12% 56%,4% 30%,28% 18%)}
+  .foe .core{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+    width:17px;height:20px;border-radius:50%;filter:blur(3px);
+    background:radial-gradient(circle,var(--sattva),rgba(242,240,232,.08) 70%)}
+  .foe .eyes{position:absolute;left:50%;top:44%;transform:translateX(-50%);display:flex;gap:7px}
+  .foe .eyes b{width:9px;height:2.5px;background:#fff;display:block;box-shadow:0 0 7px #fff}
+  .foe .ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    border-radius:50%;border:2.6px solid rgba(255,150,90,.85)}
+  .foe .ring.win{border:3.4px solid #ffe896;box-shadow:0 0 16px rgba(255,215,106,.8)}
+
+  .sadhu{position:absolute;width:52px;height:88px;z-index:9}
+  .sadhu .shadow{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);
+    width:32px;height:9px;background:rgba(0,0,0,.62);border-radius:50%}
+  .sadhu .robe{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);
+    width:34px;height:55px;background:linear-gradient(180deg,#f4f0e6,#ded7c6 52%,#b6ad9a);
+    clip-path:polygon(30% 0,70% 0,100% 100%,0 100%);
+    filter:drop-shadow(0 0 1px #000) drop-shadow(0 2px 5px rgba(0,0,0,.6))}
+  .sadhu .collar{position:absolute;left:50%;bottom:55px;transform:translateX(-50%);
+    width:18px;height:10px;background:#fbf8f0;clip-path:polygon(50% 0,100% 78%,50% 100%,0 78%)}
+  .sadhu .head{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);
+    width:14px;height:16px;background:#fdfaf2;border-radius:46% 46% 50% 50% / 40% 40% 60% 60%}
+
+  /* шапка локации */
+  .head{position:absolute;left:0;right:0;top:8px;text-align:center;z-index:20}
+  .head b{display:block;font-family:var(--fd);font-size:15px;color:var(--paper);
+    text-shadow:0 2px 8px #000;letter-spacing:.03em}
+  .head i{display:block;font-style:normal;font-size:8.5px;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--gold);text-shadow:0 1px 6px #000;margin-top:1px}
+  .head em{display:block;font-style:normal;font-size:8.5px;color:#9a8f7e;margin-top:1px}
+
+  /* микро-HUD */
+  .bars{position:absolute;right:8px;top:52px;width:78px;z-index:20}
+  .bars .r{margin-bottom:4px}
+  .bars .lb{font-size:6px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+  .bars .tk{height:4px;background:#0c0a12;border:1px solid var(--ink-line);position:relative;overflow:hidden}
+  .bars .tk i{position:absolute;left:0;top:0;bottom:0}
+  .bars .hp .tk i{background:linear-gradient(180deg,#ff6b5a,#c01f1f)}
+  .bars .qi .tk i{background:linear-gradient(180deg,#8ff4ff,#2b9fbf)}
+  .bars .av .tk i{background:linear-gradient(180deg,#b06bff,#5a1f8f)}
+  .log{position:absolute;left:8px;bottom:8px;z-index:20;display:flex;
+    flex-direction:column-reverse;gap:2px;max-width:180px}
+  .log div{font-size:8px;padding:2px 5px;background:rgba(8,7,12,.85);
+    border-left:2px solid var(--edge);color:var(--dim)}
+  .log div.g{border-left-color:var(--gold);color:#ffe6a8}
+  .log div.l{border-left-color:var(--lime);color:#c8f0a8}
+
+  /* пояснение */
+  .sheet{width:330px}
+  .row{display:flex;gap:11px;padding:10px 12px;background:rgba(12,10,18,.75);
+    border:1px solid #241d33;margin-bottom:9px;align-items:flex-start}
+  .chip{width:26px;height:26px;flex:none}
+  .row b{display:block;font-family:var(--fd);font-size:13px}
+  .row span{display:block;font-size:10px;color:var(--dim);margin-top:2px;line-height:1.45}
+  .motifs{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+  .mo{padding:7px 9px;background:rgba(12,10,18,.75);border-left:2px solid var(--gold)}
+  .mo b{display:block;font-family:var(--fd);font-size:12.5px;color:var(--gold)}
+  .mo span{display:block;font-size:9.5px;color:var(--dim);line-height:1.35;margin-top:1px}
+
+  /* ── КРИПА ── */
+  .krpaph{width:236px;height:400px;position:relative;background:#0a0812;
+    border:2px solid #3a2c1a;border-radius:4px;overflow:hidden;flex:none;
+    box-shadow:0 0 0 1px #000,0 18px 44px rgba(0,0,0,.85)}
+  .veil{position:absolute;inset:0;
+    background:radial-gradient(circle at 50% 52%, rgba(255,231,168,.55),
+      rgba(255,207,74,.16) 38%, transparent 68%)}
+  .rain{position:absolute;inset:0}
+  .rain i{position:absolute;width:1.5px;border-radius:2px;
+    background:linear-gradient(180deg,rgba(255,231,168,0),rgba(255,231,168,.55))}
+  .kbanner{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);
+    font-family:var(--fd);font-size:30px;color:#ffd76a;white-space:nowrap;z-index:25;
+    text-shadow:0 0 26px rgba(255,190,60,.8),0 2px 0 #000}
+  .kquote{position:absolute;left:14px;right:14px;bottom:12px;z-index:26;
+    padding:9px 11px;background:rgba(8,7,12,.9);border-left:2px solid var(--gold)}
+  .kquote b{display:block;font-family:var(--fd);font-size:12px;color:var(--gold);margin-bottom:2px}
+  .kquote span{display:block;font-size:9.5px;line-height:1.45;color:#d8cdb8;font-style:italic}
+  .kquote em{display:block;font-style:normal;font-size:8.5px;color:#7d7291;margin-top:3px}
+  .kobw{position:absolute;width:44px;height:48px;z-index:10}
+  .kobw .body{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:44px;height:48px;background:#120d18;box-shadow:0 0 0 1.5px #000;
+    clip-path:polygon(50% 0,72% 18%,96% 30%,88% 56%,70% 72%,50% 100%,30% 72%,12% 56%,4% 30%,28% 18%)}
+  .kobw .core{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+    width:17px;height:20px;border-radius:50%;filter:blur(3px);
+    background:radial-gradient(circle,#ffe8a8,rgba(255,232,168,.1) 70%)}
+  .kobw .eyes{position:absolute;left:50%;top:44%;transform:translateX(-50%);display:flex;gap:7px}
+  .kobw .eyes b{width:9px;height:2.5px;background:#ffe8a8;display:block;box-shadow:0 0 8px #ffe8a8}
+  .kobw .drop{position:absolute;left:50%;top:-22px;width:1.5px;height:18px;
+    background:linear-gradient(180deg,transparent,rgba(255,231,168,.7))}
+  .kobw .lbl{position:absolute;left:50%;top:56px;transform:translateX(-50%);
+    font-size:8.5px;color:#ffe8a8;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- 0 ЗЕМЛЯ -->
+<div><div class="lbl"><b>Долина Корней</b><i>🌍 Земля · terranean</i>
+  <em>Корни, тёмная охра. Пара Шакти спит под землёй.</em></div>
+  <div class="ph">
+    <div class="sky" style="background:radial-gradient(90% 50% at 50% 0%,rgba(214,140,74,.14),transparent 62%),
+      linear-gradient(#1a110e 0%,#241a14 50%,#0a0706 100%)"></div>
+    <div class="floor" style="background:rgba(58,42,32,.5)">
+      <div class="tile" style="left:4%;top:0;width:64px;height:64px;background:rgba(70,50,38,.5)"></div>
+      <div class="tile" style="left:68px;top:0;width:64px;height:64px;background:rgba(48,34,26,.5)"></div>
+      <div class="tile" style="left:132px;top:0;width:64px;height:64px;background:rgba(70,50,38,.5)"></div>
+      <div class="tile" style="left:4%;top:64px;width:64px;height:64px;background:rgba(48,34,26,.5)"></div>
+      <div class="tile" style="left:68px;top:64px;width:64px;height:64px;background:rgba(70,50,38,.5)"></div>
+      <div class="tile" style="left:132px;top:64px;width:64px;height:64px;background:rgba(48,34,26,.5)"></div>
+      <div class="tile" style="left:4%;top:128px;width:64px;height:64px;background:rgba(70,50,38,.5)"></div>
+      <div class="tile" style="left:68px;top:128px;width:64px;height:64px;background:rgba(48,34,26,.5)"></div>
+      <div class="tile" style="left:132px;top:128px;width:64px;height:64px;background:rgba(70,50,38,.5)"></div>
+    </div>
+    <div class="mot">
+      <div style="position:absolute;left:10px;top:150px;width:110px;height:7px;background:rgba(18,11,8,.72);border-radius:50%;transform:rotate(4deg)"></div>
+      <div style="position:absolute;right:8px;top:200px;width:96px;height:6px;background:rgba(18,11,8,.72);border-radius:50%;transform:rotate(-5deg)"></div>
+      <div style="position:absolute;left:70px;top:290px;width:140px;height:8px;background:rgba(18,11,8,.72);border-radius:50%"></div>
+    </div>
+    <div class="prop tree" style="left:26px;top:96px;width:30px;height:64px">
+      <div class="tr" style="bottom:0;height:34px"></div>
+      <div class="cr" style="bottom:28px;width:30px;height:30px"></div></div>
+    <div class="prop tree" style="right:20px;top:86px;width:24px;height:54px">
+      <div class="tr" style="bottom:0;height:28px"></div>
+      <div class="cr" style="bottom:22px;width:24px;height:24px"></div></div>
+    <div class="prop tree" style="right:12px;top:300px;width:32px;height:70px">
+      <div class="tr" style="bottom:0;height:36px"></div>
+      <div class="cr" style="bottom:30px;width:32px;height:32px"></div></div>
+    <div class="sadhu" style="left:92px;top:270px">
+      <div class="shadow"></div><div class="robe"></div><div class="collar"></div><div class="head"></div></div>
+    <div class="foe" style="left:164px;top:186px">
+      <div class="ring" style="width:72px;height:72px"></div>
+      <div class="body"></div><div class="core"></div><div class="eyes"><b></b><b></b></div></div>
+    <div class="head"><b>Долина Корней</b><i>🌍 Земля · terranean</i><em>владыка: Моха</em></div>
+    <div class="bars">
+      <div class="r hp"><span class="lb">жизнь</span><div class="tk"><i style="width:88%"></i></div></div>
+      <div class="r qi"><span class="lb">Ци</span><div class="tk"><i style="width:70%"></i></div></div>
+      <div class="r av"><span class="lb">авидья</span><div class="tk"><i style="width:22%"></i></div></div>
+    </div>
+    <div class="log"><div class="l">Моха — распался в свет</div>
+      <div class="g">дефлект — серия 2</div></div>
+  </div></div>
+
+<!-- 1 ВОДА -->
+<div><div class="lbl"><b>Воды Влечения</b><i>💧 Вода · fluidal</i>
+  <em>Рябь по воде, камыш у краёв. Шесть потоков.</em></div>
+  <div class="ph">
+    <div class="sky" style="background:radial-gradient(90% 50% at 50% 0%,rgba(110,220,230,.14),transparent 62%),
+      linear-gradient(#0a1c24 0%,#0e2c34 50%,#040a0e 100%)"></div>
+    <div class="floor" style="background:rgba(28,58,66,.5)">
+      <div class="tile" style="left:4%;top:0;width:64px;height:64px;background:rgba(34,70,78,.5)"></div>
+      <div class="tile" style="left:68px;top:0;width:64px;height:64px;background:rgba(20,46,54,.5)"></div>
+      <div class="tile" style="left:132px;top:0;width:64px;height:64px;background:rgba(34,70,78,.5)"></div>
+      <div class="tile" style="left:4%;top:64px;width:64px;height:64px;background:rgba(20,46,54,.5)"></div>
+      <div class="tile" style="left:68px;top:64px;width:64px;height:64px;background:rgba(34,70,78,.5)"></div>
+      <div class="tile" style="left:132px;top:64px;width:64px;height:64px;background:rgba(20,46,54,.5)"></div>
+      <div class="tile" style="left:4%;top:128px;width:64px;height:64px;background:rgba(34,70,78,.5)"></div>
+      <div class="tile" style="left:68px;top:128px;width:64px;height:64px;background:rgba(20,46,54,.5)"></div>
+      <div class="tile" style="left:132px;top:128px;width:64px;height:64px;background:rgba(34,70,78,.5)"></div>
+    </div>
+    <div class="mot">
+      <div style="position:absolute;left:20px;top:250px;width:200px;height:100px;border:1.5px solid rgba(110,220,230,.28);border-radius:50%"></div>
+      <div style="position:absolute;left:44px;top:262px;width:152px;height:76px;border:1.5px solid rgba(110,220,230,.2);border-radius:50%"></div>
+      <div style="position:absolute;left:68px;top:274px;width:104px;height:52px;border:1.5px solid rgba(110,220,230,.14);border-radius:50%"></div>
+    </div>
+    <div class="prop reeds" style="left:22px;top:110px;width:28px;height:60px">
+      <div class="rd" style="left:0;width:3px;height:52px"></div>
+      <div class="rd" style="left:9px;width:3px;height:60px"></div>
+      <div class="rd" style="left:18px;width:3px;height:44px"></div></div>
+    <div class="prop reeds" style="right:16px;top:296px;width:28px;height:60px">
+      <div class="rd" style="left:0;width:3px;height:56px"></div>
+      <div class="rd" style="left:9px;width:3px;height:42px"></div>
+      <div class="rd" style="left:18px;width:3px;height:60px"></div></div>
+    <div class="sadhu" style="left:96px;top:272px">
+      <div class="shadow"></div><div class="robe"></div><div class="collar"></div><div class="head"></div></div>
+    <div class="foe" style="left:170px;top:196px">
+      <div class="ring win" style="width:48px;height:48px"></div>
+      <div class="body"></div><div class="core"></div><div class="eyes"><b></b><b></b></div></div>
+    <div class="head"><b>Воды Влечения</b><i>💧 Вода · fluidal</i><em>владыка: Кама-Раджа</em></div>
+    <div class="bars">
+      <div class="r hp"><span class="lb">жизнь</span><div class="tk"><i style="width:78%"></i></div></div>
+      <div class="r qi"><span class="lb">Ци</span><div class="tk"><i style="width:82%"></i></div></div>
+      <div class="r av"><span class="lb">авидья</span><div class="tk"><i style="width:34%"></i></div></div>
+    </div>
+    <div class="log"><div class="g">дефлект — серия 3</div>
+      <div class="l">Кама-Раджа — распался в свет</div></div>
+  </div></div>
+
+<!-- 2 ОГОНЬ -->
+<div><div class="lbl"><b>Огненное Плато</b><i>🔥 Огонь · igneous</i>
+  <em>Трещины в земле, из них идёт свет. Огонь действия.</em></div>
+  <div class="ph">
+    <div class="sky" style="background:radial-gradient(90% 50% at 50% 0%,rgba(255,132,52,.18),transparent 62%),
+      linear-gradient(#1e0a08 0%,#2e100c 50%,#0a0403 100%)"></div>
+    <div class="floor" style="background:rgba(66,26,20,.52)">
+      <div class="tile" style="left:4%;top:0;width:64px;height:64px;background:rgba(82,32,24,.5)"></div>
+      <div class="tile" style="left:68px;top:0;width:64px;height:64px;background:rgba(46,18,14,.5)"></div>
+      <div class="tile" style="left:132px;top:0;width:64px;height:64px;background:rgba(82,32,24,.5)"></div>
+      <div class="tile" style="left:4%;top:64px;width:64px;height:64px;background:rgba(46,18,14,.5)"></div>
+      <div class="tile" style="left:68px;top:64px;width:64px;height:64px;background:rgba(82,32,24,.5)"></div>
+      <div class="tile" style="left:132px;top:64px;width:64px;height:64px;background:rgba(46,18,14,.5)"></div>
+      <div class="tile" style="left:4%;top:128px;width:64px;height:64px;background:rgba(82,32,24,.5)"></div>
+      <div class="tile" style="left:68px;top:128px;width:64px;height:64px;background:rgba(46,18,14,.5)"></div>
+      <div class="tile" style="left:132px;top:128px;width:64px;height:64px;background:rgba(82,32,24,.5)"></div>
+    </div>
+    <div class="mot">
+      <svg width="236" height="400" style="position:absolute;inset:0">
+        <g stroke="#ff8434" stroke-width="2.2" fill="none" stroke-linecap="round">
+          <path d="M30 200 L52 192 L66 212 L92 202" opacity=".9"/>
+          <path d="M150 168 L172 160 L186 180 L212 170" opacity=".75"/>
+          <path d="M100 300 L124 290 L138 312 L164 300" opacity=".85"/>
+          <path d="M40 330 L60 322 L74 340" opacity=".6"/>
+        </g>
+        <g fill="#ffbe5a">
+          <circle cx="66" cy="200" r="1.8" opacity=".8"/><circle cx="186" cy="168" r="1.6" opacity=".7"/>
+          <circle cx="138" cy="300" r="1.8" opacity=".75"/><circle cx="74" cy="328" r="1.5" opacity=".6"/>
+          <circle cx="104" cy="248" r="1.4" opacity=".5"/>
+        </g>
+      </svg>
+    </div>
+    <div class="prop spire" style="left:20px;top:110px;width:34px;height:80px">
+      <div class="sp" style="width:34px;height:80px"></div></div>
+    <div class="prop spire" style="right:14px;top:300px;width:40px;height:94px">
+      <div class="sp" style="width:40px;height:94px"></div></div>
+    <div class="sadhu" style="left:100px;top:274px">
+      <div class="shadow"></div><div class="robe"></div><div class="collar"></div><div class="head"></div></div>
+    <div class="foe" style="left:166px;top:190px">
+      <div class="ring" style="width:70px;height:70px"></div>
+      <div class="body"></div><div class="core"></div><div class="eyes"><b></b><b></b></div></div>
+    <div class="head"><b>Огненное Плато</b><i>🔥 Огонь · igneous</i><em>владыка: Маха-Кродха</em></div>
+    <div class="bars">
+      <div class="r hp"><span class="lb">жизнь</span><div class="tk"><i style="width:66%"></i></div></div>
+      <div class="r qi"><span class="lb">Ци</span><div class="tk"><i style="width:58%"></i></div></div>
+      <div class="r av"><span class="lb">авидья</span><div class="tk"><i style="width:47%"></i></div></div>
+    </div>
+    <div class="log"><div class="g">владыка сломался</div>
+      <div class="g">дефлект — серия 4</div></div>
+  </div></div>
+
+<!-- 3 ВОЗДУХ -->
+<div><div class="lbl"><b>Храм Сердца</b><i>🌬 Воздух · vāyu</i>
+  <em>Ветровые полосы, высокие колонны. Любовь, сева, сострадание.</em></div>
+  <div class="ph">
+    <div class="sky" style="background:radial-gradient(90% 50% at 50% 0%,rgba(176,232,190,.13),transparent 62%),
+      linear-gradient(#101a18 0%,#18262 50%,#050908 100%)"></div>
+    <div class="floor" style="background:rgba(42,58,50,.48)">
+      <div class="tile" style="left:4%;top:0;width:64px;height:64px;background:rgba(52,72,60,.48)"></div>
+      <div class="tile" style="left:68px;top:0;width:64px;height:64px;background:rgba(32,46,40,.48)"></div>
+      <div class="tile" style="left:132px;top:0;width:64px;height:64px;background:rgba(52,72,60,.48)"></div>
+      <div class="tile" style="left:4%;top:64px;width:64px;height:64px;background:rgba(32,46,40,.48)"></div>
+      <div class="tile" style="left:68px;top:64px;width:64px;height:64px;background:rgba(52,72,60,.48)"></div>
+      <div class="tile" style="left:132px;top:64px;width:64px;height:64px;background:rgba(32,46,40,.48)"></div>
+      <div class="tile" style="left:4%;top:128px;width:64px;height:64px;background:rgba(52,72,60,.48)"></div>
+      <div class="tile" style="left:68px;top:128px;width:64px;height:64px;background:rgba(32,46,40,.48)"></div>
+      <div class="tile" style="left:132px;top:128px;width:64px;height:64px;background:rgba(52,72,60,.48)"></div>
+    </div>
+    <div class="mot">
+      <svg width="236" height="400" style="position:absolute;inset:0">
+        <g stroke="#b0e8be" stroke-width="2" fill="none" opacity=".3">
+          <path d="M-10 180 C40 168 80 192 130 180 S210 168 250 180"/>
+          <path d="M-10 240 C40 228 80 252 130 240 S210 228 250 240"/>
+          <path d="M-10 300 C40 288 80 312 130 300 S210 288 250 300"/>
+        </g>
+      </svg>
+    </div>
+    <div class="prop column" style="left:22px;top:88px;width:30px;height:104px">
+      <div class="cl" style="bottom:8px;width:14px;height:88px"></div>
+      <div class="cap" style="bottom:96px;width:26px;height:8px"></div>
+      <div class="cap" style="bottom:0;width:24px;height:8px"></div></div>
+    <div class="prop column" style="right:16px;top:76px;width:26px;height:92px">
+      <div class="cl" style="bottom:8px;width:12px;height:78px"></div>
+      <div class="cap" style="bottom:86px;width:22px;height:7px"></div>
+      <div class="cap" style="bottom:0;width:22px;height:8px"></div></div>
+    <div class="sadhu" style="left:100px;top:274px">
+      <div class="shadow"></div><div class="robe"></div><div class="collar"></div><div class="head"></div></div>
+    <div class="foe" style="left:168px;top:192px">
+      <div class="ring" style="width:70px;height:70px"></div>
+      <div class="body"></div><div class="core"></div><div class="eyes"><b></b><b></b></div></div>
+    <div class="head"><b>Храм Сердца</b><i>🌬 Воздух · vāyu</i><em>владыка: Мада-Натха</em></div>
+    <div class="bars">
+      <div class="r hp"><span class="lb">жизнь</span><div class="tk"><i style="width:72%"></i></div></div>
+      <div class="r qi"><span class="lb">Ци</span><div class="tk"><i style="width:64%"></i></div></div>
+      <div class="r av"><span class="lb">авидья</span><div class="tk"><i style="width:52%"></i></div></div>
+    </div>
+    <div class="log"><div class="g">сева: випрочита — на��сегда</div>
+      <div class="g">дефлект — серия 2</div></div>
+  </div></div>
+
+<!-- 4 ЭФИР -->
+<div><div class="lbl"><b>Небесный Простор</b><i>🌌 Эфир · ākāśa</i>
+  <em>Звуковые кольца по земле. Рождается речь.</em></div>
+  <div class="ph">
+    <div class="sky" style="background:radial-gradient(90% 50% at 50% 0%,rgba(176,148,255,.16),transparent 62%),
+      linear-gradient(#0e0a1e 0%,#18123a 50%,#050410 100%)"></div>
+    <div class="floor" style="background:rgba(40,30,68,.5)">
+      <div class="tile" style="left:4%;top:0;width:64px;height:64px;background:rgba(50,38,84,.5)"></div>
+      <div class="tile" style="left:68px;top:0;width:64px;height:64px;background:rgba(30,22,52,.5)"></div>
+      <div class="tile" style="left:132px;top:0;width:64px;height:64px;background:rgba(50,38,84,.5)"></div>
+      <div class="tile" style="left:4%;top:64px;width:64px;height:64px;background:rgba(30,22,52,.5)"></div>
+      <div class="tile" style="left:68px;top:64px;width:64px;height:64px;background:rgba(50,38,84,.5)"></div>
+      <div class="tile" style="left:132px;top:64px;width:64px;height:64px;background:rgba(30,22,52,.5)"></div>
+      <div class="tile" style="left:4%;top:128px;width:64px;height:64px;background:rgba(50,38,84,.5)"></div>
+      <div class="tile" style="left:68px;top:128px;width:64px;height:64px;background:rgba(30,22,52,.5)"></div>
+      <div class="tile" style="left:132px;top:128px;width:64px;height:64px;background:rgba(50,38,84,.5)"></div>
+    </div>
+    <div class="mot">
+      <div style="position:absolute;left:14px;top:248px;width:208px;height:104px;border:2px solid rgba(176,148,255,.32);border-radius:50%"></div>
+      <div style="position:absolute;left:40px;top:262px;width:156px;height:78px;border:2px solid rgba(176,148,255,.24);border-radius:50%"></div>
+      <div style="position:absolute;left:68px;top:276px;width:100px;height:50px;border:2px solid rgba(176,148,255,.16);border-radius:50%"></div>
+    </div>
+    <div class="prop arch" style="left:24px;top:120px;width:46px;height:66px">
+      <div class="ar" style="width:46px;height:46px;border:6px solid rgba(12,8,26,.95)"></div></div>
+    <div class="prop arch" style="right:12px;top:290px;width:54px;height:76px">
+      <div class="ar" style="width:54px;height:54px;border:7px solid rgba(12,8,26,.95)"></div></div>
+    <div class="sadhu" style="left:98px;top:274px">
+      <div class="shadow"></div><div class="robe"></div><div class="collar"></div><div class="head"></div></div>
+    <div class="foe" style="left:166px;top:190px">
+      <div class="ring win" style="width:48px;height:48px"></div>
+      <div class="body"></div><div class="core"></div><div class="eyes"><b></b><b></b></div></div>
+    <div class="head"><b>Небесный Простор</b><i>🌌 Эфир · ākāśa</i><em>владыка: Матсарья-Кала</em></div>
+    <div class="bars">
+      <div class="r hp"><span class="lb">жизнь</span><div class="tk"><i style="width:55%"></i></div></div>
+      <div class="r qi"><span class="lb">Ци</span><div class="tk"><i style="width:76%"></i></div></div>
+      <div class="r av"><span class="lb">авидья</span><div class="tk"><i style="width:61%"></i></div></div>
+    </div>
+    <div class="log"><div class="g">Знание открыто: анахата</div>
+      <div class="g">дефлект — серия 5</div></div>
+  </div></div>
+
+<!-- 5 УМ -->
+<div><div class="lbl"><b>Звёздная Библиотека</b><i>👁 Ум · manas</i>
+  <em>Звёзды на земле — идеи, которые можно различать.</em></div>
+  <div class="ph">
+    <div class="sky" style="background:radial-gradient(90% 50% at 50% 0%,rgba(186,216,255,.15),transparent 62%),
+      linear-gradient(#080c16 0%,#121c30 50%,#03050a 100%)"></div>
+    <div class="floor" style="background:rgba(30,42,58,.5)">
+      <div class="tile" style="left:4%;top:0;width:64px;height:64px;background:rgba(38,54,74,.5)"></div>
+      <div class="tile" style="left:68px;top:0;width:64px;height:64px;background:rgba(22,32,46,.5)"></div>
+      <div class="tile" style="left:132px;top:0;width:64px;height:64px;background:rgba(38,54,74,.5)"></div>
+      <div class="tile" style="left:4%;top:64px;width:64px;height:64px;background:rgba(22,32,46,.5)"></div>
+      <div class="tile" style="left:68px;top:64px;width:64px;height:64px;background:rgba(38,54,74,.5)"></div>
+      <div class="tile" style="left:132px;top:64px;width:64px;height:64px;background:rgba(22,32,46,.5)"></div>
+      <div class="tile" style="left:4%;top:128px;width:64px;height:64px;background:rgba(38,54,74,.5)"></div>
+      <div class="tile" style="left:68px;top:128px;width:64px;height:64px;background:rgba(22,32,46,.5)"></div>
+      <div class="tile" style="left:132px;top:128px;width:64px;height:64px;background:rgba(38,54,74,.5)"></div>
+    </div>
+    <div class="mot">
+      <svg width="236" height="400" style="position:absolute;inset:0">
+        <g stroke="#bad8ff" stroke-width="1" opacity=".55">
+          <g id="st"></g>
+        </g>
+      </svg>
+      <div style="position:absolute;left:22px;top:196px"></div>
+      <div style="position:absolute;left:64px;top:250px"></div>
+      <div style="position:absolute;left:130px;top:210px"></div>
+      <div style="position:absolute;left:178px;top:290px"></div>
+      <div style="position:absolute;left:44px;top:320px"></div>
+      <div style="position:absolute;left:150px;top:336px"></div>
+    </div>
+    <div class="prop obelisk" style="left:20px;top:100px;width:30px;height:96px">
+      <div class="ob" style="width:30px;height:96px"></div></div>
+    <div class="prop obelisk" style="right:14px;top:288px;width:34px;height:106px">
+      <div class="ob" style="width:34px;height:106px"></div></div>
+    <div class="sadhu" style="left:98px;top:274px">
+      <div class="shadow"></div><div class="robe"></div><div class="collar"></div><div class="head"></div></div>
+    <div class="foe" style="left:166px;top:190px">
+      <div class="ring" style="width:70px;height:70px"></div>
+      <div class="body"></div><div class="core"></div><div class="eyes"><b></b><b></b></div></div>
+    <div class="head"><b>Звёздная Библиотека</b><i>👁 Ум · manas</i><em>владыка: Лобха-Пати</em></div>
+    <div class="bars">
+      <div class="r hp"><span class="lb">жизнь</span><div class="tk"><i style="width:48%"></i></div></div>
+      <div class="r qi"><span class="lb">Ци</span><div class="tk"><i style="width:88%"></i></div></div>
+      <div class="r av"><span class="lb">авидья</span><div class="tk"><i style="width:70%"></i></div></div>
+    </div>
+    <div class="log"><div class="g">дефлект — серия 6</div>
+      <div class="g">щит +4 · саттва +2</div></div>
+  </div></div>
+
+<!-- 6 СОЗНАНИЕ -->
+<div><div class="lbl"><b>Вершина Света</b><i>ॐ Сознание</i>
+  <em>Лепестки висят в воздухе и падают. Нирвкти.</em></div>
+  <div class="ph">
+    <div class="sky" style="background:radial-gradient(90% 55% at 50% 0%,rgba(255,232,170,.22),transparent 65%),
+      linear-gradient(#1a1610 0%,#2c2618 50%,#0a0806 100%)"></div>
+    <div class="floor" style="background:rgba(66,58,44,.5)">
+      <div class="tile" style="left:4%;top:0;width:64px;height:64px;background:rgba(82,72,54,.5)"></div>
+      <div class="tile" style="left:68px;top:0;width:64px;height:64px;background:rgba(50,44,34,.5)"></div>
+      <div class="tile" style="left:132px;top:0;width:64px;height:64px;background:rgba(82,72,54,.5)"></div>
+      <div class="tile" style="left:4%;top:64px;width:64px;height:64px;background:rgba(50,44,34,.5)"></div>
+      <div class="tile" style="left:68px;top:64px;width:64px;height:64px;background:rgba(82,72,54,.5)"></div>
+      <div class="tile" style="left:132px;top:64px;width:64px;height:64px;background:rgba(50,44,34,.5)"></div>
+      <div class="tile" style="left:4%;top:128px;width:64px;height:64px;background:rgba(82,72,54,.5)"></div>
+      <div class="tile" style="left:68px;top:128px;width:64px;height:64px;background:rgba(50,44,34,.5)"></div>
+      <div class="tile" style="left:132px;top:128px;width:64px;height:64px;background:rgba(82,72,54,.5)"></div>
+    </div>
+    <div class="mot">
+      <svg width="236" height="400" style="position:absolute;inset:0">
+        <g fill="#ffe8aa">
+          <ellipse cx="24" cy="120" rx="4" ry="2" opacity=".7" transform="rotate(20 24 120)"/>
+          <ellipse cx="70" cy="170" rx="3.4" ry="1.7" opacity=".6" transform="rotate(-30 70 170)"/>
+          <ellipse cx="120" cy="130" rx="4" ry="2" opacity=".65" transform="rotate(50 120 130)"/>
+          <ellipse cx="180" cy="190" rx="3.6" ry="1.8" opacity=".7" transform="rotate(-15 180 190)"/>
+          <ellipse cx="200" cy="140" rx="3" ry="1.5" opacity=".55" transform="rotate(35 200 140)"/>
+          <ellipse cx="44" cy="240" rx="3.8" ry="1.9" opacity=".6" transform="rotate(-45 44 240)"/>
+          <ellipse cx="150" cy="250" rx="4" ry="2" opacity=".65" transform="rotate(15 150 250)"/>
+          <ellipse cx="210" cy="230" rx="3.2" ry="1.6" opacity=".5" transform="rotate(-25 210 230)"/>
+          <ellipse cx="90" cy="300" rx="3.6" ry="1.8" opacity=".55" transform="rotate(40 90 300)"/>
+          <ellipse cx="190" cy="320" rx="3.4" ry="1.7" opacity=".5" transform="rotate(-35 190 320)"/>
+        </g>
+      </svg>
+    </div>
+    <div class="prop crown" style="left:22px;top:104px;width:48px;height:56px">
+      <div class="cr2" style="width:48px;height:48px"></div></div>
+    <div class="prop crown" style="right:12px;top:292px;width:56px;height:64px">
+      <div class="cr2" style="width:56px;height:56px"></div></div>
+    <div class="sadhu" style="left:100px;top:274px">
+      <div class="shadow"></div><div class="robe"></div><div class="collar"></div><div class="head"></div></div>
+    <div class="foe" style="left:168px;top:192px">
+      <div class="ring" style="width:70px;height:70px"></div>
+      <div class="body"></div><div class="core"></div><div class="eyes"><b></b><b></b></div></div>
+    <div class="head"><b>Вершина Света</b><i>ॐ Сознание</i><em>владыка: Ахамкара</em></div>
+    <div class="bars">
+      <div class="r hp"><span class="lb">жизнь</span><div class="tk"><i style="width:40%"></i></div></div>
+      <div class="r qi"><span class="lb">Ци</span><div class="tk"><i style="width:92%"></i></div></div>
+      <div class="r av"><span class="lb">авидья</span><div class="tk"><i style="width:26%"></i></div></div>
+    </div>
+    <div class="log"><div class="l">Ахамкара — распался в свет</div>
+      <div class="g">Нирвкти: самадхи 9</div></div>
+  </div></div>
+
+<!-- пояснение -->
+<div class="sheet">
+  <div class="lbl" style="width:100%;text-align:left"><b>Что поменялось</b></div>
+  <div class="row"><div class="chip" style="background:#d68c4a"></div>
+    <div><b>Семь земель вместо одной</b><span>Раньше в коде были захардкожены одни
+    корни и деревья, а стихии из `content/worlds.json` просто не рисовались.
+    Теперь у каждой чакры свой цвет земли, свой узор и свой силуэт.</span></div></div>
+  <div class="motifs">
+    <div class="mo"><b>Земля</b><span>корни, тёмная охра, деревья</span></div>
+    <div class="mo"><b>Вода</b><span>рябь, камыш, отражения</span></div>
+    <div class="mo"><b>Огонь</b><span>трещины со светом, искры вверх</span></div>
+    <div class="mo"><b>Воздух</b><span>ветровые полосы, высокие колонны</span></div>
+    <div class="mo"><b>Эфир</b><span>звуковые кольна, арки</span></div>
+    <div class="mo"><b>Ум</b><span>звёзды на земле, обелиски</span></div>
+    <div class="mo"><b>Сознание</b><span>падающие лепестки, короны</span></div>
+  </div>
+  <div class="row" style="margin-top:10px"><div class="chip" style="background:#ff5a5a"></div>
+    <div><b>Найден был баг — владык не было вообще</b><span>`WORLDS` ключуется по имени
+    чакры (`muladhara`), а код брал по номеру (`WORLDS['0']`, `WORLDS['1']`…).
+    Результат — <b>все 7 локаций отдавали пустоту</b>: ни владыки, ни текста,
+    ни стихии, ни урока на экране чакр. Добавлен `worldForFloor(floor)`,
+    покрыт тестом на 7 разных владык.</span></div></div>
+</div>
+
+<!-- КРИПА -->
+<div>
+  <div class="lbl"><b>Крипа — милость, которой ты не заслужил</b>
+    <i>☂ зонт тщеславия · AV 12</i>
+    <em>Падает в самую беду — но только если ни разу не ударил.</em></div>
+  <div class="krpaph">
+    <div class="sky" style="background:radial-gradient(90% 55% at 50% 0%,rgba(255,207,74,.20),transparent 65%),
+      linear-gradient(#1a1206 0%,#2a1c0a 50%,#0a0704 100%)"></div>
+    <div class="floor" style="background:rgba(66,58,44,.4)">
+      <div class="tile" style="left:4%;top:0;width:64px;height:64px;background:rgba(82,72,54,.4)"></div>
+      <div class="tile" style="left:68px;top:0;width:64px;height:64px;background:rgba(50,44,34,.4)"></div>
+      <div class="tile" style="left:132px;top:0;width:64px;height:64px;background:rgba(82,72,54,.4)"></div>
+      <div class="tile" style="left:4%;top:64px;width:64px;height:64px;background:rgba(50,44,34,.4)"></div>
+      <div class="tile" style="left:68px;top:64px;width:64px;height:64px;background:rgba(82,72,54,.4)"></div>
+      <div class="tile" style="left:132px;top:64px;width:64px;height:64px;background:rgba(50,44,34,.4)"></div>
+    </div>
+    <!-- падающие капли-частицы милости -->
+    <div class="rain">
+      <i style="left:16px;top:60px;height:14px"></i><i style="left:38px;top:110px;height:18px"></i>
+      <i style="left:62px;top:52px;height:12px"></i><i style="left:88px;top:96px;height:16px"></i>
+      <i style="left:112px;top:44px;height:13px"></i><i style="left:140px;top:120px;height:15px"></i>
+      <i style="left:164px;top:70px;height:12px"></i><i style="left:190px;top:104px;height:17px"></i>
+      <i style="left:214px;top:58px;height:14px"></i><i style="left:26px;top:170px;height:15px"></i>
+      <i style="left:74px;top:186px;height:12px"></i><i style="left:124px;top:160px;height:16px"></i>
+      <i style="left:176px;top:196px;height:13px"></i><i style="left:206px;top:158px;height:14px"></i>
+    </div>
+    <div class="veil"></div>
+
+    <!-- оковы отпускают: разом расслабились, ядра светятся -->
+    <div class="kobw" style="left:22px;top:210px">
+      <div class="drop"></div><div class="body"></div><div class="core"></div>
+      <div class="eyes"><b></b><b></b></div><div class="lbl">отпустил</div></div>
+    <div class="kobw" style="left:158px;top:176px">
+      <div class="drop"></div><div class="body"></div><div class="core"></div>
+      <div class="eyes"><b></b><b></b></div><div class="lbl">отпустил</div></div>
+    <div class="kobw" style="left:96px;top:300px">
+      <div class="drop"></div><div class="body"></div><div class="core"></div>
+      <div class="eyes"><b></b><b></b></div><div class="lbl">отпустил</div></div>
+
+    <!-- садхака под дождём -->
+    <div class="sadhu" style="left:96px;top:240px">
+      <div class="shadow"></div><div class="robe"></div><div class="collar"></div><div class="head"></div></div>
+
+    <div class="kbanner">КРИПА</div>
+    <div class="kquote">
+      <b>Крипа — милость повсюду, как дождь</b>
+      <span>«The Grace is everywhere, but you know, just like rainfall … there is an
+        umbrella of vanity upon your head, that's why you are not drenched. Remove the
+        umbrella of vanity and you will be drenched.»</span>
+      <em>Ānanda Vacanāmrtam ч. 12, «Shortening the Radius»</em>
+    </div>
+  </div>
+</div>
+
+<!-- как это работает -->
+<div class="sheet">
+  <div class="lbl" style="width:100%;text-align:left"><b>Крипа: правило</b></div>
+  <div class="row" style="background:rgba(255,207,74,.07);border-color:var(--gold)">
+    <div class="chip" style="background:var(--gold);box-shadow:0 0 14px var(--gold)"></div>
+    <div><b>Милость нельзя заработать</b>
+      <span>Её можно только <b style="color:#e8e2d4">не закрыть себя</b>.
+      Поэтому награда приходит не за подвиг, а за то, что подвига не было —
+      и ровно тогда, когда она нужнее всего.</span></div></div>
+
+  <div class="motifs">
+    <div class="mo" style="border-left-color:var(--lime)"><b>Падает</b>
+      <span>жизнь &lt; 34% · ни одного удара за локацию · авидья &lt; 40</span></div>
+    <div class="mo" style="border-left-color:#ff5a5a"><b>Не достаёт</b>
+      <span>ударил хоть раз — «зонт тщеславия» поднят</span></div>
+    <div class="mo" style="border-left-color:var(--gold)"><b>Даёт</b>
+      <span>оковы отпускают · полные сила, Ци, щит · авидья в ноль</span></div>
+    <div class="mo" style="border-left-color:var(--cyan)"><b>Отменяет</b>
+      <span>уже летящий удар не достаёт</span></div>
+  </div>
+
+  <div class="row" style="margin-top:10px">
+    <div class="chip" style="background:#8ff4ff"></div>
+    <div><b>Скопировано</b><span>Структура подарка, которого ты не заработал:
+    дары богов в Hades (1 из 3, не заслужил ни один) и награда за пощаду в
+    Undertale. Условие и смысл — из Шастр, цитата проверена.</span></div></div>
+
+  <div class="row">
+    <div class="chip" style="background:#ff5a5a"></div>
+    <div><b>И открывает знание</b><span>При первой крипе открывается цитата
+    `krpa`. Философия учится через игру, а не через чтение.
+    В профиле видно, сколько раз милость тебя доставала — за десять смерней
+    это обычно пара раз.</span></div></div>
+</div>
+
+</body>
+</html>

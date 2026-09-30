@@ -1,5 +1,5 @@
 {
-  "_comment": "Враги-Аковы — воплощения оков ума. intent — как отображается намерение (attack/defend/buff/debuff/special). moves.effects используют тот же движок эффектов, что и карты. calmMax — карт Ахимсы для успокоения при HP ≤ 50%. isBoss — босс чакры (эпитет «Владыка …»).",
+  "_comment": "Враги-Аковы — воплощения оков ума. intent — как отображается намерение (attack/defend/buff/debuff/special). moves.effects используют тот же движок эффектов, что и карты. calmMax — карт Ахимсы для успокоения при HP ≤ 50%. isBoss — босс чакры (эпитет «Владыка …»)",
   "krodha": {
     "id": "krodha",
     "name": "Кродха",
@@ -307,11 +307,11 @@
         "intent": "special",
         "damage": 0,
         "effects": [
-      {
-        "kind": "addCurseToDeck",
-        "cardId": "cinta",
-        "amount": 1
-      }
+          {
+            "kind": "addCurseToDeck",
+            "cardId": "cinta",
+            "amount": 1
+          }
         ]
       }
     ]
@@ -332,7 +332,12 @@
         "intent": "debuff",
         "damage": 0,
         "effects": [
-          { "kind": "status", "status": "weak", "amount": 1, "target": "player" }
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
         ]
       },
       {
@@ -340,7 +345,11 @@
         "intent": "attack",
         "damage": 4,
         "effects": [
-          { "kind": "damage", "amount": 4, "target": "player" }
+          {
+            "kind": "damage",
+            "amount": 4,
+            "target": "player"
+          }
         ]
       },
       {
@@ -348,8 +357,17 @@
         "intent": "attack",
         "damage": 7,
         "effects": [
-          { "kind": "damage", "amount": 7, "target": "player" },
-          { "kind": "guna", "amount": 1, "which": "t", "target": "player" }
+          {
+            "kind": "damage",
+            "amount": 7,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
         ]
       }
     ],
@@ -357,14 +375,19 @@
       "trigger": "hp_lte_50",
       "once": true,
       "effects": [
-        { "kind": "status", "status": "weak", "amount": 1, "target": "player" }
+        {
+          "kind": "status",
+          "status": "weak",
+          "amount": 1,
+          "target": "player"
+        }
       ],
       "log": "Бхая сжимает сердце: страх ослабляет вашу волю."
     }
   },
   "lajja": {
     "id": "lajja",
-    "name": "Лайя",
+    "name": "Ладжа",
     "epithet": "Прячущаяся",
     "sanskrit": "लज्जा",
     "glyph": "veil",
@@ -378,7 +401,11 @@
         "intent": "defend",
         "damage": 0,
         "effects": [
-          { "kind": "block", "amount": 6, "target": "self" }
+          {
+            "kind": "block",
+            "amount": 6,
+            "target": "self"
+          }
         ]
       },
       {
@@ -386,7 +413,10 @@
         "intent": "debuff",
         "damage": 0,
         "effects": [
-          { "kind": "discardRandomFromHand", "amount": 1 }
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          }
         ]
       },
       {
@@ -394,8 +424,15 @@
         "intent": "attack",
         "damage": 5,
         "effects": [
-          { "kind": "damage", "amount": 5, "target": "player" },
-          { "kind": "discardRandomFromHand", "amount": 1 }
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          },
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          }
         ]
       }
     ],
@@ -403,14 +440,17 @@
       "trigger": "hp_lte_50",
       "once": true,
       "effects": [
-        { "kind": "discardRandomFromHand", "amount": 1 }
+        {
+          "kind": "discardRandomFromHand",
+          "amount": 1
+        }
       ],
-      "log": "Лайя прячет ваши карты: стыд утаивает силы ума."
+      "log": "Ладжа прячет ваши карты: стыд утаивает силы ума."
     }
   },
   "ghrna": {
     "id": "ghrna",
-    "name": "Гхрна",
+    "name": "Грна",
     "epithet": "Жгущая",
     "sanskrit": "घृणा",
     "glyph": "viper",
@@ -424,7 +464,11 @@
         "intent": "attack",
         "damage": 6,
         "effects": [
-          { "kind": "damage", "amount": 6, "target": "player" }
+          {
+            "kind": "damage",
+            "amount": 6,
+            "target": "player"
+          }
         ]
       },
       {
@@ -432,8 +476,18 @@
         "intent": "debuff",
         "damage": 0,
         "effects": [
-          { "kind": "status", "status": "weak", "amount": 1, "target": "player" },
-          { "kind": "guna", "amount": 1, "which": "r", "target": "player" }
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "r",
+            "target": "player"
+          }
         ]
       },
       {
@@ -441,7 +495,11 @@
         "intent": "attack",
         "damage": 8,
         "effects": [
-          { "kind": "damage", "amount": 8, "target": "player" }
+          {
+            "kind": "damage",
+            "amount": 8,
+            "target": "player"
+          }
         ]
       }
     ],
@@ -449,15 +507,23 @@
       "trigger": "hp_lte_50",
       "once": true,
       "effects": [
-        { "kind": "strength", "amount": 1, "target": "self" },
-        { "kind": "addCurseToDeck", "cardId": "krodha", "amount": 1 }
+        {
+          "kind": "strength",
+          "amount": 1,
+          "target": "self"
+        },
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "krodha",
+          "amount": 1
+        }
       ],
-      "log": "Гхрна вскипает ненавистью: гнев просачивается в ваш ум."
+      "log": "Грна вскипает ненавистью: гнев просачивается в ваш ум."
     }
   },
   "samshaya_pasha": {
     "id": "samshaya_pasha",
-    "name": "Самшая",
+    "name": "Шаунка",
     "epithet": "Подтачивающий",
     "sanskrit": "शङ्का",
     "glyph": "ques",
@@ -471,7 +537,10 @@
         "intent": "debuff",
         "damage": 0,
         "effects": [
-          { "kind": "discardRandomFromHand", "amount": 1 }
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          }
         ]
       },
       {
@@ -479,7 +548,11 @@
         "intent": "attack",
         "damage": 4,
         "effects": [
-          { "kind": "damage", "amount": 4, "target": "player" }
+          {
+            "kind": "damage",
+            "amount": 4,
+            "target": "player"
+          }
         ]
       },
       {
@@ -487,8 +560,15 @@
         "intent": "buff",
         "damage": 0,
         "effects": [
-          { "kind": "strength", "amount": 1, "target": "self" },
-          { "kind": "discardRandomFromHand", "amount": 1 }
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          },
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          }
         ]
       }
     ],
@@ -496,9 +576,12 @@
       "trigger": "hp_lte_50",
       "once": true,
       "effects": [
-        { "kind": "discardRandomFromHand", "amount": 1 }
+        {
+          "kind": "discardRandomFromHand",
+          "amount": 1
+        }
       ],
-      "log": "Самшая колеблет ум: сомнение отбирает одну из ваших карт."
+      "log": "Шаунка колеблет ум: сомнение отбирает одну из ваших карт."
     }
   },
   "kula": {
@@ -517,7 +600,11 @@
         "intent": "defend",
         "damage": 0,
         "effects": [
-          { "kind": "block", "amount": 7, "target": "self" }
+          {
+            "kind": "block",
+            "amount": 7,
+            "target": "self"
+          }
         ]
       },
       {
@@ -525,7 +612,11 @@
         "intent": "buff",
         "damage": 0,
         "effects": [
-          { "kind": "strength", "amount": 1, "target": "self" }
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
         ]
       },
       {
@@ -533,8 +624,17 @@
         "intent": "attack",
         "damage": 7,
         "effects": [
-          { "kind": "damage", "amount": 7, "target": "player" },
-          { "kind": "guna", "amount": 1, "which": "r", "target": "player" }
+          {
+            "kind": "damage",
+            "amount": 7,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "r",
+            "target": "player"
+          }
         ]
       }
     ],
@@ -542,8 +642,16 @@
       "trigger": "hp_lte_50",
       "once": true,
       "effects": [
-        { "kind": "block", "amount": 5, "target": "self" },
-        { "kind": "strength", "amount": 1, "target": "self" }
+        {
+          "kind": "block",
+          "amount": 5,
+          "target": "self"
+        },
+        {
+          "kind": "strength",
+          "amount": 1,
+          "target": "self"
+        }
       ],
       "log": "Кула опирается на род: знатность прикрывает и крепнет."
     }
@@ -551,7 +659,7 @@
   "sila": {
     "id": "sila",
     "name": "Шила",
-    "epithet": "Холодная",
+    "epithet": "Гордая культурой",
     "sanskrit": "शील",
     "glyph": "eye",
     "maxHp": 27,
@@ -564,7 +672,11 @@
         "intent": "defend",
         "damage": 0,
         "effects": [
-          { "kind": "block", "amount": 8, "target": "self" }
+          {
+            "kind": "block",
+            "amount": 8,
+            "target": "self"
+          }
         ]
       },
       {
@@ -572,7 +684,12 @@
         "intent": "debuff",
         "damage": 0,
         "effects": [
-          { "kind": "status", "status": "weak", "amount": 1, "target": "player" }
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
         ]
       },
       {
@@ -580,8 +697,15 @@
         "intent": "attack",
         "damage": 5,
         "effects": [
-          { "kind": "damage", "amount": 5, "target": "player" },
-          { "kind": "discardRandomFromHand", "amount": 1 }
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          },
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          }
         ]
       }
     ],
@@ -589,7 +713,11 @@
       "trigger": "hp_lte_50",
       "once": true,
       "effects": [
-        { "kind": "block", "amount": 4, "target": "self" }
+        {
+          "kind": "block",
+          "amount": 4,
+          "target": "self"
+        }
       ],
       "log": "Шила замыкается в своей культуре: высокомерие становится щитом."
     }
@@ -610,7 +738,11 @@
         "intent": "buff",
         "damage": 0,
         "effects": [
-          { "kind": "strength", "amount": 1, "target": "self" }
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
         ]
       },
       {
@@ -618,8 +750,16 @@
         "intent": "defend",
         "damage": 0,
         "effects": [
-          { "kind": "block", "amount": 5, "target": "self" },
-          { "kind": "strength", "amount": 1, "target": "self" }
+          {
+            "kind": "block",
+            "amount": 5,
+            "target": "self"
+          },
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
         ]
       },
       {
@@ -627,7 +767,11 @@
         "intent": "attack",
         "damage": 7,
         "effects": [
-          { "kind": "damage", "amount": 7, "target": "player" }
+          {
+            "kind": "damage",
+            "amount": 7,
+            "target": "player"
+          }
         ]
       }
     ],
@@ -635,7 +779,11 @@
       "trigger": "hp_lte_50",
       "once": true,
       "effects": [
-        { "kind": "strength", "amount": 2, "target": "self" }
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        }
       ],
       "log": "Мана раздувается тщеславием: +2 силы."
     }
@@ -656,8 +804,16 @@
         "intent": "debuff",
         "damage": 0,
         "effects": [
-          { "kind": "discardRandomFromHand", "amount": 1 },
-          { "kind": "guna", "amount": 1, "which": "t", "target": "player" }
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
         ]
       },
       {
@@ -665,8 +821,15 @@
         "intent": "attack",
         "damage": 5,
         "effects": [
-          { "kind": "damage", "amount": 5, "target": "player" },
-          { "kind": "discardRandomFromHand", "amount": 1 }
+          {
+            "kind": "damage",
+            "amount": 5,
+            "target": "player"
+          },
+          {
+            "kind": "discardRandomFromHand",
+            "amount": 1
+          }
         ]
       },
       {
@@ -674,7 +837,11 @@
         "intent": "special",
         "damage": 0,
         "effects": [
-          { "kind": "addCurseToDeck", "cardId": "cinta", "amount": 1 }
+          {
+            "kind": "addCurseToDeck",
+            "cardId": "cinta",
+            "amount": 1
+          }
         ]
       }
     ],
@@ -682,7 +849,11 @@
       "trigger": "hp_lte_50",
       "once": true,
       "effects": [
-        { "kind": "addCurseToDeck", "cardId": "cinta", "amount": 1 }
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "cinta",
+          "amount": 1
+        }
       ],
       "log": "Джугупса распускает слухи: беспокойство проникает в ум."
     }
@@ -808,7 +979,7 @@
       {
         "name": "Огонь желаний",
         "intent": "attack",
-        "damage": 7,
+        "damage": 8,
         "effects": [
           {
             "kind": "damage",
@@ -1020,7 +1191,7 @@
       {
         "name": "Жало зависти",
         "intent": "attack",
-        "damage": 7,
+        "damage": 8,
         "effects": [
           {
             "kind": "damage",
@@ -1092,7 +1263,7 @@
       {
         "name": "Ненасытный",
         "intent": "attack",
-        "damage": 9,
+        "damage": 10,
         "effects": [
           {
             "kind": "damage",
@@ -1170,7 +1341,7 @@
       {
         "name": "Удар эго",
         "intent": "attack",
-        "damage": 10,
+        "damage": 11,
         "effects": [
           {
             "kind": "damage",
@@ -1193,7 +1364,7 @@
       {
         "name": "Гроза самости",
         "intent": "attack",
-        "damage": 13,
+        "damage": 15,
         "effects": [
           {
             "kind": "damage",

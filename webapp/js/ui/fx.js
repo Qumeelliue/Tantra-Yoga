@@ -297,6 +297,173 @@ export const sfx = {
   flow() { tone(659, 0.14, 'sine', 0.045); tone(784, 0.14, 'sine', 0.045, 0.08); tone(988, 0.16, 'sine', 0.045, 0.16); tone(1318, 0.4, 'sine', 0.04, 0.24) },
 }
 
+// ── ЗВУКИ «ПОЛЯ УМА» ────────────────────────────────────────────────────
+// Смысл каждого звука взят из боя, а не придуман: в Nine Sols парирование
+// полностью **глушит** звук удара (попадание слышно по своему лязгу),
+// в Sekiro лязг выше при длинной серии. Здесь то же самое.
+
+/** Лязг дефлекта. Чем длиннее серия — тем выше тон: слышно вслепую. */
+function parryPitch(combo) {
+  return 523.25 * Math.pow(2, Math.min(7, Math.max(0, combo - 1)) / 12)
+}
+
+export const fieldSfx = {
+  /** Пауза: короткий «вдох» и его оборот. Тише боя — это не событие, а остановка. */
+  pause() {
+    tone(196, 0.16, 'sine', 0.05, 0.01)
+    tone(147, 0.24, 'sine', 0.035, 0.02)
+  },
+  /** Металлический лязг перехваченного удара + глушение звука самого удара. */
+  parry(combo = 1) {
+    const f = parryPitch(combo)
+    tone(f, 0.13, 'triangle', 0.075)
+    tone(f * 2.01, 0.2, 'sine', 0.04, 0.01)
+    tone(f * 0.5, 0.24, 'sine', 0.035, 0.005)
+    // металлический призвук: короткий шумовой «звон»
+    tone(f * 3, 0.09, 'sine', 0.018, 0.03)
+  },
+  /** Промах: глухой деревянный удар. Не неприятный — просто мимо. */
+  parryMiss() {
+    tone(132, 0.11, 'square', 0.035)
+    tone(88, 0.16, 'sine', 0.03, 0.02)
+  },
+  /** Окова рассыпается в свет — восходящий аккорд. */
+  pacify() {
+    const base = 392
+    ;[1, 1.25, 1.5, 2].forEach((m, i) => tone(base * m, 0.5 - i * 0.06, 'sine', 0.05, i * 0.06))
+    tone(base * 3, 0.7, 'sine', 0.018, 0.3)
+  },
+  /** Владыка замахнулся: нарастающий низкий гул — слышно заранее. */
+  bossWind(phase = 1) {
+    const f = phase >= 2 ? 58 : 74
+    tone(f, 0.34, 'sawtooth', 0.028)
+    tone(f * 1.5, 0.3, 'sine', 0.022, 0.04)
+  },
+  /** Удар владыки: тяжело, с низким ударом. */
+  bossHit() {
+    tone(96, 0.3, 'sawtooth', 0.06)
+    tone(64, 0.4, 'sine', 0.05, 0.02)
+    tone(180, 0.1, 'square', 0.028, 0.01)
+  },
+  /** Порог 50%: обрыв звука, рык, потом светлый звон. */
+  bossBreak() {
+    tone(220, 0.14, 'sawtooth', 0.05)   // обрыв
+    tone(55, 0.9, 'sawtooth', 0.055, 0.14)  // рык
+    tone(880, 0.6, 'sine', 0.035, 0.2)
+    tone(1174, 0.7, 'sine', 0.025, 0.32)
+  },
+  /** Мантра: у каждой свой голос. id — из MANTRA_SLOTS. */
+  mantra(id) {
+    if (id === 'japa') {                      // повторение: короткий тихий звон
+      tone(1174.7, 0.13, 'sine', 0.04)
+      tone(1567.9, 0.16, 'sine', 0.022, 0.05)
+    } else if (id === 'pranayama') {          // дыхание: мягкий вдох-выдох
+      tone(329.6, 0.34, 'sine', 0.035)
+      tone(246.9, 0.5, 'sine', 0.03, 0.16)
+    } else if (id === 'madhuvidya') {         // знание-мёд: тёплая нота
+      tone(523.3, 0.4, 'sine', 0.045)
+      tone(659.3, 0.45, 'sine', 0.032, 0.08)
+      tone(784, 0.5, 'sine', 0.022, 0.18)
+    } else if (id === 'upavasa') {            // пост: глухой удар, как от оковы
+      tone(147, 0.2, 'square', 0.04)
+      tone(392, 0.36, 'sine', 0.03, 0.06)
+    } else {
+      tone(440, 0.26, 'sine', 0.04)
+    }
+  },
+  /** Сева: тёплый мягкий аккорд — помощь без платы. */
+  seva() {
+    tone(261.6, 0.5, 'sine', 0.04)
+    tone(392, 0.55, 'sine', 0.032, 0.08)
+    tone(523.3, 0.6, 'sine', 0.022, 0.16)
+  },
+  /** Авидья запылила: еле слышный высокий гул. */
+  avidya(level) {
+    if (level < 0.5) return
+    tone(1180, 0.5, 'sine', 0.008 + (level - 0.5) * 0.02)
+    tone(1770, 0.4, 'sine', 0.005 + (level - 0.5) * 0.012, 0.05)
+  },
+  /** Авидья схлынула — короткий спад. */
+  avidyaDown() {
+    tone(880, 0.22, 'sine', 0.022)
+    tone(587, 0.28, 'sine', 0.016, 0.05)
+  },
+  step() { tone(96, 0.05, 'sine', 0.014) },
+  dash() { tone(420, 0.13, 'triangle', 0.03); tone(190, 0.16, 'sine', 0.022, 0.03) },
+  /** Самадхи открылась — свет заливает. */
+  samadhi() {
+    tone(196, 1.4, 'sine', 0.045)
+    tone(392, 1.2, 'sine', 0.03, 0.1)
+    tone(587.3, 1.0, 'sine', 0.022, 0.22)
+    tone(784, 0.9, 'sine', 0.016, 0.36)
+  },
+}
+
+/** Тихий дрон локации: своя нота и своя окраска на каждую стихию. */
+const DRONES = {
+  0: { f: 55,    type: 'sine',     gain: 0.016, shimmer: 0 },   // Земля — низкий грунт
+  1: { f: 82.4,  type: 'sine',     gain: 0.018, shimmer: 0.4 }, // Вода — плеск
+  2: { f: 61.7,  type: 'sawtooth', gain: 0.010, shimmer: 0 },   // Огонь — гул
+  3: { f: 110,   type: 'sine',     gain: 0.012, shimmer: 0.6 }, // Воздух — свист
+  4: { f: 130.8, type: 'sine',     gain: 0.014, shimmer: 0.5 }, // Эфир — звон
+  5: { f: 146.8, type: 'triangle', gain: 0.010, shimmer: 0.7 }, // Ум — стекло
+  6: { f: 196,   type: 'sine',     gain: 0.010, shimmer: 0.8 }, // Сознание — почти тишина
+}
+
+let droneNode = null
+let droneGain = null
+let droneShimmer = null
+
+/** Запустить фон локации. Вызывать не чаще раза при входе в комнату. */
+export function startDrone(floor = 0) {
+  const audio = ensureAc()
+  if (!audio) return
+  stopDrone()
+  const d = DRONES[floor] || DRONES[0]
+  const osc = audio.createOscillator()
+  droneGain = audio.createGain()
+  droneGain.gain.value = 0.0001
+  osc.type = d.type
+  osc.frequency.value = d.f
+  osc.connect(droneGain)
+  droneGain.connect(audio.destination)
+  osc.start()
+  droneNode = osc
+  // медленный подъём громкости — фон не должен ударить сразу
+  droneGain.gain.exponentialRampToValueAtTime(d.gain, audio.currentTime + 2.5)
+  if (d.shimmer > 0) {
+    const sh = audio.createOscillator()
+    droneShimmer = audio.createGain()
+    droneShimmer.gain.value = 0.0001
+    sh.type = 'sine'
+    sh.frequency.value = d.f * 3.01
+    sh.connect(droneShimmer)
+    droneShimmer.connect(audio.destination)
+    sh.start()
+    droneShimmer.gain.exponentialRampToValueAtTime(d.gain * 0.22 * d.shimmer, audio.currentTime + 3.5)
+    droneShimmerOsc = sh
+  }
+}
+
+let droneShimmerOsc = null
+
+export function stopDrone() {
+  const audio = ac
+  if (!audio) return
+  const fade = (node, gainNode) => {
+    if (!node || !gainNode) return
+    try {
+      gainNode.gain.cancelScheduledValues(audio.currentTime)
+      gainNode.gain.setValueAtTime(Math.max(0.0001, gainNode.gain.value), audio.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + 0.4)
+      node.stop(audio.currentTime + 0.5)
+    } catch { /* уже остановлен */ }
+  }
+  fade(droneNode, droneGain)
+  fade(droneShimmerOsc, droneShimmer)
+  droneNode = droneGain = droneShimmer = droneShimmerOsc = null
+}
+
 // ── Аудиотека практики (§16.2, идея №33): проигрывание собранных звуков ──
 // Каждый звук — «записанная практика», которую можно унести в жизнь (WebAudio,
 // без файлов). Звуки генерируются как паттерны тонов; источник — Шастра.

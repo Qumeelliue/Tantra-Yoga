@@ -18,12 +18,31 @@
   --line-gold: rgba(242, 196, 109, 0.26);
   --line-gold-soft: rgba(242, 196, 109, 0.12);
 
-  --sat: #ffe9b3;
-  --sat-soft: rgba(255, 233, 179, 0.14);
-  --raj: #ff8a4a;
-  --raj-soft: rgba(255, 138, 74, 0.14);
-  --tam: #8b6fd6;
-  --tam-soft: rgba(139, 111, 214, 0.14);
+  /* Цвета-гуны по первоисточнику: «sattvaguńa is white, rajoguńa is red
+     and tamoguńa is black» (Ananda Marga Ideology and Way of Life in a Nutshell,
+     ч. 1 «Vibration, Form and Colour»; см. также Babas_Grace). Отдельно вайшья —
+     жёлтый: «the Citta is dominated by yellow vibrations» (смешение раджаса и
+     тамаса). Раньше здесь стоял неверный набор (кремовый/оранжевый/фиолетовый) —
+     игра учила неправильным цветам гун. */
+  --sat: #f4f1ea;
+  --sat-soft: rgba(244, 241, 234, 0.14);
+  --raj: #d23b3b;
+  --raj-soft: rgba(210, 59, 59, 0.16);
+  --tam: #14121a;
+  --tam-soft: rgba(20, 18, 26, 0.5);
+  /* Чёрный тамаса нечитаем как текст на тёмном фоне, поэтому для надписей и
+     линий — нейтральный серый «цвет отсутствия цвета» (по смыслу источника:
+     «Black is no colour… the perception of black is due to the absence of all
+     colours»). Сама заливка остаётся настоящим чёрным. */
+  --tam-ink: #9a90ad;
+  --vaeshya: #e0b93a;
+
+  /* Цвета варн (психические состояния, не каста): vipra белый, kshatriya красный,
+     vaeshya жёлтый, shudra чёрный. Варна меняется деятельностью и садханой. */
+  --varna-vipra: #f4f1ea;
+  --varna-kshatriya: #d23b3b;
+  --varna-vaeshya: #e0b93a;
+  --varna-shudra: #3a3540;
 
   --card-bg: rgba(37, 26, 56, 0.72);
   --card-bg-hi: rgba(49, 34, 72, 0.82);
@@ -34,14 +53,35 @@
   --font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --font-ui: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --shadow-card: 0 6px 24px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--line-gold-soft), 0 0 28px rgba(242, 196, 109, 0.06);
+
+  /* ── Безопасные зоны телефона ───────────────────────────────────────
+     Игра ездит внутри Telegram, а Telegram отдаёт размеры своей шапки и
+     нижней панели через WebApp.contentSafeAreaInset (в CSS-пикселях) —
+     игра кладёт их в --sa-* при старте (main.js, applySafeArea). Браузер
+     про вырез сообщает сам, через env(safe-area-inset-*). Берём максимум:
+     иначе полосы ресурсов и кнопка дефлекта уезжают под шапку клиента, и
+     на телефоне их просто не видно и не нажать. */
+  --sa-top: 0px;
+  --sa-right: 0px;
+  --sa-bottom: 0px;
+  --sa-left: 0px;
+  --safe-top: max(env(safe-area-inset-top), var(--sa-top));
+  --safe-right: max(env(safe-area-inset-right), var(--sa-right));
+  --safe-bottom: max(env(safe-area-inset-bottom), var(--sa-bottom));
+  --safe-left: max(env(safe-area-inset-left), var(--sa-left));
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 
 html, body {
   height: 100%;
-  overscroll-behavior: none;
+  overscroll-behavior: none;         /* телефон не должен «тянуть» страницу */
+  -webkit-tap-highlight-color: transparent;  /* без серой вспышки под пальцем */
+  -webkit-touch-callout: none;
 }
+/* Игра целиком — жест, а не документ: никакого двойного зума и резиновой
+   ленты под большим пальцем. Иначе «дефлект» превращается в зум экрана. */
+body { touch-action: manipulation; overscroll-behavior-y: none; }
 
 body {
   background:
@@ -96,7 +136,7 @@ body {
   margin: 0 auto;
   min-height: 100vh;
   min-height: 100dvh;
-  padding: calc(12px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+  padding: calc(12px + var(--safe-top)) 16px calc(20px + var(--safe-bottom));
 }
 
 .screen {
@@ -1024,7 +1064,7 @@ body {
 }
 .guna-orb.s .orb { background: radial-gradient(circle at 38% 30%, #fff6dd, var(--sat) 68%, #d9b877); }
 .guna-orb.r .orb { background: radial-gradient(circle at 38% 30%, #ffd0ad, var(--raj) 68%, #c45f28); }
-.guna-orb.t .orb { background: radial-gradient(circle at 38% 30%, #c4aef0, var(--tam) 68%, #5f46a0); }
+.guna-orb.t .orb { background: radial-gradient(circle at 38% 30%, #6a5f7d, var(--tam) 68%, #000000); }
 .guna-orb .orb.lead { transform: scale(1.12); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14), 0 0 22px rgba(255, 255, 255, 0.25); }
 .guna-orb .orb.low { opacity: 0.55; }
 .guna-orb .g-lbl { font-size: 9px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
@@ -1258,7 +1298,7 @@ body {
 }
 .calm-dot.on { background: radial-gradient(circle at 40% 35%, #fff3d6, var(--gold)); box-shadow: 0 0 12px rgba(242, 196, 109, 0.7); }
 .calm-hint { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
-.calm-hint.resist { color: var(--tam); font-style: italic; text-transform: none; letter-spacing: 0.02em; }
+.calm-hint.resist { color: var(--tam-ink); font-style: italic; text-transform: none; letter-spacing: 0.02em; }
 
 .intent {
   display: flex;
@@ -1450,7 +1490,7 @@ body {
 .float-num.block { color: #9fc3e8; }
 .float-num.sat { color: var(--sat); }
 .float-num.raj { color: var(--raj); }
-.float-num.tam { color: var(--tam); }
+.float-num.tam { color: var(--tam-ink); }
 
 @keyframes floatUp {
   from { opacity: 0; transform: translateY(8px); }
@@ -1942,3 +1982,454 @@ body {
 .run-row.awakening .run-row-name { color: var(--sat); }
 .run-row-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
 .run-row-date { font-size: 11px; color: var(--muted-2); }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   ПОЛЕ УМА — бой в локации (изометрия, Hades-структура)
+   Окову нельзя убить: её успокаивают дыханием. Победа — не сила, а терпение.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Поле занимает РОВНО экран. #app даёт экранам отступы сверху и снизу, а
+   поле им не подчиняется: у него свой край внизу (кнопки, подсказка). Если
+   не отменить отступы, низ поля уезжает под экран — на телефоне кнопки
+   дефлекта и мантры оказываются за нижней кромкой, и страница «прыгает».
+   Отступы безопасной зоны внутри поля уже учтены в .field-top / .field-dock. */
+.field { position: relative; overflow: hidden; background: var(--bg-0);
+  width: calc(100% + 32px);
+  margin: calc(-12px - var(--safe-top)) -16px
+          calc(-20px - var(--safe-bottom));
+  height: 100dvh; }
+.field-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.field-ui { position: absolute; inset: 0; pointer-events: none; }
+
+/* ── Верх: гуны и полоски ── */
+.field-top { position: absolute; top: max(28px, calc(var(--safe-top) + 18px)); left: 12px; right: 12px;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.field-topright { display: flex; flex-direction: column; align-items: flex-end; gap: 7px; }
+
+.field-guna { display: flex; align-items: center; gap: 6px; padding: 7px 11px; border-radius: 30px;
+  background: rgba(10,7,18,.56); border: 1px solid var(--line-gold-soft);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.field-guna .fg { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.field-guna .fg.s { box-shadow: 0 0 10px rgba(244,241,234,.75); }
+.field-guna .fg.r { box-shadow: 0 0 10px rgba(210,59,59,.65); }
+.field-guna .fg.t { box-shadow: inset 0 0 0 1px rgba(255,255,255,.22); }
+.field-guna .fv { font-size: 12px; font-weight: 800; letter-spacing: .02em; }
+.field-guna .fv.s { color: var(--sat); } .field-guna .fv.r { color: var(--raj); }
+.field-guna .fv.t { color: var(--tam-ink); }
+.field-guna .fg-pram { font-family: var(--font-display); font-size: 9.5px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--gold-soft); margin-left: 3px; }
+
+.fbar { width: 138px; }
+.fbar-l { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; }
+.fbar-l span { font-size: 8.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.fbar-l b { font-size: 11px; font-weight: 800; color: var(--gold-soft); }
+.fbar-t { height: 5px; border-radius: 3px; background: rgba(255,255,255,.09); overflow: hidden;
+  border: 1px solid rgba(255,255,255,.05); }
+.fbar-t i { display: block; height: 100%; border-radius: 3px; transition: width .1s linear; }
+.fbar.shakti .fbar-t i { background: linear-gradient(90deg, #7a5cc4, var(--gold));
+  box-shadow: 0 0 11px rgba(242,196,109,.6); }
+.fbar.psychic .fbar-t i { background: linear-gradient(90deg, #4e7fb8, #9ad0e8); }
+.fbar.avidya .fbar-t i { background: linear-gradient(90deg, #3d3450, #8a7fa8); }
+.fbar.avidya .fbar-l span { color: var(--tam-ink); }
+
+.field-hp { display: flex; align-items: center; gap: 6px; width: 138px; }
+.field-hp i { display: block; height: 5px; flex: 1; border-radius: 3px;
+  background: linear-gradient(90deg, #a8514a, #e08a7a); }
+.field-hp b { font-size: 11px; font-weight: 800; color: #f0b4a8; min-width: 18px; text-align: right; }
+
+/* ── Лог событий ── */
+.field-log { position: absolute; left: 12px; top: 74px; width: 210px;
+  display: flex; flex-direction: column; gap: 3px; }
+.fl { font-size: 10.5px; line-height: 1.4; padding: 4px 8px; border-radius: 7px;
+  background: rgba(8,6,15,.62); border-left: 2px solid var(--line-gold);
+  color: var(--ink-dim); animation: flIn .25s ease; }
+.fl.good { border-left-color: #7ad7a0; color: #a8e6c0; }
+.fl.bad { border-left-color: var(--raj); color: #f0a8a8; }
+.fl.tip { border-left-color: var(--gold-deep); color: var(--muted); font-style: italic; }
+@keyframes flIn { from { opacity: 0; transform: translateX(-8px); } }
+
+/* ── Подсказка у оковы ── */
+.field-prompt { position: absolute; left: 0; right: 0; top: 30%; text-align: center;
+  font-size: 12.5px; color: var(--ink-dim); text-shadow: 0 2px 10px rgba(0,0,0,.8); }
+.field-prompt .fp-name { color: var(--gold-soft); font-weight: 700; }
+.field-prompt .fp-sep { color: var(--muted); }
+.field-prompt .fp-light { color: var(--sat); }
+.field-prompt .fp-dark { color: var(--tam-ink); }
+
+/* ── Кольцо дыхания ── */
+.field-breath { position: absolute; right: 18px; bottom: 150px; width: 76px; height: 76px;
+  display: grid; place-items: center; }
+.fbr-svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.fbr-track { fill: none; stroke: rgba(255,255,255,.10); stroke-width: 5; }
+.fbr-prog { fill: none; stroke: var(--gold); stroke-width: 5; stroke-linecap: round;
+  filter: drop-shadow(0 0 5px rgba(242,196,109,.6)); }
+.fbr-label { position: relative; font-family: var(--font-display); font-size: 11px;
+  letter-spacing: .1em; color: var(--gold-soft); text-transform: lowercase; }
+
+/* ── Нижняя панель кнопок ── */
+.field-dock { position: absolute; left: 0; right: 0; bottom: max(24px, var(--safe-bottom));
+  display: flex; justify-content: center; gap: 10px; pointer-events: auto; }
+.fbtn { width: 68px; height: 68px; border-radius: 19px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px; cursor: pointer;
+  touch-action: manipulation;      /* палец жмёт кнопку, а не скроллит поле */
+  -webkit-user-select: none; user-select: none;
+  background: linear-gradient(180deg, rgba(34,25,52,.88), rgba(15,11,25,.94));
+  border: 1px solid var(--line-gold); color: var(--ink-dim);
+  box-shadow: 0 10px 26px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07); }
+.fbtn i { font-size: 19px; font-style: normal; color: var(--gold-soft); }
+.fbtn span { font-size: 9px; letter-spacing: .05em; }
+.fbtn:active { transform: translateY(2px); }
+.fbtn.on { border-color: var(--gold); box-shadow: 0 0 26px rgba(242,196,109,.45), inset 0 0 18px rgba(242,196,109,.14); }
+.fbtn.on i { color: var(--gold-soft); }
+.fbtn.disabled { opacity: .35; }
+.fbtn.fire i { color: var(--sat); }
+
+.field-hint { position: absolute; left: 0; right: 0; bottom: max(6px, var(--safe-bottom));
+  text-align: center; font-size: 9px; color: var(--muted-2); letter-spacing: .02em; }
+
+/* ── Экран севы: четыре вида по варнам (AV 30/10) ── */
+.seva-veil { position: absolute; inset: 0; z-index: 20; display: grid; place-items: center;
+  background: rgba(5,3,10,.9); backdrop-filter: blur(7px); -webkit-backdrop-filter: blur(7px);
+  padding: 18px; pointer-events: auto; }
+.seva-panel { width: 100%; max-width: 380px; }
+.seva-panel h3 { font-family: var(--font-display); font-size: 22px; font-weight: 400;
+  color: var(--gold-soft); text-align: center; }
+.seva-sub { font-size: 11.5px; color: var(--muted); text-align: center; margin: 8px 0 18px; line-height: 1.5; }
+.seva-list { display: flex; flex-direction: column; gap: 9px; }
+.seva-row { display: flex; align-items: center; gap: 11px; width: 100%; padding: 12px 13px;
+  border-radius: 14px; cursor: pointer; text-align: left;
+  background: linear-gradient(100deg, rgba(30,22,46,.92), rgba(16,12,26,.92));
+  border: 1px solid var(--line-gold-soft); color: var(--ink); }
+.seva-row:active { border-color: var(--gold); transform: scale(.99); }
+.seva-mark { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  font-size: 16px; font-style: normal; flex: none; }
+.seva-row.v-shudra .seva-mark { background: linear-gradient(180deg,#6b6274,#14121a);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.16); }
+.seva-row.v-kshatriya .seva-mark { background: linear-gradient(180deg,#f08080,var(--raj)); }
+.seva-row.v-vaeshya .seva-mark { background: linear-gradient(180deg,#f0d878,var(--vai-var, #e0b93a)); }
+.seva-row.v-vipra .seva-mark { background: linear-gradient(180deg,#fff,var(--sat)); color: #2a2233; }
+.seva-tx { flex: 1; }
+.seva-tx b { display: block; font-size: 13px; }
+.seva-tx span { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+.seva-fruit { font-size: 9px; font-style: normal; letter-spacing: .1em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: 7px; white-space: nowrap; }
+.seva-fruit.tmp { color: var(--tam-ink); background: rgba(255,255,255,.06); }
+.seva-fruit.et { color: var(--gold); background: rgba(242,196,109,.14);
+  box-shadow: inset 0 0 0 1px var(--line-gold); }
+.seva-foot { font-family: var(--font-display); font-style: italic; font-size: 11.5px;
+  color: var(--muted); text-align: center; margin-top: 16px; line-height: 1.55; }
+
+/* ── Экран итога ── */
+.field-over { position: absolute; inset: 0; z-index: 30; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 13px; text-align: center; padding: 30px;
+  background: radial-gradient(circle at 50% 44%, rgba(20,14,34,.8), rgba(5,3,10,.96)); pointer-events: auto; }
+.field-over h2 { font-family: var(--font-display); font-size: 25px; font-weight: 400; color: var(--gold-soft); }
+.field-over p { font-size: 13px; color: var(--ink-dim); line-height: 1.6; max-width: 310px; }
+.field-over-stats { display: flex; gap: 14px; font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--muted); flex-wrap: wrap; justify-content: center; }
+.field-over .btn { margin-top: 8px; min-width: 160px; }
+
+/* ── Экран итога: что игрок унёс из локации ── */
+.field-earns { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 2px; }
+.field-earns .fe { display: flex; align-items: center; gap: 8px; font-size: 12px;
+  color: var(--ink-dim); background: rgba(255,255,255,.04); padding: 7px 12px;
+  border-radius: 9px; border-left: 2px solid var(--line-gold); }
+.field-earns .fe i { font-style: normal; color: var(--gold-soft); font-size: 12px; }
+.field-over-btns { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.field-over-btns .btn { min-width: 190px; }
+
+/* ── Поле Ума: дефлект, щит, серия, мантры (Nine Sols) ── */
+.field-shield { display:flex; align-items:center; gap:7px; margin-top:5px; }
+.field-shield .fsh-l { font-size:9px; letter-spacing:.18em; text-transform:uppercase; color:var(--muted); }
+.field-shield .fsh-t { flex:1; height:6px; max-width:150px; background:#0b0a12;
+  border:1px solid var(--line); position:relative; overflow:hidden; }
+.field-shield .fsh-t b { position:absolute; inset:0 auto 0 0; display:block; width:0;
+  background:linear-gradient(90deg,#2b9fbf,#8ff4ff); box-shadow:0 0 8px rgba(79,232,255,.5); }
+.field-shield .fsh-v { font-size:11px; color:#8ff4ff; min-width:20px; text-align:right; }
+
+/* серия дефлектов */
+.fcombo { position:absolute; left:50%; top:78px; transform:translateX(-50%) scale(.9);
+  font-family:var(--font-display); font-size:19px; letter-spacing:.05em; color:var(--gold);
+  text-shadow:0 0 14px rgba(242,196,109,.6); opacity:0; transition:opacity .14s, transform .14s;
+  pointer-events:none; }
+.fcombo.on { opacity:1; transform:translateX(-50%) scale(1); }
+
+/* панель мантр — 4 слота, как талисманы Nine Sols */
+.fm-slots { position:absolute; left:0; right:0; bottom:96px; display:flex; gap:7px;
+  justify-content:center; padding:0 10px; pointer-events:none; }
+.fm-slot { pointer-events:auto; position:relative; width:23%; max-width:170px; min-width:74px;
+  background:rgba(10,9,16,.88); border:1px solid var(--line); padding:6px 7px 7px;
+  display:flex; flex-direction:column; gap:2px; text-align:left; transition:border-color .12s; }
+.fm-slot .fm-key { position:absolute; top:3px; right:5px; font-size:8px; color:var(--muted);
+  font-style:normal; }
+.fm-slot .fm-nm { font-family:var(--font-display); font-size:12.5px; color:var(--paper);
+  line-height:1.1; padding-right:10px; }
+.fm-slot .fm-cost { font-size:9px; color:#8ff4ff; letter-spacing:.06em; }
+.fm-slot .fm-desc { font-size:9px; line-height:1.25; color:var(--muted); }
+.fm-slot.sel { border-color:var(--gold); background:rgba(242,196,109,.10);
+  box-shadow:0 0 14px rgba(242,196,109,.22); }
+.fm-slot.sel .fm-nm { color:var(--gold-soft); }
+.fm-slot.poor { opacity:.42; }
+.fm-slot.poor .fm-cost { color:#ff8a7a; }
+
+/* подсказка окна парирования */
+.fp-window { color:var(--gold); font-weight:700; letter-spacing:.12em; }
+.field-prompt { transition:color .1s; }
+
+/* ── Владыка: баннер «сломался» ── */
+.fbanner { position:absolute; left:50%; top:40%; transform:translate(-50%,-50%) scale(.85);
+  font-family:var(--font-display); font-size:34px; letter-spacing:.06em; color:#ffd76a;
+  text-shadow:0 0 26px rgba(255,190,60,.75), 0 2px 0 #000; opacity:0; pointer-events:none;
+  transition:opacity .2s, transform .2s; white-space:nowrap; }
+.fbanner.on { opacity:1; transform:translate(-50%,-50%) scale(1); }
+
+/* ── Шапка локации: имя, стихия, описание (из worlds.json) ── */
+.field-head { position:absolute; left:50%; top:96px; transform:translateX(-50%);
+  width:min(92%, 372px); text-align:center; pointer-events:none;
+  animation:fhin .6s ease-out both }
+@keyframes fhin { from{opacity:0;transform:translate(-50%,-8px)} to{opacity:1;transform:translate(-50%,0)} }
+.field-head .fh-row { display:flex; align-items:baseline; justify-content:center; gap:10px; }
+.field-head .fh-name { font-family:var(--font-display); font-size:19px; color:var(--paper);
+  letter-spacing:.04em; text-shadow:0 2px 10px #000; }
+.field-head .fh-el { font-size:10.5px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--gold-soft); text-shadow:0 1px 6px #000; }
+.field-head .fh-land { margin-top:4px; font-size:10.5px; line-height:1.45; color:var(--ink-dim);
+  text-shadow:0 1px 5px #000; }
+@media (max-width:420px) { .field-head .fh-land { display:none } }
+
+/* ── Крипа: вспышка милости (AV 12, «зонт тщеславия») ── */
+.fkrpa { position:absolute; inset:0; pointer-events:none; opacity:0; z-index:60;
+  background:radial-gradient(circle at 50% 52%, rgba(255,231,168,.55), rgba(255,207,74,.16) 38%, transparent 68%); }
+.fkrpa.on { animation:krpaflash 2.4s ease-out both; }
+@keyframes krpaflash {
+  0%   { opacity:0; transform:scale(.7) }
+  12%  { opacity:1; transform:scale(1.04) }
+  32%  { opacity:.72; transform:scale(1) }
+  100% { opacity:0; transform:scale(1.18) }
+}
+
+/* ── Разборка HUD: меньше текста, ничего не наезжает ── */
+/* Шапка: только имя и стихия, одной строкой */
+.field-head { position:absolute; left:10px; top:7px; pointer-events:none;
+  white-space:nowrap; display:flex; align-items:baseline; gap:5px; max-width:46%;
+  overflow:hidden; }
+.field-head .fh-name { font-family:var(--font-display); font-size:13px; color:var(--paper);
+  letter-spacing:.02em; text-shadow:0 2px 8px #000; overflow:hidden; text-overflow:ellipsis; }
+.field-head .fh-el { font-size:8px; letter-spacing:.08em; text-transform:uppercase;
+  color:var(--gold-soft); text-shadow:0 1px 6px #000; white-space:nowrap; }
+@media (max-width:380px) { .field-head .fh-el { display:none } }
+
+/* Полоса жизни: щит — золотой отрезок внутри, а не отдельная панель */
+.field-hp { position:relative; height:9px; margin-top:6px;
+  background:#0b0a12; border:1px solid var(--line); overflow:hidden; }
+.field-hp i { position:absolute; left:0; top:0; bottom:0; display:block; }
+.field-hp #fhp-b { background:linear-gradient(90deg,#ff6b5a,#c01f1f);
+  box-shadow:0 0 8px rgba(255,80,60,.45); }
+.field-hp .fhp-shield { z-index:2; background:repeating-linear-gradient(45deg,#4fe8ff 0 3px,#2b9fbf 3px 6px);
+  box-shadow:0 0 8px rgba(79,232,255,.6); }
+
+/* Серия дефлектов — в левой колонке, под гунами */
+.fcombo { position:static; transform:none; font-family:var(--font-display); font-size:15px;
+  letter-spacing:.04em; color:var(--gold); text-shadow:0 0 12px rgba(242,196,109,.55);
+  opacity:0; transition:opacity .12s; margin-top:3px; text-align:left; }
+.fcombo.on { opacity:1; }
+
+/* Слоты мантр: номер, имя, цена. Ничего больше. */
+.fm-slots { position:absolute; left:0; right:0; bottom:74px; display:flex; gap:6px;
+  justify-content:center; padding:0 8px; pointer-events:none; }
+.fm-slot { pointer-events:auto; position:relative; width:23%; max-width:150px; min-width:70px;
+  background:rgba(10,9,16,.9); border:1px solid var(--line); padding:5px 6px 6px;
+  display:flex; flex-direction:column; gap:1px; text-align:left; }
+.fm-slot .fm-key { position:absolute; top:2px; right:4px; font-size:8px; color:var(--muted); font-style:normal; }
+.fm-slot .fm-nm { font-family:var(--font-display); font-size:12px; color:var(--paper);
+  line-height:1.1; padding-right:10px; }
+.fm-slot .fm-cost { font-size:9px; color:#8ff4ff; letter-spacing:.04em; }
+.fm-slot.sel { border-color:var(--gold); background:rgba(242,196,109,.12);
+  box-shadow:0 0 12px rgba(242,196,109,.2); }
+.fm-slot.sel .fm-nm { color:var(--gold-soft); }
+.fm-slot.poor { opacity:.4; }
+.fm-slot.poor .fm-cost { color:#ff8a7a; }
+
+/* Описание мантры — одна строка внизу, живёт 3 секунды */
+.fm-desc { position:absolute; left:0; right:0; bottom:58px; text-align:center;
+  font-size:10.5px; color:var(--ink-dim); text-shadow:0 1px 5px #000;
+  opacity:0; transition:opacity .25s; pointer-events:none; padding:0 16px; }
+.fm-desc.on { opacity:1; }
+
+/* Подсказка управления гаснет */
+.field-hint { position:absolute; left:0; right:0; bottom:2px; text-align:center;
+  font-size:9.5px; color:#5a4d70; opacity:0; transition:opacity .6s; }
+.field-hint.on { opacity:1; }
+
+/* Лог: две строки, прижат к низу слева, не задевает шапку */
+.field-log { position:absolute; left:10px; bottom:150px; width:210px;
+  display:flex; flex-direction:column-reverse; gap:2px; }
+.field-log .fl { font-size:10px; padding:3px 7px; background:rgba(8,7,12,.82);
+  border-left:2px solid var(--line); color:var(--muted); }
+
+/* ── Мастерская севы ── */
+.ws-points { display:flex; align-items:baseline; justify-content:center; gap:8px; margin-top:10px;
+  padding:8px; background:rgba(242,196,109,.07); border:1px solid var(--line-gold-soft); }
+.ws-points b { font-family:var(--font-display); font-size:22px; color:var(--gold); }
+.ws-points span { font-size:10.5px; color:var(--muted); letter-spacing:.06em; }
+.ws-row { display:flex; align-items:flex-start; gap:11px; width:100%; text-align:left;
+  padding:11px 12px; background:rgba(12,10,18,.8); border:1px solid var(--line); }
+.ws-row .ws-mark { font-style:normal; font-size:14px; color:var(--muted); }
+.ws-row .ws-tx { flex:1; }
+.ws-row .ws-tx b { display:block; font-family:var(--font-display); font-size:14px; color:var(--paper); }
+.ws-row .ws-tx span { display:block; font-size:11px; color:var(--ink-dim); margin-top:2px; }
+.ws-row .ws-tx em { display:block; font-style:italic; font-size:10px; color:var(--muted); margin-top:2px; }
+.ws-row .ws-cost { font-style:normal; font-size:10.5px; color:var(--muted); white-space:nowrap; padding-top:2px; }
+.ws-row.can { border-color:var(--line-gold-soft); background:rgba(242,196,109,.08); cursor:pointer; }
+.ws-row.can .ws-mark, .ws-row.can .ws-cost { color:var(--gold); }
+.ws-row.has { border-color:rgba(157,255,90,.4); opacity:.85; }
+.ws-row.has .ws-mark { color:var(--lime); }
+.ws-row.poor { opacity:.45; }
+
+/* Статистика крипы на титуле */
+.krpa-stats { display:flex; gap:12px; justify-content:center; margin-top:10px;
+  font-size:10.5px; color:var(--muted); }
+.krpa-stats .missed { color:#c48bff; }
+
+/* ── Две кнопки, как в Hades ── */
+.field-dock.fdock { gap:12px; }
+.fbtn.big { width:104px; height:86px; border-radius:16px; gap:4px; }
+.fbtn.big .ic { font-size:26px; }
+.fbtn.big .tx { font-size:9px; letter-spacing:.14em; }
+.fbtn.big .fm-glyph { font-size:24px; line-height:1; }
+.fbtn.big .fm-nm2 { font-family:var(--font-display); font-size:14px; color:var(--paper); line-height:1; }
+.fbtn.big .fm-cost2 { font-size:9px; color:#8ff4ff; letter-spacing:.04em; }
+.fbtn.big.poor { opacity:.45; }
+.fbtn.big.poor .fm-cost2 { color:#ff8a7a; }
+/* окно выбора севы больше не появляется — но класс остался, чтобы старые стили не мешали */
+.seva-veil { display:none; }
+
+/* ── Дары чакры: выбор 1 из 3 (Hades) ── */
+.boon-screen .node-text { margin-bottom:4px; }
+.boon-row { display:flex; flex-direction:column; gap:9px; width:100%; max-width:420px; }
+.boon-card { display:flex; flex-direction:column; gap:2px; width:100%; text-align:left;
+  padding:12px 14px; background:rgba(12,10,18,.85); border:1px solid var(--line);
+  border-left-width:3px; transition:border-color .12s, background .12s; }
+.boon-card:active { background:rgba(242,196,109,.1); }
+.boon-card .boon-rar { font-size:8.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+.boon-card .boon-name { font-family:var(--font-display); font-size:17px; color:var(--paper); line-height:1.15; }
+.boon-card .boon-sans { font-style:normal; font-size:11px; color:var(--muted); }
+.boon-card .boon-desc { font-size:11.5px; color:var(--ink-dim); margin-top:3px; line-height:1.4; }
+.boon-card .boon-field { font-style:normal; font-size:10px; color:var(--muted); margin-top:2px; }
+.boon-card.r-common  { border-left-color:var(--muted); }
+.boon-card.r-uncommon{ border-left-color:var(--cyan); }
+.boon-card.r-rare    { border-left-color:var(--gold); }
+.boon-card.r-rare .boon-name { color:var(--gold-soft); }
+.boon-owned { margin-top:12px; font-size:10.5px; color:var(--muted); text-align:center; line-height:1.5; }
+
+/* Счётчик монет (драхм) — как в Hades, слева */
+.field-purse { position:static; display:flex; align-items:center; gap:5px; margin-top:5px;
+  padding-left:2px; }
+.field-purse .fp-coin { width:9px; height:9px; border-radius:50%; display:block;
+  background:#ffcf4a; box-shadow:0 0 8px rgba(255,207,74,.75); }
+.field-purse b { font-family:var(--font-display); font-size:13px; color:var(--gold); }
+
+/* ── Лавка (Hades: магазин между комнатами) ── */
+.shop-item { display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  padding:11px 12px; background:rgba(12,10,18,.85); border:1px solid var(--line);
+  border-left:3px solid var(--line); }
+.shop-item .shop-mark { font-style:normal; font-size:16px; color:var(--muted); }
+.shop-item .shop-tx { flex:1; }
+.shop-item .shop-tx b { display:block; font-family:var(--font-display); font-size:14.5px; color:var(--paper); }
+.shop-item .shop-tx span { display:block; font-size:10.5px; color:var(--ink-dim); margin-top:2px; }
+.shop-item .shop-cost { font-style:normal; font-size:10.5px; color:var(--muted); white-space:nowrap; }
+.shop-item.can { border-left-color:var(--gold); }
+.shop-item.can .shop-mark, .shop-item.can .shop-cost { color:var(--gold); }
+.shop-item.poor { opacity:.42; }
+
+/* ── Выбор оружия (экран как в Hades: оружие в начале забега) ── */
+.wsel-row { display:flex; flex-direction:column; gap:9px; width:100%; max-width:430px; }
+.wsel-card { display:flex; flex-direction:column; gap:3px; width:100%; text-align:left;
+  padding:12px 14px; background:rgba(12,10,18,.85);
+  border:1px solid var(--line); border-left:3px solid var(--wcolor, var(--line-gold-soft));
+  transition:background .12s; }
+.wsel-card:active { background:rgba(242,196,109,.09); }
+.wsel-top { display:flex; align-items:baseline; gap:9px; }
+.wsel-mark { font-style:normal; font-size:15px; color:var(--wcolor, var(--gold)); }
+.wsel-top b { font-family:var(--font-display); font-size:18px; color:var(--paper); }
+.wsel-lv { margin-left:auto; font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); }
+.wsel-desc { font-size:11px; line-height:1.45; color:var(--ink-dim); }
+.wsel-focus { font-size:10.5px; color:var(--gold-soft); opacity:.9; }
+
+/* ── Часы смерти (Hades: Death Clock) ── */
+.fclock { position:absolute; left:50%; top:26px; transform:translateX(-50%);
+  display:flex; align-items:center; gap:6px; padding:3px 10px;
+  background:rgba(8,7,12,.8); border:1px solid var(--line);
+  font-family:var(--font-display); font-size:13px; color:var(--dim);
+  opacity:.6; transition:opacity .3s, color .3s, border-color .3s; }
+.fclock i { font-style:normal; font-size:12px; color:#4a4260; }
+.fclock.rage { opacity:1; color:#ff6b5a; border-color:#d23b3b; }
+.fclock.rage i { color:#ff5a5a; }
+
+/* ── Нефрит (Hades: keepsake) ── */
+.jade-card { border-color: #2f6b5e; background:
+  linear-gradient(180deg, rgba(30,74,62,.30), rgba(10,12,16,.9)); }
+.jade-card .boon-rar { background: #2f6b5e; color: #d6fff0; }
+.jade-card .boon-name { color: #bff5e2; }
+.jade-card .boon-sub { display:block; font-style:normal; font-size:11px;
+  color:#6fbfab; letter-spacing:.04em; margin:2px 0 4px; }
+.jade-card:hover { border-color: #4fd0ac; }
+
+/* Нефрит на побег — у лодки-панели действий, слева от мантры */
+.fjade { position:absolute; right:100%; bottom:6px; margin-right:10px;
+  display:flex; align-items:center; gap:5px; padding:4px 9px;
+  background:rgba(8,14,13,.82); border:1px solid #2f6b5e;
+  font-family:var(--font-display); font-size:11px; color:#9fe6d1; white-space:nowrap; }
+.fjade i { font-style:normal; color:#4fd0ac; }
+
+/* ── Состояния от оков: ожог, вялость, слабость, хаос-проклятие ── */
+.field-states { display:flex; gap:5px; margin-top:5px; min-height:0; }
+.fstate { font-size:9px; letter-spacing:.03em; padding:2px 6px;
+  border:1px solid currentColor; background:rgba(8,7,12,.72); white-space:nowrap; }
+.f-burn  { color:#ff7a2d; }
+.f-slow  { color:#8f86c9; }
+.f-weak  { color:#9a90ad; }
+.f-chaos { color:#b06bff; }
+
+/* Смерти (Hades: счётчик смертей на виду) рядом с часами */
+.fclock-wrap { position:absolute; left:50%; top:22px; transform:translateX(-50%);
+  display:flex; align-items:center; gap:8px; }
+.fclock { position:relative; left:auto; top:auto; transform:none; }
+.fdeaths { display:none; align-items:center; gap:5px; padding:3px 9px;
+  background:rgba(8,7,12,.8); border:1px solid #4a2020;
+  font-family:var(--font-display); font-size:13px; color:#ff6b5a; }
+.fdeaths.on { display:flex; }
+.fdeaths i { font-style:normal; font-size:11px; }
+
+/* ── Финал забега (Hades: итог побега перед возвратом) ── */
+.win-screen .node-icon { font-size: 40px; }
+.win-quote { margin: 18px 0 14px; padding: 14px 16px;
+  border-left: 2px solid var(--gold); background: rgba(255,255,255,.03); }
+.win-quote p { font-family: var(--font-display); font-size: 15px; line-height: 1.6;
+  color: var(--ink); font-style: italic; }
+.win-quote cite { display: block; margin-top: 8px; font-size: 10px;
+  color: var(--muted-2); font-style: normal; letter-spacing: .03em; }
+.win-rows { display: flex; flex-direction: column; gap: 6px; }
+.win-row { display: flex; justify-content: space-between; align-items: baseline;
+  padding: 7px 12px; background: rgba(255,255,255,.035);
+  border: 1px solid var(--line); }
+.win-k { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+.win-v { font-family: var(--font-display); font-size: 16px; color: var(--gold-soft); }
+
+/* ── Пауза (Hades: pause menu) ── */
+.fpause { position:absolute; right:12px; top:max(28px, calc(var(--safe-top) + 18px));
+  width:34px; height:34px; border-radius:10px; display:grid; place-items:center;
+  font-size:11px; letter-spacing:-1px; color:var(--muted);
+  background:rgba(8,7,12,.7); border:1px solid var(--line); pointer-events:auto;
+  touch-action:manipulation; cursor:pointer; }
+.fpause.on { color:var(--gold); border-color:var(--line-gold); }
+
+.field-pause { position:absolute; inset:0; z-index:24; display:none;
+  place-content:center; gap:14px; text-align:center; padding:24px;
+  background:rgba(5,3,10,.86); backdrop-filter:blur(6px);
+  -webkit-backdrop-filter:blur(6px); pointer-events:auto; }
+.field-pause:not(:empty) { display:grid; }
+.pause-title { font-family:var(--font-display); font-size:26px; color:var(--gold-soft); }
+.pause-text { font-size:12px; color:var(--muted); line-height:1.6; max-width:32ch;
+  margin:0 auto; }
+.field-pause .btn-row { justify-content:center; }

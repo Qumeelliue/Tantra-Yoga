@@ -7,20 +7,55 @@ import quotesData from '@content/quotes.json'
 import challengesData from '@content/challenges.json'
 import trialsData from '@content/trials.json'
 import worldsData from '@content/worlds.json'
+import boonsData from '@content/boons.json'
 
-export const CARDS = cardsData
-export const ENEMIES = enemiesData
-export const RELICS = relicsData
-export const EVENTS = eventsData
-export const QUOTES = quotesData
-export const CHALLENGES = Object.fromEntries(
-  Object.entries(challengesData).filter(([k]) => !k.startsWith('_'))
+/**
+ * Только данные, без служебных ключей.
+ *
+ * В `content/*.json` ключ, начинающийся с `_`, — это комментарий автора
+ * (`_comment`, `_path`). Он полезен в файле, но он НЕ является событием,
+ * реликвией или цитатой, и в игру попадать не должен.
+ *
+ * Фильтр был проставлен только на BOONS, CHALLENGES и WORLDS. На остальные
+ * пять карт — забыт, и из этого выросло три настоящих бага:
+ *
+ *   · `eventOptions` брал ключ из всех, и каждое ШЕСТОЕ событие роняло экран
+ *     с «Cannot read properties of undefined (reading 'map')»;
+ *   · выдача реликвии могла выдать ключ `_comment` — игрок получал «реликвию»
+ *     без имени, которая ломала бой;
+ *   · счётчик цитат показывал 101 вместо 100, а случайная цитата иногда
+ *     оказывалась комментарием из JSON.
+ *
+ * Один фильтр на все — чтобы это нельзя было забыть в шестой раз.
+ */
+const dataOnly = (obj) => Object.fromEntries(
+  Object.entries(obj).filter(([k]) => !k.startsWith('_')),
 )
+
+export const CARDS = dataOnly(cardsData)
+export const ENEMIES = dataOnly(enemiesData)
+export const RELICS = dataOnly(relicsData)
+export const EVENTS = dataOnly(eventsData)
+export const QUOTES = dataOnly(quotesData)
+// Дары чакры (§16.2, Hades-style boons): выбор 1 из 3 после боя, комбинируются.
+export const BOONS = dataOnly(boonsData)
+export const CHALLENGES = dataOnly(challengesData)
 
 // Лор семи миров-чакр (§16.2a): философия Ананда Марги, «герой идёт по миру».
-export const WORLDS = Object.fromEntries(
-  Object.entries(worldsData).filter(([k]) => !k.startsWith('_'))
+export const WORLDS = dataOnly(worldsData)
+// Тот же лор, но по номеру этажа 0..6. Раньше код брал `WORLDS[String(floor)]`,
+// а WORLDS ключуется по ИМЕНИ чакры (`muladhara`, `svadhisthana`, …).
+// Из-за этого все 7 локаций отдавали `undefined`: не было ни владыки,
+// ни текста локации, ни стихии. Теперь индекс по номеру — отдельный.
+export const WORLD_BY_FLOOR = Object.fromEntries(
+  Object.values(WORLDS)
+    .filter((w) => w && typeof w.floor === 'number')
+    .map((w) => [String(w.floor), w])
 )
+// Безопасный доступ: этаж → мир. Никогда не возвращает undefined.
+export function worldForFloor(floor) {
+  return WORLD_BY_FLOOR[String(floor)] || WORLDS.muladhara
+}
 // Рамка космологии: санчара → пратисанчара (вступление пути).
 export const WORLD_PATH = worldsData._path || null
 

@@ -5,7 +5,17 @@ import { setHaptics, haptics } from './ui/haptics.js'
 import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
-import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS, WORLDS, WORLD_PATH } from './core/data.js'
+import { fieldScreen } from './ui/screens/field.js'
+import { buildFieldFloor, fieldHead } from './core/fieldBuild.js'
+import { WORKSHOP, workshopCost, canBuy, sevaPointsFor, applyUpgrades } from './core/workshop.js'
+import { FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS } from './core/field.js'
+import { applyVarna } from './core/varnaKits.js'
+import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.js'
+import { nextStage, ROOMS_PER_STAGE, isLastFloor } from './core/stageRoute.js'
+import { chakraQuote, nextTeacherQuote, teacherChain, placeQuotes } from './core/teaching.js'
+import { BOONS as FIELD_BOONS, rollBoons, applyBoons } from './core/boons.js'
+import { createField } from './core/field.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, BOONS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS, WORLDS, WORLD_PATH, worldForFloor } from './core/data.js'
 import { computeSynergies } from './core/engine.js'
 import {
   createRun, currentNode, currentEnemyId, startCombatAtNode, finishCombat,
@@ -13,13 +23,13 @@ import {
   eventOptions, resolveEventChoice, isNodeDone, markNodeDone,
   floorComplete, advanceFloor, CHAKRAS, LEPESTKI,
   rollShop, buyShopCard, buyShopRemove, buyShopRelic, SHOP_COSTS, shopPrice, shopDiscount,
-  challengeFulfilled,
+  challengeFulfilled, rollBoonChoices,
 } from './core/run.js'
 import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, recordDeath, resetMeta, quoteById, cloudSync,
   markVisit, progressDaily, varnaState, addVarnaPoints, isSadvipra,
   unlockCard, trialsProgress, markLived, gardenState, recordSound, soundState,
-  cityBlessingBonus, setVarnaBranch,
+  cityBlessingBonus, setVarnaBranch, flushCloud,
 } from './core/save.js'
 
 const appEl = document.getElementById('app')
@@ -31,6 +41,7 @@ function boot() {
   if (booted) return
   booted = true
   initFx()
+  applySafeArea()
   try {
     window.Telegram?.WebApp?.ready()
     window.Telegram?.WebApp?.expand()
@@ -44,6 +55,14 @@ function boot() {
     app.bootEvent = event
   }
   showHome()
+  // Телефон умеет убить страницу, не спросив. Локально мета уже записана
+  // (localStorage пишется сразу), но в облако она уезжает пачкой через
+  // полторы секунды — а палец мог закрыть приложение раньше. Поэтому на
+  // уходе со страницы дописываем всё накопленное немедленно.
+  addEventListener('pagehide', () => { flushCloud() })
+  addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushCloud()
+  })
   // фаза 2 (§17.1): синк через Telegram CloudStorage — побеждает свежее сохранение
   cloudSync(app.meta).then((fresh) => {
     if (fresh) {
@@ -54,6 +73,24 @@ function boot() {
       showHome()
     }
   })
+}
+
+/**
+ * Безопасные зоны. Телефон срезает верх вырезом, а Telegram — своей
+ * шапкой и нижней панелью, и сообщает размеры в `contentSafeAreaInset`
+ * (в CSS-пикселях). Мы выкладываем их в CSS-переменные, а стили берут
+ * максимум из них и из `env(safe-area-inset-*)`: пока кто-то открывает игру
+ * в браузере, работает env, внутри Telegram — его числа.
+ */
+function applySafeArea() {
+  const wa = window.Telegram?.WebApp
+  const insets = wa?.contentSafeAreaInset || wa?.safeAreaInset
+  if (!insets) return
+  const root = document.documentElement
+  for (const side of ['top', 'right', 'bottom', 'left']) {
+    const v = Number(insets[side])
+    if (Number.isFinite(v) && v > 0) root.style.setProperty(`--sa-${side}`, `${v}px`)
+  }
 }
 
 // Первый запуск показывает обучение; дальше — титульный экран.
@@ -197,19 +234,32 @@ function showTitle() {
   } }, 'Прогресс садхаки ▾')
   const metaFoldBlock = h('div', { class: 'meta-fold' }, metaHeadEl, metaBodyEl)
 
+  // Статистика крипы: сколько раз милость доставала и сколько раз зонт
+  // тщеславия её не пустил. Это единственная честная мера «снимал ли я себя».
+  const krpaLine = (meta.krpaFell || meta.krpaMissed) ? h('div', { class: 'krpa-stats' },
+    h('span', {}, `☂ под крипой ${meta.krpaFell || 0}`),
+    (meta.krpaMissed || 0) ? h('span', { class: 'missed' }, `зонт не пустил ${meta.krpaMissed}`) : null,
+  ) : null
+
   show(h('div', { class: 'screen active title-screen' },
     h('div', { class: 'mandala-wrap' },
       h('div', { class: 'mandala' }),
       h('div', { class: 'mandala core' }),
       h('div', { class: 'om-glyph', style: 'position:absolute' }, 'ॐ')),
     h('div', { class: 'game-title' }, 'Tantra: The Game'),
-    h('div', { class: 'game-sub' }, 'игра-учение · колода — это ум'),
+    h('div', { class: 'game-sub' }, 'игра-учение · садхака идёт сам'),
     h('p', { class: 'hint', style: 'max-width:300px' }, cityText),
     cityDots,
     teachers,
 
-    progressBlock,
+    // Один путь. Мир — единственная игра. Колода спрятана в «Городе»,
+    // потому что на титуле она отвлекала от главного и мешала начать забег.
+    h('div', { class: 'btn-row mt', style: 'margin-top:14px' },
+      h('button', { class: 'btn primary', onclick: showWeaponSelect }, 'В путь по миру ▶'),
+      h('button', { class: 'btn ghost', onclick: showSevaWorkshop }, 'Мастерская')),
 
+    progressBlock,
+    krpaLine,
     metaFoldBlock,
     h('div', { class: 'panel city-card' },
       h('div', { class: 'row between', style: 'font-size:12px;color:var(--muted)' },
@@ -220,8 +270,11 @@ function showTitle() {
       best,
 
       h('div', { class: 'btn-row' },
-        h('button', { class: 'btn primary', onclick: startNewRun }, 'Начать забег'),
-        h('button', { class: 'btn', onclick: () => showCompendium() }, `Грантха (${compCount})`)),
+        // Поле — игра. Колода спрятана рядом и названа честно: это второй
+        // путь, а не «начать игру». Раньше главная кнопка вела в колоду, и
+        // игрок, прочитавший на титуле про поле, попадал в карточный бой.
+        h('button', { class: 'btn', onclick: () => showCompendium() }, `Грантха (${compCount})`),
+        h('button', { class: 'btn ghost', onclick: startNewRun }, 'Колода — второй путь')),
     h('div', { class: 'btn-row mt' },
       h('button', { class: 'btn ghost', onclick: () => showDiary() }, 'Дневник практики'),
       h('button', { class: 'btn ghost small', style: 'width:auto', onclick: () => showHowto() }, '?'),
@@ -247,32 +300,37 @@ function showHowto() {
     h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
     h('div', { class: 'panel mt' },
       h('div', { class: 'display', style: 'font-size:22px' }, 'Как играть'),
+      h('div', { class: 'hint', style: 'color:var(--gold-soft)' }, 'ПОЛЕ УМА — основной путь'),
       h('div', { class: 'hint mt' },
-        'Ваша колода — это ум. В ней — оковы и вртти (лента, гнев, жадность). Убирайте их медитацией и мантрами, добавляйте практики.'),
+        'Ты ходишь по комнате, и оки приходят к тебе. Две кнопки: «Дефлект» — поймать удар и вернуть его, «Сева» — встать и выдержать, когда сил нет.'),
       h('div', { class: 'hint mt' },
-        'Вместо маны — три гуны: саттва (ясность), раджас (действие), тамас (покой). Держите равновесие — прама даёт бонус. Перекос — штраф.'),
+        'Ока замахнулась — жми кольцо. Попадание в окно отправляет удар обратно и снимает часть её сомнения. Сомнение кончилось — ока уходит сама, её не нужно добивать.'),
       h('div', { class: 'hint mt' },
-        'Каждого врага можно победить силой… или успокоить ахимсой (сыграть N карт «Ахимса» при его ХП ≤ 50%). Мирный путь — истинный финал.'),
+        'Пока в комнате не пройдёт время, мир злится: оки быстрее. Это «часы смерти» — они и держат напряжение.'),
       h('div', { class: 'hint mt' },
-        'На высоких этажах встречаются восемь оков-паш (страх, стыд, ненависть, сомнение…). Им сопротивляются правильной практикой: страх успокаивается Тапасом, стыд — Севой.'),
+        'Решения: у Фонтана — один нефрит на забег, после владыки — дар из трёх. Между — лавка за монеты и комната амбросии перед владыкой.'),
       h('div', { class: 'hint mt' },
-        'Узлы «Испытание» просят победить, не сыграв ни одной оковки; узлы «Воспоминание» — вспомнить открытые термины. Дисциплина и память дают бонус.'),
-      h('div', { class: 'hint mt' },
-        'Каждая карта и враг — подлинный термин Шастры. Первая встреча открывает карточку в Грантхе. Знание переживает смерть.'),
+        'Смерть отнимает нефрит и дары, но не знание: цитаты, что ты открыл, остаются. Семь чакр — семь владык, и Вершина Света в конце.'),
+      h('div', { class: 'hint mt', style: 'color:var(--muted)' },
+        'КОЛОДА — второй путь, он спрятан в Городе. Карты-практики против оков, три гуны вместо маны, мирный финал через ахимсу. Играется иначе, но тот же ум.'),
     ),
-    h('button', { class: 'btn primary mt', onclick: startNewRun }, 'Понятно, начнём'),
+    h('button', { class: 'btn primary mt', onclick: showWeaponSelect }, 'Понятно, в путь'),
   ))
 }
 
 // ── Первый запуск (§онбординг): короткий рассказ о том, что за игра и где геймплей.
 // Показывается один раз, до первого забега. Язык — игровой, без жаргона.
 
+// Онбординг учит ТОМУ, во что игрок пойдёт. Раньше здесь было пять шагов
+// про колоду, карты и «три гуны в бою», а кнопка в конце отправляла в
+// карточный путь — и новичок читал одно, а играл в другое. Игра теперь
+// поле: шаг, две кнопки, дефлект. Учим именно этому.
 const ONBOARDING_STEPS = [
-  { e: '🗺', t: 'Путь — вверх по 7 чакрам', d: 'На карте забега кликайте узлы: бой, медитация, событие, воспоминание. В конце каждого этажа — владыка чакры. Узлы сверкают — они ждут вашего шага.' },
-  { e: '🃏', t: 'Колода — это ваш ум', d: 'Карты-практики (медитация, мантра, кииртан, сева) — инструменты. Оковки (лень, гнев, жадность) — мусор: они кормят неведение. В бою просто нажимайте карту, чтобы сыграть её.' },
-  { e: '☯', t: 'Вместо маны — три гуны', d: 'Саттва (ясность), раджас (действие), тамас (покой). Держите их в равновесии — прама даёт бонусы. Перекос — штраф. Следите за тремя кружками над врагом.' },
-  { e: '🕊', t: 'Врага можно не убивать', d: 'Соберите 3+ карты Ахимсы и успокойте врага, когда его ХП ≤ 50%: окову освобождают, а не давят. Мирный путь — истинный финал (как прощение в Undertale).' },
-  { e: '♻️', t: 'Смерть — это перерождение', d: 'Знание (цитаты в Грантхе) переживает смерть и остаётся навсегда. Каждый забег делает ум мудрее — так и растёт ваш «хаб» между жизнями.' },
+  { e: '🚶', t: 'Ты идёшь сам', d: 'Никакой карты на столе. Ты ходишь по комнате, оки приходят к тебе, и всё решают две кнопки. Комната — это комната, а не стол с картами.' },
+  { e: '✋', t: 'Ока замахнулась — жми кольцо', d: 'Когда ока бьёт, нажимай «Дефлект». Попадёшь в окно — удар вернётся в неё, и она станет спокойнее. Это и есть весь бой: поймал момент.' },
+  { e: '🕊', t: 'Убивать нельзя', d: 'Окову снимают терпением: бей в ритм и жди, пока сомкнётся кольцо. Снятая ока уходит сама. Мирный путь — настоящий финал, как в Hades, где можно пройти без единого убийства.' },
+  { e: '🕯', t: 'Между комнатами — выбор', d: 'У Фонтана берёшь один нефрит на весь забег. После владыки — дар: один из трёх, остаются до конца. Это единственные решения в игре, и они копятся.' },
+  { e: '♻️', t: 'Смерть — это перерождение', d: 'Смерть отнимает нефрит и дары, но не знание. Цитаты, которые ты открыл, остаются навсегда: следующий забег начинается не с нуля, а с того, что ты уже понял.' },
 ]
 
 function showOnboarding() {
@@ -291,7 +349,9 @@ function showOnboarding() {
     h('button', { class: 'btn primary mt', onclick: () => {
       app.meta.onboarded = true
       saveMeta(app.meta)
-      startNewRun()
+      // В игру — в поле, а не в колоду: кнопка «в путь» обязана вести туда,
+      // о чём только что рассказала.
+      showWeaponSelect()
     } }, 'Понятно — в путь ▶'),
   ))
 }
@@ -605,9 +665,14 @@ function showCity() {
           h('div', { class: 'city-area-glyph', style: 'font-size:34px' }, t.glyph === 'mask' ? '◐' : t.glyph === 'crown' ? '👑' : t.glyph === 'eye' ? '👁' : t.glyph === 'greed' ? '👑' : t.glyph === 'heart' ? '♥' : '✦'),
           h('div', { class: 'city-area-name' }, t.name),
           h('div', { class: 'city-area-epithet' }, t.epithet),
-          talked
-            ? h('div', { class: 'city-area-talked' }, '✓ благословение взято')
-            : h('button', { class: 'btn small mt', onclick: () => talkToTeacher(t) }, 'Поговорить с учителем'))
+          // Учителя можно слушать и после первого визита: у него есть
+          // цепочка цитат, и он отдаёт её по одной.
+          h('button', {
+            class: 'btn small mt',
+            onclick: () => talkToTeacher(t),
+          }, talked
+            ? (nextTeacherQuote(t.id, meta.lived || {}) ? 'Учитель даст ещё' : 'Учитель ждёт')
+            : 'Поговорить с учителем'))
       : h('div', { class: 'city-area-dark' },
           h('div', { class: 'city-area-glyph', style: 'font-size:34px' }, '·'),
           h('div', { class: 'city-area-name' }, t.epithet.replace('Учитель', 'Владыка')),
@@ -633,27 +698,43 @@ function showCity() {
       h('div', { class: 'row between' },
         h('span', { class: 'hint' }, 'благословение на следующий забег'),
         h('span', { style: 'color:var(--gold-soft);font-weight:800' }, `+${blessing} саттвы`)),
-      h('div', { class: 'hint mt' }, 'Благословение применяется в начале забега, как милость учителей. Возьмите его, выбрав «Начать забег» на титуле.'))
+      h('div', { class: 'hint mt' }, 'Благословение применяется в начале забега, как милость учителей. Возьмите его, выбрав «Колода — второй путь» на титуле.'))
   ))
 }
 
-// Разговор с учителем: первый раз — цитата проживается (знание вручено) и
-// благословение записывается (+1 саттва к старту следующего забега).
+// Разговор с учителем. Учитель — это успокоенный владыка, и у него НЕ одна
+// фраза, а учение: несколько цитат, которые он вручает по одной за визит.
+// Так устроена садхана — пришёл, получил следующий слой, ушёл думать.
+// Раньше он давал ровно одну цитату, и 14 цитат корпуса не открывались ничем.
 function talkToTeacher(t) {
   const meta = app.meta
   const spoken = meta.citySpoken || (meta.citySpoken = [])
-  if (spoken.includes(t.id)) return
 
-  const wasLived = isQuoteLived(meta, t.quoteId)
-  if (!wasLived) markLived(meta, t.quoteId)
-  if (meta.quotesUnlocked && !meta.quotesUnlocked[t.quoteId]) meta.quotesUnlocked[t.quoteId] = true
-  spoken.push(t.id)
+  // Что он даст в этот раз: собственная цитата о нём, если ещё не дана,
+  // иначе — следующая в его цепочке. Закончил цепочку — больше нечего.
+  const chain = teacherChain(t.id)
+  const own = !isQuoteLived(meta, t.quoteId) ? t.quoteId : null
+  const next = own || nextTeacherQuote(t.id, meta.lived || {})
+  if (!next) {
+    show(h('div', { class: 'screen active comp-screen' },
+      h('button', { class: 'btn ghost small', onclick: showCity }, '← Город'),
+      h('div', { class: 'display chakra-title' }, t.name),
+      h('div', { class: 'chakra-sub' }, t.epithet),
+      h('div', { class: 'panel mt city-story' },
+        h('p', { class: 'hint' }, t.story),
+        h('p', { class: 'hint mt', style: 'color:var(--gold-soft)' }, t.advice)),
+      h('p', { class: 'hint center mt' }, `Он дал тебе всё, что мог: ${chain.length + 1} слой. Иди и проживай.`),
+      h('button', { class: 'btn primary mt', onclick: showCity }, 'Вернуться в Город')))
+    return
+  }
+
+  const isFirst = !spoken.includes(t.id)
+  markLived(meta, next)
+  if (meta.quotesUnlocked && !meta.quotesUnlocked[next]) meta.quotesUnlocked[next] = true
+  if (isFirst) spoken.push(t.id)
   saveMeta(meta)
 
-  const q = QUOTES[t.quoteId]
-  const quoteBlock = q
-    ? quoteBox(t.quoteId, { revealed: true })
-    : null
+  const left = teacherChain(t.id).filter((id) => !isQuoteLived(meta, id)).length
   show(h('div', { class: 'screen active comp-screen' },
     h('button', { class: 'btn ghost small', onclick: showCity }, '← Город'),
     h('div', { class: 'display chakra-title' }, t.name),
@@ -661,12 +742,15 @@ function talkToTeacher(t) {
     h('div', { class: 'panel mt city-story' },
       h('p', { class: 'hint' }, t.story),
       h('p', { class: 'hint mt', style: 'color:var(--gold-soft)' }, t.advice)),
-    quoteBlock,
-    h('div', { class: 'panel mt' },
-      h('div', { class: 'row between' },
-        h('span', { class: 'hint' }, 'благословение учителя'),
-        h('span', { style: 'color:var(--sat);font-weight:800' }, '+1 саттва к следующему забегу')),
-      h('button', { class: 'btn primary mt', onclick: showCity }, 'Вернуться в Город')),
+    quoteBox(next, { revealed: true }),
+    isFirst
+      ? h('div', { class: 'panel mt' },
+        h('div', { class: 'row between' },
+          h('span', { class: 'hint' }, 'благословение учителя'),
+          h('span', { style: 'color:var(--sat);font-weight:800' }, '+1 саттва к следующему забегу')))
+      : h('p', { class: 'hint center mt' },
+        left > 0 ? `Он дал следующий слой. Осталось у него ${left}.` : 'Это был последний его слой.'),
+    h('button', { class: 'btn primary mt', onclick: showCity }, 'Вернуться в Город'),
     h('div', { class: 'hint center mt' }, 'Знание вручено — оково больше не держит.'))
   )
 }
@@ -737,7 +821,8 @@ function showStats() {
         ? 'Пробуждение — не везение, а накопленный мир. Каждый забег учил вас чему-то.'
         : null),
     h('div', { class: 'btn-row mt' },
-      h('button', { class: 'btn primary', onclick: startNewRun }, 'Новый забег ▶')),
+      h('button', { class: 'btn primary', onclick: startNewRun }, 'Новый забег ▶'),
+      h('button', { class: 'btn ghost', onclick: showFieldChakra }, 'Поле Ума ▶')),
   ))
 }
 
@@ -750,6 +835,588 @@ function startNewRun() {
   app.meta.stats.runs += 1
   saveMeta(app.meta)
   showFocus()
+}
+
+// ─────────────────────────────────────────────────────────────
+// Поле Ума: бой в локации (изометрия, вместо карточного стола)
+// ─────────────────────────────────────────────────────────────
+
+// Выбор чакры для «Поля Ума». Показываем, чему чакра учит, — это и есть
+// цель пути, а не просто список уровней.
+/**
+ * Выбор оружия в начале забега — экран как в Hades.
+ *
+ * «Оружие» здесь — ментальность (варна) из Human Society Part 2. Это не
+ * классы и не «класс души», а психология ума: за них идёт бой, у каждой свой
+ * навык. Всё содержимое — из `MENTALITIES`, ничего не выдумано.
+ * Зеркальный аналог выбора оружия в Hades, но с нашей терминологией.
+ */
+function showWeaponSelect() {
+  const meta = app.meta
+  const cards = MENTALITY_ORDER.map((id) => {
+    const m = MENTALITIES[id]
+    const lv = meta.varnas?.[id] ?? 0
+    return h('button', {
+      class: `wsel-card w-${id}`,
+      style: `--wcolor:${m.color}`,
+      onclick: () => { meta.focusVarna = id; saveMeta(meta); sfx.unlock?.(); showFountain() },
+    },
+      h('div', { class: 'wsel-top' },
+        h('i', { class: 'wsel-mark' }, m.sanskrit),
+        h('b', {}, m.name),
+        h('span', { class: 'wsel-lv' }, lv > 0 ? `ур. ${lv}` : 'новое'),
+      ),
+      h('p', { class: 'wsel-desc' }, m.desc),
+      h('p', { class: 'wsel-focus' }, m.focusDesc),
+    )
+  })
+
+  show(h('div', { class: 'screen active node-screen wsel-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
+    h('div', { class: 'node-icon' }, '⚔'),
+    h('div', { class: 'node-title display' }, 'Кем ты идёшь'),
+    h('p', { class: 'node-text' },
+      'Варны — не классы и не «класс души», а психология ума (Human Society Part 2). Выбери, с кем пойдёшь: у каждой свой навык, и он меняет бой.'),
+    h('div', { class: 'wsel-row' }, cards),
+  ))
+}
+
+/**
+ * Фонтан юности (Hades: Fountain of Youth) — выбор нефрита на забег.
+ *
+ * В Hades это ровно то же место и то же назначение: одно «хранилище» на
+ * побег, выбираешь один раз, и оно меняет бой до конца забега.
+ * Здесь термины настоящие (content/quotes.json), эффекты — только
+ * уже существующие величины боя.
+ */
+function showFountain() {
+  const picks = rollKeepsakes(Math.random, 3)
+  const stone = (k) => h('button', {
+    class: 'boon-card r-rare jade-card',
+    onclick: () => {
+      app.runKeepsake = k.id
+      app.runHp = null
+      app.boons = []          // новый забег — старые дары остались в прошлом
+      sfx.unlock?.()
+      markLived(app.meta, k.quoteId)
+      saveMeta(app.meta)
+      showFieldChakra()
+    },
+  },
+    h('span', { class: 'boon-rar' }, 'нефрит'),
+    h('b', { class: 'boon-name' }, k.name),
+    h('i', { class: 'boon-sub' }, k.sub),
+    h('span', { class: 'boon-desc' }, k.desc),
+  )
+
+  show(h('div', { class: 'screen active node-screen wsel-screen' },
+    h('button', { class: 'btn ghost small', onclick: showWeaponSelect }, '← Назад'),
+    h('div', { class: 'node-icon' }, '◈'),
+    h('div', { class: 'node-title display' }, 'Фонтан юности'),
+    h('p', { class: 'node-text' },
+      'Один нефрит на весь побег. Он не лечит и не бьёт — он меняет правила боя, и менять придётся до конца. Дары боги дадут потом, а это — твоё.'),
+    h('div', { class: 'wsel-row' }, picks.map(stone)),
+  ))
+}
+
+function showFieldChakra() {
+  const meta = app.meta
+  const unlocked = meta.fieldFloor || 0
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, '◉'),
+    h('div', { class: 'node-title display' }, 'Поле Ума'),
+    h('p', { class: 'node-text' },
+      'Иди по миру и возвращай оковы ударами. Ока замахнулась — кольцо сомкнулось — жми дефлект. Убить их нельзя.'),
+    h('div', { class: 'stack', style: 'margin-top:16px' },
+      CHAKRAS.map((name, i) => {
+        const w = worldForFloor(i)
+        const locked = i > unlocked
+        return h('div', {
+          class: `varna-card ${locked ? 'locked' : ''}`,
+          style: locked ? 'opacity:.45' : '',
+          onclick: () => { if (!locked) startFieldRun(i) },
+        },
+          h('div', { class: 'varna-head' },
+            h('div', {},
+              h('div', { class: 'varna-label' }, `${i + 1} · ${w.elementIcon || '◉'} ${w.element || 'чакра'}`),
+              h('div', { class: 'varna-name' }, `${w.name || ''} · ${name}`)),
+            h('div', { class: 'varna-next' }, locked ? '🔒' : 'войти →')),
+          h('div', { class: 'varna-hint' }, w.teach || w.land || ''),
+        )
+      })),
+    h('div', { class: 'btn-row mt' },
+      h('button', { class: 'btn ghost', onclick: showTitle }, '← Город')),
+  ))
+}
+
+/**
+ * Лавка между комнатами — как в Hades: за монеты лечат, качают сердце
+ * и покупают дары. Лавка стоит не в каждой комнате (в Hades тоже не в каждой).
+ * Монеты **живут между забегами** — их не тратишь, а копишь, как в игре.
+ */
+function showFieldShop(st, nextFloor) {
+  const meta = app.meta
+  const purse = meta.coins || 0
+  app.fieldShopDiscount = st?.o?.shopDiscount || 0
+  // Лавка — место, где учат: песня, танец и инструмент вместе.
+  const sq = QUOTES[placeQuotes('shop')[0]]
+  if (sq) markLived(meta, sq.id)
+  const has = (cost) => purse >= cost
+  // Товар в лавке можно взять ОДИН раз. В Hades лавка одноразовая: полки
+  // пустеют, и уйти — уйти. Раньше бесплатный дар можно было выкупать
+  // кликами без конца, и за один забег собирались все десять.
+  // Список покупок НЕ сбрасывается при перерисовке лавки — иначе «куплено»
+  // сбрасывалось бы тем же кликом, который только что купил.
+  if (!app.fieldShopBought) app.fieldShopBought = {}
+
+  const item = (mark, key, name, desc, cost, buy) => {
+    const taken = !!app.fieldShopBought[key]
+    const price = Math.round(cost * (1 - (app.fieldShopDiscount || 0)))
+    return h('button', {
+      class: `shop-item ${taken ? 'poor' : (cost === 0 || has(cost) ? 'can' : 'poor')}`,
+      disabled: taken || cost > purse,
+      onclick: () => {
+        if (app.fieldShopBought[key]) return
+        if (price > purse) return
+        app.fieldShopBought[key] = true
+        meta.coins = purse - price; buy(); saveMeta(meta); sfx.buy?.(); showFieldShop(st, nextFloor)
+      },
+    },
+      h('i', { class: 'shop-mark' }, mark),
+      h('div', { class: 'shop-tx' }, h('b', {}, name), h('span', {}, taken ? 'куплено' : desc)),
+      h('i', { class: 'shop-cost' }, taken ? '—' : cost === 0 ? 'дар' : `${price} монет`),
+    )
+  }
+
+  show(h('div', { class: 'screen active node-screen' },
+    h('button', { class: 'btn ghost small', onclick: () => { collectCoins(meta, st); showBoonDraft(nextFloor) } }, '← уйти'),
+    h('div', { class: 'node-icon' }, '◈'),
+    h('div', { class: 'node-title display' }, 'Лавка'),
+    h('div', { class: 'ws-points' }, h('b', {}, String(purse)), h('span', {}, 'монет')),
+    h('div', { class: 'stack', style: 'margin-top:12px' },
+      item('❖', 'boon', 'Дар чакры', 'Случайный дар на этот путь.', 0, () => {
+        const opts2 = rollBoons(runBoons(), Math.random, 1)
+        if (opts2[0]) { runBoons().push(opts2[0].id); markLived(meta, opts2[0].quoteId) }
+      }),
+      item('♥', 'full', 'Ахимса', 'Восстановить всю жизнь.', 25, () => { st.player.hp = st.player.maxHp }),
+      item('✦', 'shakti', 'Духовная сила', 'Наполнить духовную силу до конца.', 20, () => { st.player.shakti = st.player.shaktiMax }),
+    ),
+  ))
+}
+
+function collectCoins(meta, st) {
+  if (!st) return
+  const take = st.coinsTaken || 0
+  if (take > 0) { meta.coins = (meta.coins || 0) + take; saveMeta(meta) }
+}
+
+/**
+ * Дары ТЕКУЩЕГО забега. В Hades дары умирают вместе с побегом: умер — и
+ * начинаешь с нуля, поэтому каждый забег снова решает, кем ты будешь.
+ * Раньше они лежали в meta и копились забег за забегом: к третьему пул из
+ * 10 даров кончался, и дальше поле шло вообще без выбора и без силы.
+ *
+ * Между забегами остаётся знание (цитаты, прожитого) — оно и должно
+ * копиться, а не боевая мощь.
+ */
+function runBoons() {
+  if (!Array.isArray(app.boons)) app.boons = []
+  return app.boons
+}
+
+/** Дары чакры — выбор 1 из 3, как в Hades. Стоит между локациями:
+ * окно просто и ясно, три карточки, одна кнопка на каждой.
+ */
+function showBoonDraft(nextFloor, caption) {
+  const meta = app.meta
+  // Дары живут ОДИН ЗАБЕГ, как в Hades. Раньше они копились в meta между
+  // побегами, и к третьему забегу их не оставалось ни одного: пул кончался,
+  // экран выбора пропускался, и поле игралось вообще без силы. Это была
+  // не плавная сложность, а поломка петли.
+  const owned = runBoons()
+  const options = rollBoons(owned, Math.random, 3)
+  if (!options.length) { startFieldRun(nextFloor); return }
+
+  const cards = options.map((b) => h('button', {
+    class: `boon-card r-${b.rarity}`,
+    onclick: () => {
+      owned.push(b.id)
+      markLived(meta, b.quoteId)          // дар открывает цитату
+      saveMeta(meta)
+      sfx.buy?.()
+      startFieldRun(nextFloor)
+    },
+  },
+    h('span', { class: 'boon-rar' }, b.rarity === 'common' ? 'обычный' : b.rarity === 'uncommon' ? 'необычный' : 'редкий'),
+    h('b', { class: 'boon-name' }, b.name),
+    h('i', { class: 'boon-sans' }, b.sanskrit),
+    h('span', { class: 'boon-desc' }, b.desc),
+    h('em', { class: 'boon-field' }, b.field),
+  ))
+
+  show(h('div', { class: 'screen active node-screen boon-screen' },
+    h('div', { class: 'node-icon' }, '✦'),
+    h('div', { class: 'node-title display' }, 'Дары чакры'),
+    h('p', { class: 'node-text' }, caption || 'Возьми один. Они останутся до конца пути и сложатся.'),
+    h('div', { class: 'boon-row' }, cards),
+    owned.length
+      ? h('div', { class: 'boon-owned' }, 'уже с тобой: ' + owned.map((id) => FIELD_BOONS.find((x) => x.id === id)?.name).filter(Boolean).join(' · '))
+      : null,
+  ))
+}
+
+/**
+ * Мастерская севы. Тратит накопленные очки севы на практику, а не на силу:
+ * каждое усиление — принцип Ямы или Ниямы, и покупая его, игрок открывает
+ * цитату из шастр (SPEC §10.1a: знание надо прожить).
+ */
+function showSevaWorkshop() {
+  const meta = app.meta
+  const owned = meta.upgrades || (meta.upgrades = [])
+  const pts = meta.sevaPoints || 0
+  const rows = WORKSHOP.map((u) => {
+    const has = owned.includes(u.id)
+    const afford = canBuy(u.id, pts, owned)
+    return h('button', {
+      class: `ws-row ${has ? 'has' : afford ? 'can' : 'poor'}`,
+      disabled: has || !afford,
+      onclick: () => {
+        if (!canBuy(u.id, pts, owned)) return
+        meta.sevaPoints = pts - u.cost
+        owned.push(u.id)
+        markLived(meta, u.quoteId)     // усиление открывает цитату
+        saveMeta(meta)
+        sfx.buy?.()
+        showSevaWorkshop()
+      },
+    },
+      h('i', { class: 'ws-mark' }, has ? '✦' : '◇'),
+      h('div', { class: 'ws-tx' },
+        h('b', {}, u.name),
+        h('span', {}, u.desc),
+        h('em', {}, u.why),
+      ),
+      h('i', { class: 'ws-cost' }, has ? 'есть' : `${u.cost} сева`),
+    )
+  })
+
+  show(h('div', { class: 'screen active node-screen' },
+    h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
+    h('div', { class: 'node-icon' }, '◈'),
+    h('div', { class: 'node-title display' }, 'Мастерская севы'),
+    h('p', { class: 'node-text' },
+      'Очки севы набегают за помощь и за оковы, снятые без удара. Тратятся не на силу, а на практику: каждый принцип меняет одно правило боя и открывает цитату.'),
+    h('div', { class: 'ws-points' },
+      h('b', {}, String(pts)), h('span', {}, 'очков севы накоплено')),
+    h('div', { class: 'stack', style: 'margin-top:12px' }, rows),
+  ))
+}
+
+/**
+ * Комната забега. `stage`:
+ *   'room' — обычная комната с оками, в конце дверь
+ *   'boss' — комната владыки: он один, дверь закрыта до его падения
+ * В Hades босс — всегда ОТДЕЛЬНАЯ комната в конце этапа. Здесь так же.
+ */
+function startFieldRun(floor, stage = 'room', room = 0) {
+  const meta = app.meta
+  const built = buildFieldFloor(floor, { room })
+  const foes = stage === 'boss' ? [] : built.foes.slice()
+  if (stage === 'boss' && built.boss) foes.push(built.boss)
+
+  // Мантра выдаётся по чакре сама — выбирать нечего (см. FLOOR_MANTRA).
+  const vId = meta.focusVarna || 'shudra'
+  const vLv = meta.varnas?.[vId] ?? 0
+  const base = { playerHp: 60 + (vLv * 4) + (MENTALITIES[vId]?.focusHp || 0) + (meta.hpBonus || 0),
+    look: built.look, world: built.world, mantraId: FLOOR_MANTRA[floor] || 'japa',
+    coins: meta.coins || 0, varna: vId, varnaLevel: vLv,
+    keepsake: app.runKeepsake || null,
+    deaths: meta.stats?.deaths || 0,
+    // Фонтан амбросии стоит в последней комнате этапа — прямо перед
+    // владыкой (Hades). Без него туда входят с тем, что осталось.
+    spring: stage === 'room' && room === ROOMS_PER_STAGE - 1 }
+  // Сначала дары, потом мастерская — усиления перекрывают дары, если
+  // затрагивают ту же величину (и это правильно: усиление дороже).
+  // порядок: варна → дары → мастерская (позднее перекрывает раньше)
+  // порядок: варна → нефрит → дары → мастерская (позднее перекрывает раньше)
+  const opts2 = applyUpgrades(
+    applyBoons(applyKeepsake(applyVarna(base, vId), app.runKeepsake), runBoons()),
+    meta.upgrades || [],
+  )
+
+  // Здоровье живёт весь побег, как в Hades: вышел из комнаты битый — вошёл
+  // в следующую битый. Раньше каждая комната начиналась с полной жизни, и
+  // весь забег становился бесконечным «сбросом»: напряжения не было вовсе,
+  // а фонтан амбросии и комната покоя теряли смысл.
+  const fullHp = opts2.playerHp || 60
+  const entryHp = app.runHp == null ? fullHp : Math.max(1, Math.min(fullHp, app.runHp))
+
+  const st = createField({
+    player: { x: built.field.w * 0.5, y: built.field.h * 0.72, hp: entryHp, maxHp: fullHp },
+    foes,
+    wares: built.wares,
+    field: built.field,
+    rng: Math.random,
+    opts: opts2,
+  })
+  app.field = st
+  app.fieldFloor = floor
+  // Отладочный доступ к состоянию поля из консоли (не влияет на игру).
+  if (typeof window !== 'undefined') window.__field = st
+  setTint(null)
+  show(fieldScreen(st, {
+    floor,
+    room,
+    placeQuotes,
+    onKnowledge: (qid, name) => {
+      markLived(meta, qid)
+      markSeen(meta, 'enemies', st.foes.find((f) => f.name === name)?.id || '')
+      saveMeta(meta)
+    },
+    // Цитата чакры: приходит сама, когда входишь в локацию впервые.
+    // Раньше 48 цитат корпуса не открывались ничем — они лежали в файле
+    // и были не видны игроку.
+    onEnter: () => {
+      const q = chakraQuote(built.world?.id)
+      if (q && QUOTES[q] && !isQuoteLived(meta, q)) {
+        markLived(meta, q)
+        saveMeta(meta)
+        return q
+      }
+      return null
+    },
+    // Хаос-путь: дар бесплатно за проклятие (Hades: Chaos Gate).
+    onChaos: (st2) => {
+      const owned = runBoons()
+      const opts3 = rollBoons(owned, Math.random, 1)
+      if (opts3[0]) { owned.push(opts3[0].id); markLived(meta, opts3[0].quoteId); saveMeta(meta) }
+    },
+    // Крипа пала под дождём: метка в профиле. «Побывал под крипой» —
+    // и есть настоящая статистика: сколько раз милость тебя достала.
+    onKrpa: (landed) => {
+      meta.krpaFell = (meta.krpaFell || 0) + (landed ? 1 : 0)
+      meta.krpaMissed = (meta.krpaMissed || 0) + (landed ? 0 : 1)
+      saveMeta(meta)
+    },
+    // Смерть — как в Hades: знание и монеты остаются, забег начинается заново.
+    onRetry: (st2) => {
+      // Смерть — место, которое учит. Смерть приносит слово, которого
+      // в бою не было: «освобождение нужно во всех сферах жизни».
+      const dq = QUOTES[placeQuotes('death')[0]]
+      if (dq && !isQuoteLived(meta, dq.id)) markLived(meta, dq.id)
+      // Смерть — конец побега: в следующую попытку жизнь полная и дары
+      // прежние, как в Hades. Умер — начал заново, без накопленного.
+      app.runHp = null
+      app.boons = []
+      settleFieldRun(meta, st2, floor)
+      app.field = null
+      startFieldRun(floor)
+    },
+    onNext: (nextFloor, st2) => {
+      // Запоминаем здоровье ПЕРЕД тем, как комната закончилась: дверь в
+      // следующую открывается из последнего кадра боя, а не из экрана.
+      if (st2?.player) app.runHp = st2.player.hp
+      settleFieldRun(meta, st2, floor)
+      app.field = null
+      // Этап — это несколько комнат подряд, потом комната владыки (Hades).
+      // Маршрут считает отдельная чистая функция: она покрыта тестами, и
+      // ошибиться в ней нельзя молча.
+      const step = nextStage(stage, room, !!built.boss)
+      if (step.kind === 'room') { startFieldRun(floor, 'room', step.room); return }
+      if (step.kind === 'boss') { startFieldRun(floor, 'boss', step.room); return }
+      if (stage === 'boss') {
+        settleFloor(meta, floor)
+        app.field = null
+        // За седьмым владыкой забег заканчивается. Раньше он не
+        // заканчивался вовсе: дар вёл в «чакру 8», которой нет, и мир
+        // снова становился первым — игрок крутился по кругу вечно.
+        if (isLastFloor(floor)) { showFieldVictory(meta, floor, st2); return }
+        showAfterBoss(meta, floor, st2)
+        return
+      }
+      // Лавка ставится ПОСЛЕ владыки (см. showAfterBoss → afterRest), а не
+      // здесь: сюда эта ветка не доходила никогда. Маршрут из nextStage
+      // даёт либо следующую комнату, либо босса, либо конец — третьего нет,
+      // и условие `(nextFloor % 2) === 1` было мёртвым кодом. Монеты
+      // копились, а тратить их было негде.
+      collectCoins(meta, st2)
+      showBoonDraft(nextFloor)
+    },
+    onClose: (st2) => {
+      settleFieldRun(meta, st2, floor)
+      app.field = null
+      app.runHp = null
+      app.runKeepsake = null
+      app.boons = []
+      showFieldChakra()
+    },
+  }))
+}
+
+/** Этаж пройден: владыка падён — чакра открыта. */
+/**
+ * ФИНАЛ ЗАБЕГА. Седьмой владыка снят — забег закончен.
+ *
+ * Раньше этого экрана не было: дар после седьмого владыки вёл в «чакру 8»,
+ * которой не существует, и мир снова становился первым. Игрок крутился по
+ * кругу вечно, и пройти игру было нельзя.
+ *
+ * Итог — как побег в Hades: что прошёл, сколько снял, сколько убил,
+ * сколько узнал. И два выхода: ещё раз или в Город.
+ */
+function showFieldVictory(meta, floor, st) {
+  const p = st?.player || {}
+  const kills = st ? st.foes.filter((f) => f.dead).length : 0
+  const pacified = st ? st.pacified : 0
+  const time = Math.round(st?.time || 0)
+  const peaceful = kills === 0
+
+  meta.stats.victories = (meta.stats.victories || 0) + 1
+  if (peaceful) meta.stats.awakened = (meta.stats.awakened || 0) + 1
+  meta.fieldFloor = CHAKRAS.length
+  saveMeta(meta)
+
+  // Финал отдаёт знание щедро: одна цитата за целый забег — скупо, когда
+  // пройдено семь чакр. Здесь — ахимса (или освобождение от статичности)
+  // плюс то, что копилось всю дорогу и осталось невыданным.
+  const quoteId = peaceful ? 'ahimsa' : 'liberation_from_staticity'
+  const q = QUOTES[quoteId] || {}
+  markLived(meta, quoteId)
+  const given = []
+  for (const id of placeQuotes('finale')) {
+    if (!QUOTES[id] || isQuoteLived(meta, id)) continue
+    markLived(meta, id)
+    given.push(id)
+  }
+  saveMeta(meta)
+
+  const line = (k, v) => h('div', { class: 'win-row' },
+    h('span', { class: 'win-k' }, k), h('b', { class: 'win-v' }, v))
+
+  const mm = String(Math.floor(time / 60)).padStart(2, '0')
+  const ss = String(time % 60).padStart(2, '0')
+
+  show(h('div', { class: 'screen active node-screen win-screen' },
+    h('div', { class: 'node-icon' }, peaceful ? '❖' : '✦'),
+    h('div', { class: 'node-title display' },
+      peaceful ? 'Вершина Света — без крови' : 'Вершина Света'),
+    h('p', { class: 'node-text' },
+      peaceful
+        ? 'Семь владык снято, и никого не убито. Учение говорит, что высший результат — не перебить чужую жизнь, а снять с неё оковы.'
+        : 'Семь владык снято. Но кровь осталась на твоих руках: оковы, которые можно было разрубить, ты рубил.'),
+    h('div', { class: 'win-quote' },
+      q.quote ? h('p', {}, q.quote) : null,
+      q.source ? h('cite', {}, q.source) : null),
+    given.length
+      ? h('p', { class: 'win-more' },
+        `Вершина отдала ${given.length} ещё: ${given.map((id) => QUOTES[id].term).join(' · ')}`)
+      : null,
+    h('div', { class: 'win-rows' },
+      line('время забега', `${mm}:${ss}`),
+      line('освобождено', String(pacified)),
+      line('убито', String(kills)),
+      line('монет', String(meta.coins || 0)),
+      line('открыто знаний', String(Object.keys(meta.lived || {}).length)),
+    ),
+    h('div', { class: 'btn-row mt' },
+      h('button', {
+        class: 'btn primary',
+        onclick: () => { app.runHp = null; app.runKeepsake = null; showFountain() },
+      }, 'Ещё раз'),
+      h('button', { class: 'btn ghost', onclick: showTitle }, 'В Город')),
+  ))
+}
+
+function settleFloor(meta, floor) {
+  if (!isLastFloor(floor) && (meta.fieldFloor || 0) < floor + 1) meta.fieldFloor = floor + 1
+  saveMeta(meta)
+}
+
+/** После владыки: покой, потом чередование лавка/дар, потом следующая чакра. */
+function showAfterBoss(meta, floor, st) {
+  collectCoins(meta, st)
+  // Комната покоя — как в Hades после босса: либо здоровье, либо +макс. ХП.
+  // Одно из двух, выбор как в остальном — одна карточка из двух.
+  showRestRoom(meta, floor, st)
+}
+
+/**
+ * Что после покоя. В Hades после босса — награда, а лавка попадается в
+ * маршруте. Здесь лавка стоит через чакру: монеты копились в забеге, и
+ * тратить их было негде — экран лавки был написан, но не вызывался ни разу.
+ */
+function afterRest(meta, next, st) {
+  if (next % 2 === 1) {
+    app.fieldShopBought = {}       // новая лавка — товар снова на полке
+    showFieldShop(st, next)
+    return
+  }
+  showBoonDraft(next, 'владыка пал — выбери дар')
+}
+
+/** Комната покоя: выбрать — лечиться или стать крепче. */
+function showRestRoom(meta, floor, st) {
+  // Покой — место, которое учит: стоять нужно во всех сферах жизни.
+  const rq = QUOTES[placeQuotes('rest')[0]]
+  if (rq) markLived(meta, rq.id)
+  // Выбор покоя влияет на то, с чем пойдёшь дальше по забегу.
+  const run = { hp: st?.player?.hp ?? 0, maxHp: st?.player?.maxHp ?? 60 }
+  app.runHp = run.hp
+  const next = floor + 1
+  const card = (mark, name, desc, buy) => h('button', {
+    class: 'boon-card r-rare',
+    onclick: () => { buy(); saveMeta(meta); sfx.buy?.(); afterRest(meta, next, st) },
+  },
+    h('span', { class: 'boon-rar' }, 'покой'),
+    h('b', { class: 'boon-name' }, name),
+    h('span', { class: 'boon-desc' }, desc),
+  )
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, '☾'),
+    h('div', { class: 'node-title display' }, 'Комната покоя'),
+    h('p', { class: 'node-text' },
+      'Стоять нужно. Одно из двух: восстановиться или стать крепче на всю оставшуюся жизнь.'),
+    h('div', { class: 'boon-row' },
+      card('♥', 'Ахимса', 'Восстановить всю жизнь.', () => { run.hp = run.maxHp; app.runHp = run.maxHp }),
+      card('✚', 'Тapa', 'Максимум жизни +6 — навсегда.', () => { run.maxHp += 6; meta.hpBonus = (meta.hpBonus || 0) + 6 }),
+    ),
+  ))
+}
+
+
+// Итоги локации засчитываются в мету один раз: и владыки в город,
+// и следующая чакра открывается только за чистый путь.
+function settleFieldRun(meta, st, floor) {
+  if (st.__settled) return
+  st.__settled = true
+  // Очки севы — постоянная валюта мастерской (Nine Sols: 拜 → мастерская).
+  const pts = sevaPointsFor(st)
+  meta.sevaPoints = (meta.sevaPoints || 0) + pts
+  for (const f of st.foes) {
+    if (f.pacified) {
+      markSeen(meta, 'enemies', f.id)
+      meta.stats.pacified += 1
+      if (f.isBoss) {
+        meta.stats.awakened += 1
+        const list = meta.pacifiedBosses || (meta.pacifiedBosses = [])
+        if (!list.includes(f.name)) list.push(f.name)
+      }
+    } else if (f.dead) {
+      markSeen(meta, 'enemies', f.id)
+      meta.stats.kills += 1
+    }
+  }
+  // Монеты собираются даже при смерти — как в Hades: драхма остаётся.
+  collectCoins(meta, st)
+  // Следующая чакра — только если все оковы сняты терпением.
+  if (st.foes.every((f) => f.pacified) && !isLastFloor(floor)) {
+    if ((meta.fieldFloor || 0) < floor + 1) meta.fieldFloor = floor + 1
+  }
+  meta.deathsInRow = st.player.alive ? 0 : (meta.deathsInRow || 0) + 1
+  recordRunEnd(meta, st.player.alive ? 'victory' : 'death', {
+    floor, pacified: st.pacified, kills: st.foes.filter((f) => f.dead).length,
+  })
+  saveMeta(meta)
 }
 
 function showFocus() {
@@ -774,6 +1441,10 @@ function showFocus() {
 
 function beginRun(focusId) {
   app.run = createRun({ meta: app.meta, options: { focus: focusId } })
+  // Отладочный доступ к забегу из консоли (как у поля). Нужен стенду,
+  // чтобы доводить карточный забег до конца: без него экраны этого пути
+  // нечем проверять. На игру не влияет.
+  if (typeof window !== 'undefined') window.__run = app.run
   // Самскара прошлой жизни (§5/§10): смерть конструирует следующего тебя
   const nl = app.meta.nextLife
   if (nl) {
@@ -912,14 +1583,18 @@ function showMap() {
     h('div', { class: 'display chakra-title mt' }, chakra),
     h('div', { class: 'chakra-sub' }, 'восхождение'),
     h('div', { class: 'run-bar' },
-      h('div', { class: 'chip' }, `ХП <span class="gold">${run.hp}</span>`),
-      h('div', { class: 'chip' }, `Прана <span class="gold">${run.prana}</span>`),
-      h('div', { class: 'chip' }, `колода <span class="gold">${run.deck.length}</span>`),
-      h('div', { class: 'chip' }, `реликвии <span class="gold">${run.relics.length}</span>`)),
+      // Раньше здесь была строка с HTML внутри: игрок видел на экране
+      // «ХП <span class="gold">70</span>» буквально. Значение и подпись —
+      // два разных элемента.
+      h('div', { class: 'chip' }, 'ХП ', h('b', { class: 'gold' }, String(run.hp))),
+      h('div', { class: 'chip' }, 'Прана ', h('b', { class: 'gold' }, String(run.prana))),
+      h('div', { class: 'chip' }, 'колода ', h('b', { class: 'gold' }, String(run.deck.length))),
+      h('div', { class: 'chip' }, 'реликвии ', h('b', { class: 'gold' }, String(run.relics.length)))),
     hintEl,
     worldEl,
     runSynergiesLine(run),
     run.relics.length > 0 ? h('div', { class: 'hint center mt' }, 'реликвии: ' + run.relics.map((r) => RELICS[r].name).join(' · ')) : null,
+    run.boons && run.boons.length > 0 ? h('div', { class: 'hint center mt', style: 'color:var(--gold-soft)' }, '✦ дары: ' + run.boons.map((b) => BOONS[b] ? BOONS[b].name : b).join(' · ')) : null,
   ))
 
   // после монтирования: садхака у входа в локацию
@@ -1221,10 +1896,16 @@ function enterCombat() {
   app.meta.encounters[node.enemyId] = (app.meta.encounters[node.enemyId] || 0) + 1
   saveMeta(app.meta)
   app.combat = startCombatAtNode(run)
+  // Отладочный доступ к бою из консоли (как у поля). Нужен стенду, чтобы
+  // доводить карточный забег до финала. На игру не влияет.
+  if (typeof window !== 'undefined') window.__combat = app.combat
   show(combatScreen(app))
 }
 
 function onCombatEnd(combat) {
+  // Бой окончен — отладочная ссылка тоже должна погаснуть, иначе стенд
+  // (и консоль) продолжают «видеть» бой, которого уже нет.
+  if (typeof window !== 'undefined') window.__combat = null
   const run = app.run
   const node = currentNode(run)
   const isFinalBoss = node.type === 'boss' && run.floor === run.floors.length - 1
@@ -1343,6 +2024,9 @@ function onCombatEnd(combat) {
   }
 
   saveMeta(app.meta)
+  // Дары чакры (§16.2): генерируем 3 случайных дара для выбора после боя.
+  result.boonChoices = rollBoonChoices(run, run.rand)
+  app.lastReward = result
   showRewards(result)
   if (app.trialUnlockToast) {
     toast(app.trialUnlockToast, 'hl')
@@ -1399,10 +2083,50 @@ function showRewards(result) {
 
     varnaLevelLine(),
 
+    // Дары чакры (§16.2, Hades-style boons): после боя — выбор 1 из 3 даров.
+    // Дары комбинируются между собой — каждый забег уникален.
+    h('div', { class: 'hint center', style: 'color:var(--gold-soft);font-weight:700;margin-top:12px' }, '✦ Дары чакры — выберите один'),
+    h('div', { class: 'reward-cards' },
+      (result.boonChoices || []).map((id) => {
+        const b = BOONS[id]
+        if (!b) return null
+        return h('div', {
+          class: 'card boon-card',
+          onclick: () => pickBoon(id),
+        },
+          h('div', { class: 'card-name', style: 'color:var(--gold-soft)' }, b.name),
+          h('div', { class: 'card-sanskrit' }, b.sanskrit),
+          h('div', { class: 'card-desc' }, b.desc),
+          h('div', { class: 'card-rarity' }, b.rarity === 'rare' ? '✦ редкий' : b.rarity === 'uncommon' ? '✧ необычный' : '○ обычный'),
+        )
+      })),
     h('div', { class: 'hint center' }, 'Выберите карту в колоду (ум)'),
     h('div', { class: 'reward-cards' },
       result.cardChoices.map((id) => cardEl(CARDS[id], { onPlay: () => pickRewardCard(id), glow: CARDS[id].rarity === 'rare', hint: rewardSynergyHint(id) }))),
   ))
+}
+
+// Выбор дара чакры (§16.2): добавляет дар в забег. Дары применяются движком
+// через opts.boons при следующем createCombat (см. run.startCombatAtNode).
+function pickBoon(id) {
+  const run = app.run
+  if (!run || !BOONS[id]) return
+  if (!run.boons.includes(id)) {
+    run.boons.push(id)
+    markSeen(app.meta, 'boons', id)
+    // Цитата открывается, только если она реально есть в Грантхе (не все
+    // термины имеют карточку — не пишем «прожито» в пустоту).
+    if (quoteById(BOONS[id].quoteId)) markLived(app.meta, BOONS[id].quoteId)
+    sfx.unlock()
+    toast(`Дар получен: ${BOONS[id].name}`, 'hl')
+  }
+  // Перерисовываем экран наград из сохранённого результата боя (finishCombat
+  // уже отработал в onCombatEnd — второй раз его звать нельзя).
+  const res = app.lastReward
+  if (res) {
+    res.boonChoices = (res.boonChoices || []).filter((b) => b !== id)
+    showRewards(res)
+  }
 }
 
 // Подсказка синергии при выборе карты (§дофамин): если карта приближает/добирает
@@ -1522,8 +2246,16 @@ function notifySynergy(before, after) {
 // ─────────────────────────────────────────────────────────────
 
 function showMeditation() {
+  // Медитация — это и есть узел восстановления (Hades: fountain). В карточном
+  // пути больше нечему лечиться: победа в бое не даёт жизни, как и в Hades.
+  // Практика возвращает часть тела — и это честно: ты сел и дышал.
   show(meditationScreen(app, { onDone: (res) => {
     if (res && res.quality >= 3) progressDaily(app.meta, 'meditate_q3', 1)
+    const heal = Math.round(app.run.maxHp * (res && res.quality >= 3 ? 0.4 : 0.22))
+    const before = app.run.hp
+    app.run.hp = Math.min(app.run.maxHp, app.run.hp + heal)
+    const got = app.run.hp - before
+    if (got > 0) toast(`Практика вернула ${got} жизни`, 'hl')
     // Аудиотека практики (§16.2): дыхательная медитация записывает звук пранаямы
     if (recordSound(app.meta, 'pranayama')) {
       sfx.unlock()
@@ -1703,7 +2435,10 @@ function showCompendium(tab = 'Цитаты') {
 
   // Коллекционные наборы (§исследование, completionist): собрал весь пантеон врагов —
   // открывается ключ-цитата. Коллекционирование «пониманий», а не предметов.
-  const RIPU_IDS = ['krodha', 'lobha', 'nidra', 'kama', 'mada', 'matsarya']
+  // Шесть внутренних врагов (Elementary Philosophy, гл. 6): кама, кродха, лобха,
+  // моха, мада, матсарья. «Моха» в игре — владыка Муладхары, поэтому он же
+  // засчитывается в пантеоне рипу; нидра (сон) в шесть внутренних не входит.
+  const RIPU_IDS = ['kama', 'krodha', 'lobha', 'moha', 'mada', 'matsarya']
   const PASHA_IDS = ['bhaya_pasha', 'lajja', 'ghrna', 'samshaya_pasha', 'kula', 'sila', 'mana_pasha', 'jugupsa']
   const BOSS_IDS = ['moha', 'kama_raja', 'krodha_maharaja', 'mada_natha', 'matsarya_kala', 'lobha_pati', 'ahankara']
 

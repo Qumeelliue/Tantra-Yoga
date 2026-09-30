@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Путь Садхаки — живое демо</title>
+<style>
+  * { box-sizing: border-box; margin:0; padding:0; }
+  :root {
+    --bg-0:#08060f; --ink:#f4e9d6; --ink-dim:#cfc3b0; --muted:#9c90b4;
+    --gold:#f2c46d; --gold-soft:#ffdfa8; --gold-deep:#a87f45;
+    --line:rgba(242,196,109,.22); --line-soft:rgba(242,196,109,.10);
+    --sat:#f4f1ea; --raj:#d23b3b; --tam-ink:#9a90ad;
+    --display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  }
+  body { background:#05040a; color:var(--ink); font-family:var(--ui);
+    display:flex; align-items:flex-start; justify-content:center; padding:22px 12px 60px; gap:34px; flex-wrap:wrap; }
+  .col { display:flex; flex-direction:column; gap:16px; }
+  h1 { font-family:var(--display); font-size:21px; font-weight:400; color:var(--gold); }
+  .panel { width:412px; }
+  .help { width:300px; font-size:12.5px; color:var(--muted); line-height:1.7; }
+  .help h3 { font-family:var(--display); color:var(--ink); font-size:14px; font-weight:400; margin:14px 0 6px; }
+  .help kbd { background:rgba(255,255,255,.08); border:1px solid var(--line-soft);
+    border-radius:5px; padding:1px 6px; font-size:11px; color:var(--gold-soft); }
+  .help p { margin-bottom:8px; }
+  .help em { color:var(--gold-soft); font-style:normal; }
+
+  #stage { position:relative; width:412px; height:600px; border-radius:20px; overflow:hidden;
+    background:var(--bg-0); box-shadow:0 24px 60px rgba(0,0,0,.7), 0 0 0 1px #221c2c; cursor:crosshair; }
+  #cv { display:block; width:100%; height:100%; }
+  #ui { position:absolute; inset:0; pointer-events:none; }
+
+  .top { position:absolute; top:12px; left:12px; right:12px; display:flex; justify-content:space-between; }
+  .guna { display:flex; gap:7px; align-items:center; background:rgba(10,7,18,.55);
+    border:1px solid var(--line-soft); border-radius:30px; padding:7px 11px; backdrop-filter:blur(8px); }
+  .guna i { width:12px; height:12px; border-radius:50%; display:block; }
+  .guna i.s { background:var(--sat); box-shadow:0 0 9px rgba(244,241,234,.7); }
+  .guna i.r { background:var(--raj); box-shadow:0 0 9px rgba(210,59,59,.6); }
+  .guna i.t { background:#14121a; border:1px solid rgba(255,255,255,.2); }
+  .guna span { font-size:11px; font-weight:700; }
+  .guna span.s { color:var(--sat) } .guna span.r { color:var(--raj) } .guna span.t { color:var(--tam-ink) }
+  .guna .pr { font-family:var(--display); font-size:9px; letter-spacing:.16em;
+    color:var(--gold); text-transform:uppercase; margin-left:3px; }
+
+  .bars { display:flex; flex-direction:column; gap:6px; align-items:flex-end; }
+  .bar { width:132px; }
+  .bar .l { display:flex; justify-content:space-between; font-size:9px; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:3px; }
+  .bar .l b { color:var(--gold-soft); font-weight:700; }
+  .bar .t { height:4px; background:rgba(255,255,255,.08); border-radius:3px; overflow:hidden; }
+  .bar .f { height:100%; border-radius:3px; transition:width .12s linear; }
+  .bar.sh .f { background:linear-gradient(90deg,#7a5cc4,var(--gold)); box-shadow:0 0 9px rgba(242,196,109,.55); }
+  .bar.av .f { background:linear-gradient(90deg,#3f3752,#8a7fa8); }
+  .bar.ps .f { background:linear-gradient(90deg,#5aa87a,#9ad08b); }
+  .bar.hp .f { background:linear-gradient(90deg,#a8514a,#e08a7a); }
+
+  .tips { position:absolute; left:12px; right:12px; bottom:12px; display:flex; gap:7px; }
+  .tip { flex:1; font-size:9.5px; text-align:center; padding:7px 4px; border-radius:9px;
+    background:rgba(12,9,22,.6); border:1px solid var(--line-soft); color:var(--muted); }
+  .tip b { display:block; color:var(--gold-soft); font-size:10px; margin-bottom:2px; }
+  .tip.act { border-color:var(--gold); color:var(--gold-soft); }
+
+  #log { position:absolute; left:12px; top:76px; width:210px; display:flex; flex-direction:column; gap:3px; }
+  .lg { font-size:10.5px; color:var(--ink-dim); background:rgba(8,6,15,.6);
+    padding:3px 7px; border-radius:6px; border-left:2px solid var(--line); animation:fi .3s; }
+  .lg.good { border-left-color:#7ad7a0; color:#a8e6c0; }
+  .lg.bad { border-left-color:var(--raj); color:#f0a8a8; }
+  @keyframes fi { from{opacity:0;transform:translateX(-8px)} }
+
+  #end { position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(5,3,10,.93); flex-direction:column; gap:14px; text-align:center; padding:26px; }
+  #end h2 { font-family:var(--display); font-size:23px; font-weight:400; color:var(--gold); }
+  #end p { font-size:12.5px; color:var(--ink-dim); line-height:1.6; max-width:290px; }
+  #end button { font-family:var(--ui); font-size:13px; padding:10px 22px; border-radius:11px;
+    background:linear-gradient(180deg,#3a2a58,#20182f); color:var(--gold-soft);
+    border:1px solid var(--line); cursor:pointer; }
+</style>
+</head>
+<body>
+
+<div class="col panel">
+  <h1>Долина Корней — живое демо</h1>
+  <div id="stage">
+    <canvas id="cv"></canvas>
+    <div id="ui">
+      <div class="top">
+        <div class="guna">
+          <i class="s"></i><span class="s" id="gs">4</span>
+          <i class="r"></i><span class="r" id="gr">2</span>
+          <i class="t"></i><span class="t" id="gt">3</span>
+          <span class="pr" id="pram">прама</span>
+        </div>
+        <div class="bars">
+          <div class="bar sh"><div class="l"><span>духовная</span><b id="shv">3</b></div><div class="t"><div class="f" id="shb" style="width:15%"></div></div></div>
+          <div class="bar ps"><div class="l"><span>психическая</span><b id="psv">6</b></div><div class="t"><div class="f" id="psb" style="width:50%"></div></div></div>
+          <div class="bar av"><div class="l"><span>авидья</span><b id="avv">0</b></div><div class="t"><div class="f" id="avb" style="width:0%"></div></div></div>
+          <div class="bar hp"><div class="l"><span>жизнь</span><b id="hpv">60</b></div><div class="t"><div class="f" id="hpb" style="width:100%"></div></div></div>
+        </div>
+      </div>
+      <div id="log"></div>
+      <div class="tips">
+        <div class="tip" id="tMove"><b>W A S D / стрелки</b>идти</div>
+        <div class="tip" id="tBreath"><b>ПРОБЕЛ (держать)</b>дышать</div>
+        <div class="tip" id="tCalm"><b>у оковы</b>успокоение</div>
+      </div>
+      <div id="end">
+        <h2 id="endT"></h2><p id="endP"></p><button onclick="location.reload()">заново</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="col help">
+  <div>
+    <h3>Как играть</h3>
+    <p><em>WASD / стрелки</em> — идти. <em>Пробел</em> (держать) — дышать. <em>Shift</em> — рывок.</p>
+    <p><em>Левый клик по окове</em> — удар.</p>
+  </div>
+  <div>
+    <h3>Главное правило</h3>
+    <p><em>Окову нельзя убить.</em> У рипу нет ХП — удары по нему бессмысленны, только злят и кормят авидью.</p>
+    <p>Чтобы снять окову: <em>подойди и дыши</em>. Счётчик спокойствия растёт, пока ты терпеливо дышишь рядом. Отошёл — тает.</p>
+  </div>
+  <div>
+    <h3>Аура — различение</h3>
+    <p>Над оковой точка: <em>белая</em> — видья, <em>чёрная</em> — авидья, <em>?</em> — пелена неведения закрывает различение. Ударяй по белой — попадёшь. По чёрной — мимо, и придёт самскара.</p>
+  </div>
+  <div>
+    <h3>Три вида силы</h3>
+    <p><em>Психическая</em> — от дыхания, быстро, но потолок низкий: в самадхи не пустит.</p>
+    <p><em>Духовная</em> — только от севы и успокоения, медленно, но открывает самадхи.</p>
+    <p>Источник: <em>Subhāśita Saḿgraha 9</em> — «In the human being there are three kinds of energy: physical, psychic, and spiritual».</p>
+  </div>
+  <div>
+    <h3>Сева</h3>
+    <p>Подойди к просящему слева и нажми на него — выбор вида севы. Помощь с расчётом («должен мне») не засчитывается.</p>
+  </div>
+  <div>
+    <h3>Цвета</h3>
+    <p>Саттва — <em>белая</em>, раджас — <em>красная</em>, тамас — <em>чёрная</em>. По источнику: «sattvaguńa is white, rajoguńa is red and tamoguńa is black».</p>
+  </div>
+</div>
+
+<script type="module">
+// ─── Ядро (тот же код, что в игре — импортируется из webapp/js/core/field.js) ───
+// Для демо продублировано минимальное ядро, чтобы файл был самодостаточным.
+
+const O = {
+  walkSpeed:132, dashSpeed:430, dashTime:.16, dashCooldown:.85,
+  calmRadius:64, calmPerSec:.40, calmDecayIdle:.30,
+  enemySpeed:44, enemyTelegraph:.8, enemyReach:42,
+  avidyaMax:100, avidyaGainIdle:2.2, avidyaGainStrike:9, avidyaCalmBreath:14,
+  avidyaCalmPacify:12, avidyaCalmSeva:6,
+  shaktiMax:20, psychicMax:12, samadhiShakti:14, samadhiTime:9,
+};
+
+const FOE_DEFS = [
+  { id:'krodha', name:'Кродха', epithet:'Тлеющий', x:520, y:300, calmMax:3, light:'light',   glyph:'🔥' },
+  { id:'lobha',  name:'Лобха',  epithet:'Разбухающий', x:250, y:210, calmMax:3, light:'light', glyph:'🪙' },
+  { id:'moha',   name:'Моха',   epithet:'Прикрывающий', x:250, y:440, calmMax:3, light:'dark',  fakeLight:'light', glyph:'🌫' },
+];
+const WARES = [
+  { id:'w1', name:'старик у колодца', call:'«Колодец пуст… помоги»', x:110, y:150 },
+  { id:'w2', name:'мальчик у стены',  call:'«Я не могу идти»',     x:300, y:520, debt:true },
+];
+
+let S, raf, lastT, keys={}, mouse={x:0,y:0}, logs=[];
+
+function init(){
+  S = {
+    time:0, outcome:null, score:0, pacified:0, samskaraCount:0, samskaraPressure:0,
+    avidya:0, tint:[40,32,58],
+    player:{ x:206, y:400, facing:1, hp:60, maxHp:60, shakti:3, shaktiMax:20,
+      psychic:6, psychicMax:12, guna:{s:4,r:2,t:3}, prama:true,
+      dash:0, dashCd:0, invuln:0, strikeCd:0, breathing:false, breathPhase:0,
+      inSamadhi:false, samadhi:0, alive:true, pacifying:false },
+    foes: FOE_DEFS.map(d=>({ ...d, kind:'ripu', hp:1, calm:0, state:'idle', timer:0,
+      trueLight:d.light, fakeLight:d.fakeLight||null, shownLight:d.fakeLight||d.light,
+      dead:false, pacified:false, dist:0 })),
+    wares: WARES.map(w=>({ ...w, done:false, near:false })),
+    field:{w:412,h:600},
+  };
+  keys={}; logs=[]; lastT=performance.now();
+  document.getElementById('end').style.display='none';
+  document.getElementById('log').innerHTML='';
+  if(!raf) loop();
+}
+
+// ── логика (зеркало webapp/js/core/field.js) ──
+function nearestFoe(max=1e9){ let b=null;
+  for(let i=0;i<S.foes.length;i++){ const f=S.foes[i];
+    if(f.dead||f.pacified) continue;
+    const d=Math.hypot(S.player.x-f.x,S.player.y-f.y);
+    if(d<max&&(!b||d<b.dist)) b={foe:f,dist:d,index:i}; }
+  return b; }
+
+function step(dt){
+  const p=S.player, o=O; S.time+=dt;
+  p.dash=Math.max(0,p.dash-dt); p.dashCd=Math.max(0,p.dashCd-dt);
+  p.invuln=Math.max(0,p.invuln-dt); p.strikeCd=Math.max(0,p.strikeCd-dt);
+
+  let gain=o.avidyaGainIdle;
+  if(p.breathing) gain=-o.avidyaCalmBreath*.28;
+  if(p.inSamadhi) gain*=.3;
+  S.avidya=Math.max(0,Math.min(o.avidyaMax,S.avidya+gain*dt));
+  if(S.avidya>=o.avidyaMax) samskara();
+
+  let dx=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0);
+  let dy=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);
+  const mag=Math.hypot(dx,dy);
+  if(mag>.01){
+    const sp=p.dash>0?o.dashSpeed:o.walkSpeed;
+    const m=p.guna.t>5?.86:p.guna.s>5?1.06:1;
+    p.x+=dx/mag*sp*m*dt; p.y+=dy/mag*sp*m*dt;
+    if(dx!==0) p.facing=dx>0?1:-1;
+  }
+  p.x=Math.max(30,Math.min(382,p.x)); p.y=Math.max(96,Math.min(556,p.y));
+
+  p.breathing=!!keys[' '];
+  if(p.breathing){
+    p.breathPhase+=dt;
+    if(p.breathPhase>=3.2){
+      p.breathPhase-=3.2;
+      p.psychic=Math.max(0,p.psychic-1);
+      S.avidya=Math.max(0,S.avidya-o.avidyaCalmBreath);
+      if(p.guna.t>p.guna.s) p.guna.t+=.5; else p.guna.s+=.5;
+      const n=nearestFoe(o.calmRadius*1.9);
+      if(n){ n.foe.calm=Math.min(n.foe.calmMax,n.foe.calm+.30); }
+      addLog('вдох… выдох','good');
+    }
+  } else if(p.breathPhase>0) p.breathPhase=Math.max(0,p.breathPhase-dt*2.4);
+
+  if(p.inSamadhi){ p.samadhi-=dt; if(p.samadhi<=0){p.inSamadhi=false;p.samadhi=0;} }
+
+  for(const f of S.foes) stepFoe(f,dt);
+  stepCalming(dt);
+  for(const w of S.wares) w.near=Math.hypot(p.x-w.x,p.y-w.y)<58;
+
+  // ауры
+  const veiled=S.avidya>o.avidyaMax*.5 && !p.inSamadhi;
+  for(const f of S.foes){
+    if(f.dead||f.pacified) continue;
+    f.shownLight = f.fakeLight ? f.fakeLight : (veiled?'unknown':f.trueLight);
+  }
+  // гун�� → прама + цвет мира
+  const g=p.guna, mx=Math.max(g.s,g.r,g.t), mn=Math.min(g.s,g.r,g.t);
+  p.prama = (mx-mn)<=1;
+  const tw=g.s+g.r+g.t||1;
+  let t=[46,36,64];
+  const mix=(a,b,w)=>a.map((v,i)=>Math.round(v*(1-w)+b[i]*w));
+  t=mix(t,[255,240,210],Math.min(1,g.s/tw)*.30);
+  t=mix(t,[255,120,90],Math.min(1,g.r/tw)*.45);
+  t=mix(t,[34,26,48],Math.min(1,g.t/tw)*.55);
+  if(p.prama) t=mix(t,[255,240,210],.18);
+  if(p.inSamadhi) t=mix(t,[255,255,255],.30);
+  if(S.avidya>o.avidyaMax*.66) t=mix(t,[20,16,30],.45);
+  S.tint=t;
+
+  // самадхи
+  if(!p.inSamadhi && p.shakti>=o.samadhiShakti){
+    p.inSamadhi=true; p.samadhi=o.samadhiTime; p.shakti=0;
+    addLog('САМАДХИ — ясность!','good');
+  }
+  // итог
+  if(!p.alive){ finish('Тьма накрыла','Ум истощился. Практика — снова. Начни заново.'); }
+  else if(S.foes.every(f=>f.dead||f.pacified)) finish('Локация очищена','Три оковы сняты. Мир стал светлее — и это не случайность.');
+}
+
+function stepFoe(f,dt){
+  if(f.dead||f.pacified) return;
+  const p=S.player;
+  const dx=p.x-f.x, dy=p.y-f.y, dist=Math.hypot(dx,dy)||1;
+  f.dist=dist;
+  if(dist>O.calmRadius*1.5) f.calm=Math.max(0,f.calm-O.calmDecayIdle*dt);
+  if(f.state==='telegraph'){
+    f.timer-=dt;
+    if(f.timer<=0){
+      f.state='idle';
+      if(p.dash<=0){ p.psychic=Math.max(0,p.psychic-2); S.avidya=Math.min(O.avidyaMax,S.avidya+6);
+        addLog(f.name+' задел тебя','bad'); }
+    }
+  } else if(f.state==='idle' && dist<O.enemyReach && !p.pacifying){
+    f.state='telegraph'; f.timer=O.enemyTelegraph;
+  } else if(dist>O.calmRadius*.9){
+    f.x+=dx/dist*O.enemySpeed*dt; f.y+=dy/dist*O.enemySpeed*dt;
+  }
+}
+
+function stepCalming(dt){
+  const p=S.player;
+  const n=nearestFoe(O.calmRadius);
+  p.pacifying=!!n;
+  if(!n||!p.breathing) return;
+  let mod=1; if(p.prama)mod*=1.2; if(p.inSamadhi)mod*=1.6; if(p.guna.t>5)mod*=.85;
+  const f=n.foe;
+  f.calm=Math.min(f.calmMax,f.calm+O.calmPerSec*mod*dt);
+  if(f.calm>=f.calmMax){
+    f.pacified=true; S.pacified++; p.guna.s+=2;
+    p.shakti=Math.min(p.shaktiMax,p.shakti+2);
+    p.psychic=Math.min(p.psychicMax,p.psychic+3);
+    S.avidya=Math.max(0,S.avidya-O.avidyaCalmPacify); S.score+=100;
+    addLog(f.name+' — распался в свет','good');
+  }
+}
+
+function strike(ix){
+  const p=S.player;
+  if(p.strikeCd>0) return;
+  const n = ix>=0 && S.foes[ix] && !S.foes[ix].dead && !S.foes[ix].pacified
+    ? {foe:S.foes[ix],index:ix} : nearestFoe(48);
+  if(!n) return;
+  p.strikeCd=.42;
+  const f=n.foe;
+  if(f.shownLight!==f.trueLight){
+    S.avidya=Math.min(O.avidyaMax,S.avidya+O.avidyaGainStrike*.5);
+    addLog('аура была ложной — удар в пустоту','bad'); return;
+  }
+  S.avidya=Math.min(O.avidyaMax,S.avidya+O.avidyaGainStrike);
+  if(f.calm>0) f.calm=Math.max(0,f.calm-.5);
+  addLog('рипу не ранится — его сдерживают','bad');
+}
+
+function samskara(){
+  S.avidya=0;
+  const k=['fear','anger','heaviness'][S.samskaraCount%3]; S.samskaraCount++;
+  const p=S.player;
+  if(k==='fear'){p.psychic=Math.max(0,p.psychic-2);addLog('самскара: пришла тревога','bad');}
+  if(k==='anger'){p.guna.s=Math.max(0,p.guna.s-1);addLog('самскара: саттва померкла','bad');}
+  if(k==='heaviness'){p.guna.t+=1;p.psychic=Math.max(0,p.psychic-1);addLog('самскара: ум потяжелел к тамасу','bad');}
+}
+
+function serve(ix,kind){
+  const w=S.wares[ix]; if(!w||w.done) return;
+  if(w.debt){ addLog('помощь с расчётом — это не сева','bad'); w.done=true; return; }
+  w.done=true; const p=S.player;
+  const G={ shudrocita:{sh:1,ps:3,s:.5,perm:false,l:'временный'},
+            ksatriyocita:{sh:1,ps:2,s:.5,perm:false,l:'временный'},
+            vaeshyocita:{sh:2,ps:1,s:1,perm:false,l:'временный'},
+            viprocita:{sh:2,ps:2,s:2,perm:true,l:'навсегда'} }[kind];
+  p.guna.s+=G.s; p.psychic=Math.min(p.psychicMax,p.psychic+G.ps);
+  p.shakti=Math.min(p.shaktiMax,p.shakti+G.sh);
+  S.avidya=Math.max(0,S.avidya-O.avidyaCalmSeva);
+  addLog(`сева (${G.l}): +${G.sh} духовной силы`,'good');
+}
+
+function addLog(t,cls){ logs.unshift({t,cls}); if(logs.length>5)logs.pop();
+  const el=document.getElementById('log');
+  el.innerHTML=logs.map(l=>`<div class="lg ${l.cls||''}">${l.t}</div>`).join(''); }
+
+function finish(t,p){ if(S.outcome) return; S.outcome=t;
+  document.getElementById('endT').textContent=t;
+  document.getElementById('endP').innerHTML=p+'<br><br>счёт: <b>'+S.score+'</b> · освобождено: <b>'+S.pacified+'</b>';
+  document.getElementById('end').style.display='flex'; }
+
+// ── отрисовка ──
+const cv=document.getElementById('cv'), cx=cv.getContext('2d');
+function fit(){ const r=cv.getBoundingClientRect();
+  cv.width=r.width*devicePixelRatio; cv.height=r.height*devicePixelRatio;
+  cx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0); }
+addEventListener('resize',fit); fit();
+
+function draw(now){
+  const dt=Math.min(.05,(now-lastT)/1000); lastT=now;
+  if(!S.outcome) step(dt);
+  const W=cv.clientWidth, H=cv.clientHeight, p=S.player;
+  const t=S.tint;
+
+  // фон
+  const sky=cx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#0a0716'); sky.addColorStop(.45,`rgb(${t[0]},${t[1]},${t[2]})`); sky.addColorStop(1,'#070510');
+  cx.fillStyle=sky; cx.fillRect(0,0,W,H);
+
+  // пол-ромб (изометрия)
+  cx.save(); cx.translate(W/2,150); cx.scale(1,.5); cx.rotate(Math.PI/4);
+  cx.fillStyle='rgba(52,38,44,.5)'; cx.fillRect(-420,-420,840,840);
+  cx.strokeStyle='rgba(242,196,109,.10)'; cx.lineWidth=1.6;
+  for(let i=-420;i<=420;i+=44){ cx.beginPath(); cx.moveTo(i,-420); cx.lineTo(i,420); cx.stroke();
+    cx.beginPath(); cx.moveTo(-420,i); cx.lineTo(420,i); cx.stroke(); }
+  cx.restore();
+
+  // деревья по краям
+  for(const [tx,ty,sc] of [[62,180,.9],[350,168,.75],[78,470,.8],[344,486,.95]]){
+    cx.fillStyle='rgba(24,16,14,.85)';
+    cx.fillRect(tx-3*sc,ty-40*sc,6*sc,40*sc);
+    cx.beginPath(); cx.arc(tx,ty-46*sc,20*sc,0,7); cx.fillStyle='rgba(18,12,10,.9)'; cx.fill();
+  }
+
+  // просящие
+  for(const w of S.wares){
+    if(w.done){ continue; }
+    cx.save(); cx.translate(w.x,w.y);
+    if(w.near){ cx.strokeStyle='rgba(242,196,109,.75)'; cx.lineWidth=1.5;
+      cx.beginPath(); cx.arc(0,-16,26,0,7); cx.stroke(); }
+    cx.fillStyle='rgba(120,105,88,.95)';
+    cx.beginPath(); cx.ellipse(0,0,11,20,0,0,7); cx.fill();
+    cx.beginPath(); cx.arc(0,-24,8,0,7); cx.fillStyle='rgba(190,175,150,.95)'; cx.fill();
+    // линия в небо
+    const gr=cx.createLinearGradient(0,-34,0,-74);
+    gr.addColorStop(0,'rgba(242,196,109,.6)'); gr.addColorStop(1,'rgba(242,196,109,0)');
+    cx.strokeStyle=gr; cx.lineWidth=1.2;
+    cx.beginPath(); cx.moveTo(0,-34); cx.lineTo(0,-74); cx.stroke();
+    cx.restore();
+    if(w.near){ cx.font='11px ' + FONT; cx.fillStyle='#e9dcc4'; cx.textAlign='center';
+      cx.fillText(w.name, w.x, w.y+38); }
+  }
+
+  // оковы
+  for(let i=0;i<S.foes.length;i++){
+    const f=S.foes[i];
+    if(f.dead) continue;
+    if(f.pacified){
+      // цветок на месте
+      cx.fillStyle='rgba(122,215,160,.5)';
+      cx.beginPath(); cx.arc(f.x,f.y,5,0,7); cx.fill();
+      continue;
+    }
+    cx.save(); cx.translate(f.x,f.y);
+    // тень
+    cx.fillStyle='rgba(0,0,0,.4)'; cx.beginPath(); cx.ellipse(0,16,15,5,0,0,7); cx.fill();
+    // тело — тёмное пятно
+    const pulse=1+Math.sin(S.time*2.4+i)*.06;
+    const g=cx.createRadialGradient(-3,-5,2,0,0,20*pulse);
+    const dark = f.trueLight==='dark';
+    g.addColorStop(0, dark?'#4a1f2a':'#1d2b4a'); g.addColorStop(1,'#0a0508');
+    cx.fillStyle=g; cx.beginPath();
+    cx.ellipse(0,-2,17*pulse,18*pulse,0,0,7); cx.fill();
+    cx.strokeStyle= f.state==='telegraph' ? 'rgba(210,59,59,.95)' : 'rgba(210,59,59,.25)';
+    cx.lineWidth= f.state==='telegraph'?2.4:1.2;
+    cx.beginPath(); cx.ellipse(0,-2,20,21,0,0,7); cx.stroke();
+    // аура (различение)
+    const L=f.shownLight;
+    if(L==='unknown'){ cx.fillStyle='#6b6274'; cx.beginPath(); cx.arc(0,-30,5,0,7); cx.fill();
+      cx.font='13px '+FONT; cx.fillStyle='#9c90b4'; cx.textAlign='center'; cx.fillText('?',0,-42); }
+    else { cx.shadowBlur=12; cx.shadowColor = L==='light'?'#f4f1ea':'#5a4a6a';
+      cx.fillStyle = L==='light' ? '#f4f1ea' : '#2a2038';
+      cx.beginPath(); cx.arc(0,-30,5,0,7); cx.fill(); cx.shadowBlur=0;
+      cx.strokeStyle = L==='light' ? 'rgba(244,241,234,.9)' : 'rgba(150,130,180,.8)'; cx.lineWidth=1;
+      cx.beginPath(); cx.arc(0,-30,5,0,7); cx.stroke();
+      cx.font='9px '+FONT; cx.fillStyle = L==='light'?'#f4f1ea':'#9c90b4'; cx.textAlign='center';
+      cx.fillText(L==='light'?'видья':'авидья',0,-42); }
+    // счётчик спокойствия
+    if(f.calm>0.01){
+      cx.strokeStyle='rgba(242,196,109,.9)'; cx.lineWidth=3; cx.lineCap='round';
+      cx.beginPath(); cx.arc(0,-2,26,-Math.PI/2,-Math.PI/2+(f.calm/f.calmMax)*Math.PI*2); cx.stroke();
+      cx.lineCap='butt';
+    }
+    // подпись
+    cx.font='10px '+FONT; cx.fillStyle='#cfc3b0'; cx.textAlign='center';
+    cx.fillText(f.name, 0, 34);
+    cx.restore();
+  }
+
+  // садхака
+  cx.save(); cx.translate(p.x,p.y);
+  if(p.invuln>0 && Math.floor(now/70)%2===0) cx.globalAlpha=.45;
+  // дыхание-круг
+  const br=1+Math.sin(p.breathPhase/3.2*Math.PI*2)*.12;
+  cx.strokeStyle=`rgba(242,196,109,${p.breathing?.85:.4})`; cx.lineWidth=1.6;
+  cx.beginPath(); cx.ellipse(0,17,26*br,8*br,0,0,7); cx.stroke();
+  // тело
+  cx.fillStyle='#efe6d6';
+  cx.beginPath(); cx.ellipse(0,2,10,20,0,0,7); cx.fill();
+  cx.beginPath(); cx.arc(0,-22,8,0,7); cx.fillStyle='#fbf5e9'; cx.fill();
+  if(p.inSamadhi){ cx.shadowBlur=26; cx.shadowColor='#fff'; cx.fillStyle='#fff';
+    cx.beginPath(); cx.arc(0,-22,9,0,7); cx.fill(); cx.shadowBlur=0; }
+  cx.restore();
+
+  // HUD
+  document.getElementById('gs').textContent=p.guna.s.toFixed(0);
+  document.getElementById('gr').textContent=p.guna.r.toFixed(0);
+  document.getElementById('gt').textContent=p.guna.t.toFixed(0);
+  document.getElementById('pram').style.opacity=p.prama?1:.15;
+  document.getElementById('shv').textContent=Math.floor(p.shakti);
+  document.getElementById('shb').style.width=(p.shakti/p.shaktiMax*100)+'%';
+  document.getElementById('psv').textContent=Math.floor(p.psychic);
+  document.getElementById('psb').style.width=(p.psychic/p.psychicMax*100)+'%';
+  document.getElementById('avv').textContent=Math.floor(S.avidya);
+  document.getElementById('avb').style.width=(S.avidya/O.avidyaMax*100)+'%';
+  document.getElementById('hpv').textContent=Math.floor(p.hp);
+  document.getElementById('hpb').style.width=(p.hp/p.maxHp*100)+'%';
+  document.getElementById('tBreath').className='tip'+(p.breathing?' act':'');
+  const n=nearestFoe(O.calmRadius);
+  document.getElementById('tCalm').innerHTML = n
+    ? `<b>${n.foe.name}</b>${p.breathing?'успокаивай':'нужно дышать (пробел)'}`
+    : '<b>у оковы</b>успокоение';
+
+  requestAnimationFrame(draw);
+}
+
+const FONT='-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+function loop(){ raf=requestAnimationFrame(draw); }
+
+// ввод
+addEventListener('keydown',e=>{ keys[e.key.toLowerCase()]=true;
+  if(e.key===' ') e.preventDefault();
+  if(e.key.toLowerCase()==='shift') doDash(); });
+addEventListener('keyup',e=>{ keys[e.key.toLowerCase()]=false; });
+function doDash(){ const p=S.player;
+  if(p.dashCd>0||p.dash>0) return;
+  let dx=(keys.d||keys.ArrowRight?1:0)-(keys.a||keys.ArrowLeft?1:0);
+  let dy=(keys.s||keys.ArrowDown?1:0)-(keys.w||keys.ArrowUp?1:0);
+  if(!dx&&!dy){dx=p.facing;dy=0;}
+  const m=Math.hypot(dx,dy)||1;
+  p.dash=O.dashTime; p.dashCd=O.dashCooldown; p.invuln=O.dashTime+.08;
+  p.x+=dx/m*26; p.y+=dy/m*26; }
+cv.addEventListener('click',e=>{
+  const r=cv.getBoundingClientRect();
+  const x=e.clientX-r.left, y=e.clientY-r.top;
+  // просящий?
+  for(let i=0;i<S.wares.length;i++){ const w=S.wares[i];
+    if(!w.done && Math.hypot(S.player.x-w.x,S.player.y-w.y)<70){ pickSeva(i); return; } }
+  // окова?
+  for(let i=0;i<S.foes.length;i++){ const f=S.foes[i];
+    if(!f.dead&&!f.pacified && Math.hypot(f.x-x,f.y-y)<30){ strike(i); return; } }
+  // идти
+  S.player.facing = x>S.player.x?1:-1;
+  keys._tx=x; keys._ty=y;
+});
+// движение к точке, если зажали... упростим: клик по полу = рывок туда
+function pickSeva(i){
+  const w=S.wares[i];
+  const kinds=[['shudrocita','шудрочита (накормить)'],['ksatriyocita','кшатрийочита (защитить)'],
+                ['vaeshyocita','вайшйочита (дать нужное)'],['viprocita','випрочита (научить)']];
+  const label=kinds[Math.floor(Math.random()*4)][1];
+  serve(i,kinds[Math.floor(Math.random()*4)][0]);
+  addLog(label,'good');
+}
+init();
+</script>
+</body>
+</html>

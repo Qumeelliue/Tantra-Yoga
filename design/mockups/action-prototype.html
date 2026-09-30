@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Путь Садхаки — макет экранов</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    /* Фоны — ночь, лампа, тёплое золото в синей темноте */
+    --bg-0: #08060f;
+    --bg-1: #120d1e;
+    --bg-2: #1b1330;
+    --ink: #f4e9d6;
+    --ink-dim: #cfc3b0;
+    --muted: #9c90b4;
+    --gold: #f2c46d;
+    --gold-soft: #ffdfa8;
+    --gold-deep: #a87f45;
+    --line: rgba(242,196,109,.22);
+    --line-soft: rgba(242,196,109,.10);
+    /* ГУНЫ — по источнику: саттва белая, раджас красная, тамас чёрная,
+       вайшья жёлтая (раджас+тамас) */
+    --sat: #f4f1ea;
+    --raj: #d23b3b;
+    --tam: #14121a;
+    --tam-ink: #9a90ad;
+    --vai: #e0b93a;
+    --display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+    --ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  body {
+    background: #05040a;
+    color: var(--ink);
+    font-family: var(--ui);
+    padding: 30px 20px 70px;
+    display: flex; flex-direction: column; align-items: center; gap: 46px;
+  }
+  .frame-label { text-align: center; margin-bottom: -24px; }
+  .frame-label b { font-family: var(--display); font-size: 19px; color: var(--gold); letter-spacing: .04em; }
+  .frame-label span { display:block; font-size: 12.5px; color: var(--muted); margin-top: 5px; }
+
+  /* ── Телефон ── */
+  .phone {
+    width: 390px; height: 844px; border-radius: 42px; position: relative;
+    background: var(--bg-0);
+    box-shadow: 0 40px 90px rgba(0,0,0,.75), 0 0 0 10px #16121d, 0 0 0 11px #2a2331;
+    overflow: hidden; flex: none;
+  }
+  .notch { position:absolute; top:11px; left:50%; transform:translateX(-50%);
+    width:118px; height:27px; background:#0a0810; border-radius:15px; z-index:60; }
+  .statusbar { position:absolute; top:0; left:0; right:0; height:48px; z-index:55;
+    display:flex; align-items:center; justify-content:space-between; padding:0 26px;
+    font-size:13px; font-weight:600; letter-spacing:.02em; }
+  .statusbar .ic { letter-spacing:1.5px; opacity:.75; font-size:11px; }
+
+  /* ── Фон локации: изометрический пол + глубина ── */
+  .scene { position:absolute; inset:0; overflow:hidden; }
+  .sky { position:absolute; inset:0;
+    background:
+      radial-gradient(120% 80% at 50% -14%, rgba(255,214,140,.16), transparent 58%),
+      radial-gradient(70% 50% at 50% 118%, rgba(120,60,180,.20), transparent 70%),
+      linear-gradient(#0b0817 0%, #150f26 42%, #0d0919 100%);
+  }
+  /* звёздная пыль */
+  .dust { position:absolute; inset:0; opacity:.5;
+    background-image:
+      radial-gradient(1.4px 1.4px at 18% 22%, rgba(255,235,190,.9), transparent),
+      radial-gradient(1.2px 1.2px at 72% 16%, rgba(255,235,190,.75), transparent),
+      radial-gradient(1.6px 1.6px at 44% 34%, rgba(255,225,170,.6), transparent),
+      radial-gradient(1.1px 1.1px at 84% 40%, rgba(255,235,190,.55), transparent),
+      radial-gradient(1.3px 1.3px at 28% 47%, rgba(255,225,170,.5), transparent),
+      radial-gradient(1.2px 1.2px at 60% 52%, rgba(255,235,190,.45), transparent);
+  }
+  /* изометрический пол-ромб */
+  .floor { position:absolute; left:-30%; right:-30%; top:40%; bottom:-14%;
+    transform: perspective(560px) rotateX(58deg);
+    transform-origin: 50% 0;
+    background:
+      radial-gradient(60% 55% at 50% 30%, rgba(255,205,120,.10), transparent 70%),
+      linear-gradient(rgba(60,40,30,.55), rgba(30,22,30,.75));
+    border-top: 1px solid var(--line);
+  }
+  .floor::before { content:""; position:absolute; inset:0;
+    background-image:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size: 46px 46px;
+    mask-image: radial-gradient(70% 70% at 50% 45%, #000 30%, transparent 88%);
+    -webkit-mask-image: radial-gradient(70% 70% at 50% 45%, #000 30%, transparent 88%);
+  }
+  /* корни Древа */
+  .roots { position:absolute; inset:0; pointer-events:none; }
+  .root { position:absolute; background:linear-gradient(90deg, rgba(20,12,8,.9), rgba(45,28,18,.75));
+    border-radius: 50%; filter: blur(1.2px); }
+  .r1 { left:-8%; top:47%; width:62%; height:26px; transform: rotate(7deg); }
+  .r2 { right:-12%; top:56%; width:58%; height:22px; transform: rotate(-9deg); }
+  .r3 { left:16%; top:69%; width:78%; height:30px; transform: rotate(-2deg); }
+  .r4 { left:4%; top:82%; width:60%; height:20px; transform: rotate(12deg); opacity:.7; }
+
+  /* ── Садхака ── */
+  .sadhu { position:absolute; left:96px; top:470px; width:60px; height:96px; z-index:30; }
+  .sadhu .body { position:absolute; inset:0;
+    background:linear-gradient(180deg, #efe6d6 0%, #d9cbb4 46%, #a99a84 100%);
+    border-radius: 46% 46% 30% 30% / 34% 34% 20% 20%;
+    box-shadow: 0 0 26px rgba(255,214,140,.42), inset 0 -8px 14px rgba(0,0,0,.28); }
+  .sadhu .head { position:absolute; left:50%; top:-24px; transform:translateX(-50%);
+    width:30px; height:32px; border-radius:50%;
+    background:radial-gradient(circle at 38% 32%, #fbf5e9, #cdbfa6 70%, #9c8f7a);
+    box-shadow:0 0 16px rgba(255,224,170,.5); }
+  /* дыхание — круг под ногами */
+  .sadhu .breath { position:absolute; left:50%; bottom:-15px; transform:translateX(-50%);
+    width:70px; height:26px; border-radius:50%;
+    border:1.5px solid rgba(255,214,140,.5);
+    box-shadow:0 0 16px rgba(255,214,140,.28), inset 0 0 12px rgba(255,214,140,.16);
+    animation: br 4.2s ease-in-out infinite; }
+  @keyframes br { 0%,100%{transform:translateX(-50%) scaleX(.72); opacity:.5} 45%{transform:translateX(-50%) scaleX(1.08); opacity:.95} }
+  .sadhu .glow { position:absolute; inset:-26px; border-radius:50%;
+    background:radial-gradient(circle, rgba(255,214,140,.16), transparent 68%); }
+  .sadhu .shadow { position:absolute; left:50%; bottom:-24px; transform:translateX(-50%);
+    width:56px; height:14px; border-radius:50%; background:rgba(0,0,0,.5); filter:blur(5px); }
+
+  /* ── Окова: Кродха ── */
+  .krodha { position:absolute; left:262px; top:452px; width:66px; height:66px; z-index:28; }
+  .krodha .core { position:absolute; inset:0; border-radius:48% 52% 46% 54% / 52% 46% 54% 48%;
+    background:radial-gradient(circle at 42% 38%, #4a1f1a, #1d0b0a 68%, #0a0505);
+    box-shadow:0 0 30px rgba(210,59,59,.34), inset 0 0 18px rgba(210,59,59,.22);
+    animation: pulse 2.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{transform:scale(1) rotate(0)} 50%{transform:scale(1.07) rotate(7deg)} }
+  /* аура Видья/Авидья — над головой */
+  .aura { position:absolute; left:50%; top:-34px; transform:translateX(-50%);
+    display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .aura .mark { width:19px; height:19px; border-radius:50%;
+    background:radial-gradient(circle at 40% 35%, #fff, #f4f1ea 55%, #cfc9bd);
+    box-shadow:0 0 15px rgba(244,241,234,.85); }
+  .aura .lbl { font-size:9.5px; letter-spacing:.16em; color:var(--sat); opacity:.9;
+    text-transform:uppercase; text-shadow:0 0 10px rgba(244,241,234,.5); }
+  /* метка прицела */
+  .aim { position:absolute; left:-14px; top:-14px; width:94px; height:94px; z-index:29;
+    border:1px dashed rgba(244,241,234,.34); border-radius:50%; }
+
+  /* ── Просящие (сева) ── */
+  .beggar { position:absolute; left:56px; top:604px; width:44px; height:70px; z-index:26; }
+  .beggar .fig { position:absolute; inset:0; border-radius:44% 44% 26% 26% / 32% 32% 18% 18%;
+    background:linear-gradient(180deg,#7d6f5c,#4e4438); opacity:.92; }
+  .beggar .fig::after { content:""; position:absolute; left:50%; top:-19px; transform:translateX(-50%);
+    width:24px; height:25px; border-radius:50%; background:radial-gradient(circle at 38% 32%,#d8cbb6,#a2957f); }
+  .beggar .call { position:absolute; left:50%; top:-46px; transform:translateX(-50%);
+    white-space:nowrap; font-size:11.5px; color:#e9dcc4; font-family:var(--display); font-style:italic;
+    text-shadow:0 2px 12px rgba(0,0,0,.9); }
+  .beggar .call::after { content:""; display:block; width:1px; height:16px; margin:5px auto 0;
+    background:linear-gradient(rgba(242,196,109,.7), transparent); }
+  /* тонкая линия в небо = зов */
+  .beggar .thread { position:absolute; left:50%; bottom:100%; width:1px; height:56px;
+    background:linear-gradient(rgba(242,196,109,.5), transparent); }
+
+  /* ── HUD ── */
+  .hud { position:absolute; inset:0; z-index:40; pointer-events:none; }
+  .hud-top { position:absolute; top:54px; left:0; right:0; display:flex; justify-content:space-between;
+    padding:0 18px; align-items:flex-start; }
+  .guna { display:flex; gap:9px; align-items:center;
+    background:rgba(10,7,18,.5); border:1px solid var(--line-soft); border-radius:40px;
+    padding:8px 13px; backdrop-filter: blur(9px); }
+  .guna .orb { width:15px; height:15px; border-radius:50%; position:relative; }
+  .guna .orb.s { background:radial-gradient(circle at 36% 32%, #fff, var(--sat) 60%, #c9c4b8);
+    box-shadow:0 0 12px rgba(244,241,234,.7); }
+  .guna .orb.r { background:radial-gradient(circle at 36% 32%, #f08080, var(--raj) 60%, #7a1f1f);
+    box-shadow:0 0 12px rgba(210,59,59,.65); }
+  .guna .orb.t { background:radial-gradient(circle at 36% 32%, #6b6274, var(--tam) 62%, #000);
+    border:1px solid rgba(255,255,255,.14); }
+  .guna .n { font-size:12.5px; font-weight:700; letter-spacing:.03em; }
+  .guna .n.s { color:var(--sat); } .guna .n.r { color:var(--raj); } .guna .n.t { color:var(--tam-ink); }
+  .guna .pram { font-family:var(--display); font-size:10px; letter-spacing:.2em; color:var(--gold);
+    text-transform:uppercase; opacity:.9; }
+
+  .bars { display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+  .bar { width:154px; }
+  .bar .lbl { display:flex; justify-content:space-between; font-size:10px; letter-spacing:.13em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:4px; }
+  .bar .lbl b { color:var(--gold-soft); font-weight:700; letter-spacing:.06em; }
+  .bar .track { height:5px; border-radius:3px; background:rgba(255,255,255,.08); overflow:hidden; }
+  .bar .fill { height:100%; border-radius:3px; }
+  .bar.shakti .fill { background:linear-gradient(90deg, #7a5cc4, #f2c46d);
+    box-shadow:0 0 11px rgba(242,196,109,.6); }
+  .bar.avidya .fill { background:linear-gradient(90deg, #4a4060, #8a7fa8); }
+  .bar.avidya .track { height:4px; }
+
+  /* ── Слоты мантр ── */
+  .slots { position:absolute; left:0; right:0; bottom:132px; display:flex; justify-content:center; gap:11px; }
+  .slot { width:66px; height:66px; border-radius:17px; position:relative;
+    background:linear-gradient(180deg, rgba(34,25,52,.86), rgba(15,11,25,.92));
+    border:1px solid var(--line); box-shadow:0 10px 26px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.07); }
+  .slot.fire { border-color:var(--gold); box-shadow:0 0 24px rgba(242,196,109,.42), inset 0 0 18px rgba(242,196,109,.14); }
+  .slot .nm { position:absolute; left:0; right:0; bottom:7px; text-align:center;
+    font-size:8.6px; letter-spacing:.03em; color:var(--gold-soft); opacity:.94; }
+  .slot .sk { position:absolute; left:0; right:0; top:9px; text-align:center; font-size:15px; }
+  .slot .key { position:absolute; top:5px; left:7px; font-size:8.5px; color:var(--muted); opacity:.8; }
+  .slot .cd { position:absolute; inset:0; border-radius:17px; background:rgba(5,4,10,.78);
+    display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--gold-soft); }
+
+  /* ── Нижняя панель ── */
+  .bottom { position:absolute; left:0; right:0; bottom:0; height:104px; z-index:42;
+    background:linear-gradient(rgba(6,4,12,0), rgba(6,4,12,.88) 42%);
+    display:flex; align-items:flex-end; justify-content:space-between; padding:0 18px 22px; }
+  .verb { display:flex; flex-direction:column; gap:5px; }
+  .verb .cap { font-size:9.5px; letter-spacing:.15em; text-transform:uppercase; color:var(--muted); }
+  .verb .chips { display:flex; gap:7px; }
+  .chip { font-size:11px; padding:5px 10px; border-radius:9px; letter-spacing:.02em;
+    background:rgba(255,255,255,.055); border:1px solid var(--line-soft); color:var(--ink-dim); }
+  .chip.hot { color:var(--gold-soft); border-color:var(--line); background:rgba(242,196,109,.10); }
+
+  /* ── Подсказка ── */
+  .hintbar { position:absolute; left:18px; right:18px; bottom:104px; z-index:41;
+    text-align:center; font-size:12.5px; color:var(--ink-dim); line-height:1.5; }
+  .hintbar b { color:var(--gold-soft); }
+
+  /* ── Дыхание (мини-игра) ── */
+  .breathy { position:absolute; inset:0; z-index:70; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:26px;
+    background:radial-gradient(circle at 50% 46%, rgba(20,14,34,.62), rgba(5,3,10,.94)); }
+  .breathy .t { font-family:var(--display); font-size:15px; color:var(--gold-soft); letter-spacing:.16em;
+    text-transform:uppercase; opacity:.9; }
+  .orb-breath { width:170px; height:170px; border-radius:50%; position:relative;
+    border:1px solid var(--line); display:flex; align-items:center; justify-content:center; }
+  .orb-breath .core { width:112px; height:112px; border-radius:50%;
+    background:radial-gradient(circle at 42% 36%, rgba(255,235,200,.95), rgba(242,196,109,.55) 55%, transparent 72%);
+    box-shadow:0 0 44px rgba(242,196,109,.55); animation: inhale 4.6s ease-in-out infinite; }
+  @keyframes inhale { 0%,100%{transform:scale(.7); opacity:.75} 48%{transform:scale(1.16); opacity:1} }
+  .orb-breath .ring { position:absolute; inset:14px; border-radius:50%;
+    border:1px dashed rgba(242,196,109,.28); }
+  .breathy .sub { font-size:12px; color:var(--muted); font-style:italic; font-family:var(--display); }
+  .breathy .gain { font-size:13px; color:var(--gold); font-weight:700; letter-spacing:.04em; }
+
+  /* ── Экран севы ── */
+  .seva-panel { position:absolute; inset:0; z-index:65; display:flex; flex-direction:column;
+    background:linear-gradient(180deg, rgba(6,4,12,.9), rgba(10,7,18,.97));
+    padding:64px 20px 26px; }
+  .seva-panel h2 { font-family:var(--display); font-size:23px; color:var(--gold); font-weight:400;
+    text-align:center; letter-spacing:.03em; }
+  .seva-panel .sub { text-align:center; font-size:11.5px; color:var(--muted); margin-top:7px; line-height:1.6; }
+  .seva-list { margin-top:20px; display:flex; flex-direction:column; gap:11px; }
+  .seva-item { display:flex; gap:13px; align-items:center; padding:13px 14px; border-radius:15px;
+    background:linear-gradient(100deg, rgba(30,22,46,.9), rgba(16,12,26,.9));
+    border:1px solid var(--line-soft); }
+  .seva-item.sel { border-color:var(--gold); box-shadow:0 0 22px rgba(242,196,109,.26); }
+  .seva-item .vn { width:40px; height:40px; border-radius:11px; flex:none; display:flex;
+    align-items:center; justify-content:center; font-size:17px; }
+  .seva-item .vn.vipra { background:linear-gradient(180deg,#f4f1ea,#c9c4b8); color:#2a2233; }
+  .seva-item .vn.ksh { background:linear-gradient(180deg,#f08080,#d23b3b); color:#fff; }
+  .seva-item .vn.vai { background:linear-gradient(180deg,#f0d878,#e0b93a); color:#3a2f0d; }
+  .seva-item .vn.shu { background:linear-gradient(180deg,#6b6274,#14121a); color:var(--ink-dim);
+    border:1px solid rgba(255,255,255,.16); }
+  .seva-item .tx b { display:block; font-size:13.5px; color:var(--ink); font-weight:700; }
+  .seva-item .tx span { display:block; font-size:11.5px; color:var(--muted); margin-top:3px; line-height:1.45; }
+  .seva-item .fruit { margin-left:auto; font-size:9.5px; letter-spacing:.11em; text-transform:uppercase;
+    padding:4px 8px; border-radius:7px; white-space:nowrap; }
+  .fruit.tmp { color:var(--tam-ink); background:rgba(255,255,255,.05); }
+  .fruit.et { color:var(--gold); background:rgba(242,196,109,.13); border:1px solid var(--line); }
+  .foot { margin-top:auto; text-align:center; font-size:11.5px; color:var(--muted);
+    font-style:italic; font-family:var(--display); line-height:1.6; }
+
+  /* ── Экран мантр ── */
+  .m-slot { width:74px; height:74px; border-radius:19px; position:relative;
+    background:linear-gradient(180deg, rgba(34,25,52,.9), rgba(15,11,25,.94));
+    border:1px solid var(--line); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:4px; }
+  .m-slot.fire { border-color:var(--gold); box-shadow:0 0 26px rgba(242,196,109,.45); }
+  .m-slot .sk { font-size:18px; }
+  .m-slot .nm { font-size:9px; color:var(--gold-soft); text-align:center; line-height:1.25; }
+  .m-slot .lay { position:absolute; top:5px; right:7px; font-size:8px; letter-spacing:.1em;
+    color:var(--muted); text-transform:uppercase; }
+  .mrow { display:flex; gap:12px; justify-content:center; }
+  .mcard { margin-top:22px; padding:15px 16px; border-radius:16px;
+    background:linear-gradient(180deg, rgba(32,23,50,.92), rgba(14,10,24,.94));
+    border:1px solid var(--line-soft); }
+  .mcard .q { font-family:var(--display); font-size:13px; font-style:italic; color:var(--ink);
+    line-height:1.65; }
+  .mcard .src { margin-top:10px; font-size:10px; letter-spacing:.1em; color:var(--gold-deep);
+    text-transform:uppercase; }
+  .stage-row { margin-top:18px; display:flex; gap:8px; justify-content:center; }
+  .st { padding:6px 11px; border-radius:9px; font-size:10px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); border:1px solid var(--line-soft); }
+  .st.on { color:var(--gold); border-color:var(--line); background:rgba(242,196,109,.1);
+    box-shadow:0 0 16px rgba(242,196,109,.2); }
+  .titlebar { text-align:center; margin-bottom:20px; }
+  .titlebar .kicker { font-size:10.5px; letter-spacing:.28em; text-transform:uppercase;
+    color:var(--gold-deep); }
+  .titlebar h1 { font-family:var(--display); font-size:27px; font-weight:400; margin-top:7px;
+    color:var(--ink); letter-spacing:.02em; }
+  .titlebar .tag { font-size:12px; color:var(--muted); margin-top:8px; font-style:italic;
+    font-family:var(--display); }
+</style>
+</head>
+<body>
+
+  <!-- 1. ЛОКАЦИЯ -->
+  <div class="frame-label"><b>1 · Долина Корней — идёт бой</b>
+    <span>изометрия, вид сверху-сбоку. Садхака идёт, оковы подходят, мир меняется от состояния ума</span></div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar"><span>21:41</span><span class="ic">▮▮▮ ⌁ ▰</span></div>
+    <div class="scene">
+      <div class="sky"></div><div class="dust"></div>
+      <div class="floor"></div>
+      <div class="roots"><i class="root r1"></i><i class="root r2"></i><i class="root r3"></i><i class="root r4"></i></div>
+      <div class="beggar"><i class="thread"></i><span class="call">«Помоги, колодец пуст…»</span><i class="fig"></i></div>
+      <div class="krodha">
+        <div class="aura"><span class="mark"></span><span class="lbl">видья</span></div>
+        <div class="aim"></div>
+        <div class="core"></div>
+      </div>
+      <div class="sadhu"><i class="glow"></i><i class="body"></i><i class="head"></i>
+        <i class="breath"></i><i class="shadow"></i></div>
+    </div>
+    <div class="hud">
+      <div class="hud-top">
+        <div class="guna">
+          <i class="orb s"></i><span class="n s">4</span>
+          <i class="orb r"></i><span class="n r">2</span>
+          <i class="orb t"></i><span class="n t">3</span>
+          <span class="pram">прама</span>
+        </div>
+        <div class="bars">
+          <div class="bar shakti"><div class="lbl"><span>духовная сила</span><b>7</b></div>
+            <div class="track"><div class="fill" style="width:58%"></div></div></div>
+          <div class="bar avidya"><div class="lbl"><span>авидья</span><b>5/12</b></div>
+            <div class="track"><div class="fill" style="width:42%"></div></div></div>
+        </div>
+      </div>
+      <div class="hintbar">Аура горит — это <b>видья</b>. Удар Ахимсой придёт по-настоящему.<br>
+        Чтобы снять окову — <b>подойди и дыши</b>, не бей.</div>
+      <div class="slots">
+        <div class="slot fire"><i class="key">1</i><i class="sk">🕊</i><i class="nm">ахимса</i></div>
+        <div class="slot"><i class="key">2</i><i class="sk">◉</i><i class="nm">свадхьяя</i></div>
+        <div class="slot"><i class="key">3</i><i class="sk">✦</i><i class="nm">джапа</i></div>
+        <div class="slot"><i class="key">4</i><i class="sk">◇</i><i class="nm">пранаяма</i></div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div class="verb"><span class="cap">мир</span><div class="chips">
+        <span class="chip">🌍 Долина Корней</span><span class="chip">глава 1 / 7</span></div></div>
+      <div class="verb" style="align-items:flex-end"><span class="cap">стадия</span><div class="chips">
+        <span class="chip hot">упорство · ятамана</span></div></div>
+    </div>
+  </div>
+
+  <!-- 2. ДЫХАНИЕ -->
+  <div class="frame-label"><b>2 · Пранаяма — мини-игра дыхания</b>
+    <span>психическая сила быстро, но потолок низкий: в самадхи не пустит. Духовную даёт только садхана</span></div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar"><span>21:43</span><span class="ic">▮▮▮ ⌁ ▰</span></div>
+    <div class="scene">
+      <div class="sky"></div><div class="dust"></div><div class="floor"></div>
+      <div class="sadhu" style="left:50%;top:352px;transform:translateX(-50%)">
+        <i class="glow"></i><i class="body"></i><i class="head"></i><i class="breath"></i><i class="shadow"></i></div>
+    </div>
+    <div class="breathy">
+      <div class="t">пранаяма</div>
+      <div class="orb-breath"><div class="ring"></div><div class="core"></div></div>
+      <div class="sub">вдох на четыре — дыхание на четыре</div>
+      <div class="gain">+3 психической силы · авидья −2</div>
+    </div>
+  </div>
+
+  <!-- 3. СЕВА ПО ВАРНАМ -->
+  <div class="frame-label"><b>3 · Сева — четыре вида по варнам</b>
+    <span>«Ánanda Vacanámrtam» 30/10. Первые три дают временный плод, випрочита — единственный вечный</span></div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar"><span>21:45</span><span class="ic">▮▮▮ ⌁ ▰</span></div>
+    <div class="scene"><div class="sky"></div><div class="dust"></div><div class="floor"></div></div>
+    <div class="seva-panel">
+      <h2>Кому помочь?</h2>
+      <div class="sub">Служение одностороннее: ты отдаёшь и не ждёшь платы.<br>Помощь «в расчёте» плода не даёт.</div>
+      <div class="seva-list">
+        <div class="seva-item">
+          <div class="vn shu">🜂</div>
+          <div class="tx"><b>Шудрочита сева</b><span>накормить, обогреть, перевязать — телом</span></div>
+          <div class="fruit tmp">временный</div>
+        </div>
+        <div class="seva-item sel">
+          <div class="vn ksh">🛡</div>
+          <div class="tx"><b>Кшатрийочита сева</b><span>встать между слабым и опасностью</span></div>
+          <div class="fruit tmp">временный</div>
+        </div>
+        <div class="seva-item">
+          <div class="vn vai">✽</div>
+          <div class="tx"><b>Вайшйочита сева</b><span>снять нужду, дать то, что нужно</span></div>
+          <div class="fruit tmp">временный</div>
+        </div>
+        <div class="seva-item">
+          <div class="vn vipra">📖</div>
+          <div class="tx"><b>Випрочита сева</b><span>научить, объяснить, показать истину</span></div>
+          <div class="fruit et">навсегда</div>
+        </div>
+      </div>
+      <div class="foot">Для умирающего от голода лучшее служение — накормить его,<br>а не вести медитировать. Сначала накорми, потом учи.</div>
+    </div>
+  </div>
+
+  <!-- 4. МАНТРЫ -->
+  <div class="frame-label"><b>4 · Четыре слота мантр</b>
+    <span>как четыре слота оружия в Hades, но это практики. Открываются стадиями садханы, не уровнем</span></div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="statusbar"><span>21:47</span><span class="ic">▮▮▮ ⌁ ▰</span></div>
+    <div class="scene">
+      <div class="sky"></div><div class="dust"></div><div class="floor"></div>
+      <div class="titlebar">
+        <div class="kicker">твои мантры</div>
+        <h1>Что ты поёшь</h1>
+        <div class="tag">эффект мантры = цитата из шастр. нет цитаты — нет мантры</div>
+      </div>
+      <div class="mrow">
+        <div class="m-slot fire"><i class="lay">удар</i><i class="sk">🕊</i><i class="nm">ахимса</i></div>
+        <div class="m-slot"><i class="lay">особое</i><i class="sk">☸</i><i class="nm">баба нам<br>кевалам</i></div>
+        <div class="m-slot"><i class="lay">поле</i><i class="sk">✦</i><i class="nm">гуру-мантра</i></div>
+        <div class="m-slot"><i class="lay">рывок</i><i class="sk">◇</i><i class="nm">биджа</i></div>
+      </div>
+      <div class="mcard">
+        <div class="q">«Милость повсюду, как дождь; но над твоей головой зонт
+        тщеславия — вот почему ты не промокаешь. Убери зонт тщеславия — и будешь омыт».</div>
+        <div class="src">«Ánanda Vacanámrtam», ч. 12 — Shortening the Radius</div>
+      </div>
+      <div class="stage-row">
+        <div class="st on">упорство</div><div class="st">контроль</div>
+        <div class="st">однонаправленность</div><div class="st">власть</div>
+      </div>
+      <div class="foot" style="margin-top:18px">Стадии садханы: yatamāna → vyatireka → ekendriya → vashiikāra.<br>
+        Открытая мантра звучит по-настоящему: «Брахма Крипахи Кевалам».</div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -10,7 +10,15 @@
     "build:pages": "vite build --base=/Tantra-Yoga/",
     "preview": "vite preview",
     "test": "vitest run",
-    "balance": "node --experimental-loader ./scripts/aliases.mjs scripts/balance.mjs"
+    "balance": "node --experimental-loader ./scripts/aliases.mjs scripts/balance.mjs",
+    "field-balance": "node --experimental-loader ./scripts/aliases.mjs scripts/fieldBalance.mjs",
+    "audit:sanskrit": "node scripts/auditSanskrit.mjs",
+    "audit:glossary": "node scripts/auditGlossary.mjs",
+    "audit:state": "node --experimental-loader ./scripts/aliases.mjs scripts/auditState.mjs",
+    "audit:quotes": "node --experimental-loader ./scripts/aliases.mjs scripts/auditQuotes.mjs",
+    "audit:tdz": "node scripts/auditTdz.mjs",
+    "audit:content": "node --experimental-loader ./scripts/aliases.mjs scripts/auditObtainable.mjs",
+    "audit:impact": "node --experimental-loader ./scripts/aliases.mjs scripts/auditImpact.mjs"
   },
   "devDependencies": {
     "vite": "^7.0.0",

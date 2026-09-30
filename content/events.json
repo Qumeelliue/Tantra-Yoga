@@ -11,9 +11,19 @@
         "sub": "Сыграть кииртану. Уныние рассеется, и вы запомните этот якорь.",
         "kind": "practice",
         "effects": [
-          { "kind": "add_card", "cardId": "nama_kevalam" },
-          { "kind": "heal", "amount": 3 },
-          { "kind": "anchor", "situation": "УНЫНИЕ", "practice": "КИИРТАН" }
+          {
+            "kind": "add_card",
+            "cardId": "nama_kevalam"
+          },
+          {
+            "kind": "heal",
+            "amount": 3
+          },
+          {
+            "kind": "anchor",
+            "situation": "УНЫНИЕ",
+            "practice": "КИИРТАН"
+          }
         ]
       },
       {
@@ -21,8 +31,14 @@
         "sub": "Сжать зубы и перетерпеть. Это даст краткую силу, но гнев останется в колоде.",
         "kind": "strength",
         "effects": [
-          { "kind": "add_card", "cardId": "krodha" },
-          { "kind": "prana", "amount": 6 }
+          {
+            "kind": "add_card",
+            "cardId": "krodha"
+          },
+          {
+            "kind": "prana",
+            "amount": 6
+          }
         ]
       }
     ]
@@ -38,8 +54,14 @@
         "sub": "+15 Праны. Но беспокойство просочится в ум.",
         "kind": "strength",
         "effects": [
-          { "kind": "prana", "amount": 15 },
-          { "kind": "add_card", "cardId": "cinta" }
+          {
+            "kind": "prana",
+            "amount": 15
+          },
+          {
+            "kind": "add_card",
+            "cardId": "cinta"
+          }
         ]
       },
       {
@@ -47,9 +69,19 @@
         "sub": "Не брать лишнего. Апариграха дарит покой и знание.",
         "kind": "practice",
         "effects": [
-          { "kind": "guna", "amount": 2, "which": "s" },
-          { "kind": "prana", "amount": 2 },
-          { "kind": "knowledge", "amount": 1 }
+          {
+            "kind": "guna",
+            "amount": 2,
+            "which": "s"
+          },
+          {
+            "kind": "prana",
+            "amount": 2
+          },
+          {
+            "kind": "knowledge",
+            "amount": 1
+          }
         ]
       }
     ]
@@ -65,8 +97,15 @@
         "sub": "Служение исцеляет того, кто служит. Восстановите 6 ХП.",
         "kind": "practice",
         "effects": [
-          { "kind": "heal", "amount": 6 },
-          { "kind": "guna", "amount": 1, "which": "s" }
+          {
+            "kind": "heal",
+            "amount": 6
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "s"
+          }
         ]
       },
       {
@@ -88,8 +127,15 @@
         "sub": "Апариграха: не брать лишнего. +2 саттвы и +1 знание.",
         "kind": "practice",
         "effects": [
-          { "kind": "guna", "amount": 2, "which": "s" },
-          { "kind": "knowledge", "amount": 1 }
+          {
+            "kind": "guna",
+            "amount": 2,
+            "which": "s"
+          },
+          {
+            "kind": "knowledge",
+            "amount": 1
+          }
         ]
       },
       {
@@ -97,8 +143,14 @@
         "sub": "+15 Праны, но гордость проберётся в ум.",
         "kind": "strength",
         "effects": [
-          { "kind": "prana", "amount": 15 },
-          { "kind": "add_card", "cardId": "mada" }
+          {
+            "kind": "prana",
+            "amount": 15
+          },
+          {
+            "kind": "add_card",
+            "cardId": "mada"
+          }
         ]
       }
     ]
@@ -114,9 +166,18 @@
         "sub": "Знание — свет. Возьмите карту мантры «Ом» и восстановите 3 ХП.",
         "kind": "practice",
         "effects": [
-          { "kind": "add_card", "cardId": "om" },
-          { "kind": "heal", "amount": 3 },
-          { "kind": "knowledge", "amount": 1 }
+          {
+            "kind": "add_card",
+            "cardId": "om"
+          },
+          {
+            "kind": "heal",
+            "amount": 3
+          },
+          {
+            "kind": "knowledge",
+            "amount": 1
+          }
         ]
       },
       {
@@ -138,8 +199,15 @@
         "sub": "Якорь: УНЫНИЕ → КИИРТАН. +1 карта кииртана в колоду.",
         "kind": "practice",
         "effects": [
-          { "kind": "add_card", "cardId": "nama_kevalam" },
-          { "kind": "anchor", "situation": "УНЫНИЕ", "practice": "КИИРТАН" }
+          {
+            "kind": "add_card",
+            "cardId": "nama_kevalam"
+          },
+          {
+            "kind": "anchor",
+            "situation": "УНЫНИЕ",
+            "practice": "КИИРТАН"
+          }
         ]
       },
       {
@@ -161,8 +229,15 @@
         "sub": "Якорь: СТРАХ → ТАПАХ. Тапах входит в колоду — смелость рождается усилием.",
         "kind": "practice",
         "effects": [
-          { "kind": "add_card", "cardId": "tapah" },
-          { "kind": "anchor", "situation": "СТРАХ", "practice": "ТАПАХ" }
+          {
+            "kind": "add_card",
+            "cardId": "tapah"
+          },
+          {
+            "kind": "anchor",
+            "situation": "СТРАХ",
+            "practice": "ТАПАХ"
+          }
         ]
       },
       {
@@ -170,8 +245,14 @@
         "sub": "Страх остаётся оковом: Бхая в колоде, но +4 Праны за «осторожность».",
         "kind": "strength",
         "effects": [
-          { "kind": "add_card", "cardId": "bhaya" },
-          { "kind": "prana", "amount": 4 }
+          {
+            "kind": "add_card",
+            "cardId": "bhaya"
+          },
+          {
+            "kind": "prana",
+            "amount": 4
+          }
         ]
       }
     ]
@@ -187,9 +268,20 @@
         "sub": "Якорь: ЗЛОСЛОВИЕ → САТЬЯ. +2 саттвы и +1 знание.",
         "kind": "practice",
         "effects": [
-          { "kind": "guna", "amount": 2, "which": "s" },
-          { "kind": "knowledge", "amount": 1 },
-          { "kind": "anchor", "situation": "ЗЛОСЛОВИЕ", "practice": "САТЬЯ" }
+          {
+            "kind": "guna",
+            "amount": 2,
+            "which": "s"
+          },
+          {
+            "kind": "knowledge",
+            "amount": 1
+          },
+          {
+            "kind": "anchor",
+            "situation": "ЗЛОСЛОВИЕ",
+            "practice": "САТЬЯ"
+          }
         ]
       },
       {
@@ -197,7 +289,10 @@
         "sub": "Тишина не множит ложь: +3 Праны.",
         "kind": "strength",
         "effects": [
-          { "kind": "prana", "amount": 3 }
+          {
+            "kind": "prana",
+            "amount": 3
+          }
         ]
       }
     ]
@@ -213,7 +308,11 @@
         "sub": "Сыграйте 3 практики в следующем бою. За исполнение — редкая карта.",
         "kind": "practice",
         "effects": [
-          { "kind": "challenge", "rule": "practice_3", "rewardCard": "kevala_bhakti" }
+          {
+            "kind": "challenge",
+            "rule": "practice_3",
+            "rewardCard": "kevala_bhakti"
+          }
         ]
       },
       {
@@ -221,7 +320,194 @@
         "sub": "Не связывать себя обещанием. Смирение даёт +1 саттву.",
         "kind": "strength",
         "effects": [
-          { "kind": "guna", "amount": 1, "which": "s" }
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "s"
+          }
+        ]
+      }
+    ]
+  },
+  "greed": {
+    "id": "greed",
+    "name": "Жадность",
+    "glyph": "coin",
+    "text": "Прохожий шепчет: «у меня есть лишнее, у тебя — нет. Отдай своё, получишь больше». Соблазн честен: он действительно выгоден сейчас.",
+    "choices": [
+      {
+        "text": "Отойти",
+        "sub": "Апариграха: не взять лишнего. +2 саттвы.",
+        "kind": "practice",
+        "effects": [
+          {
+            "kind": "guna",
+            "amount": 2,
+            "which": "s"
+          }
+        ]
+      },
+      {
+        "text": "Взять",
+        "sub": "+18 Праны, но жадность сядет в колоду и будет требовать сброса.",
+        "kind": "strength",
+        "effects": [
+          {
+            "kind": "prana",
+            "amount": 18
+          },
+          {
+            "kind": "add_card",
+            "cardId": "lobha"
+          }
+        ]
+      }
+    ]
+  },
+  "envy": {
+    "id": "envy",
+    "name": "Зависть",
+    "glyph": "eye",
+    "text": "Тот, кто идёт впереди, оглядывается. Зависть шепчет: «у него больше, значит, твоё — не то». И почти всегда это правда.",
+    "choices": [
+      {
+        "text": "Пойти своим путём",
+        "sub": "Саттва: удержаться от сравнения. +2 саттвы.",
+        "kind": "practice",
+        "effects": [
+          {
+            "kind": "guna",
+            "amount": 2,
+            "which": "s"
+          }
+        ]
+      },
+      {
+        "text": "Смерить",
+        "sub": "+16 Праны, но зависть в колоде.",
+        "kind": "strength",
+        "effects": [
+          {
+            "kind": "prana",
+            "amount": 16
+          },
+          {
+            "kind": "add_card",
+            "cardId": "matsarya"
+          }
+        ]
+      }
+    ]
+  },
+  "hatred": {
+    "id": "hatred",
+    "name": "Ненависть",
+    "glyph": "flame",
+    "text": "Кто-то сделал тебе больно. Можно запомнить и ответить, можно запомнить и ждать. Оба ответа — одинаково верные и одинаково дорогие.",
+    "choices": [
+      {
+        "text": "Отпустить",
+        "sub": "Шауча и сатья: очистить ум от остатка обиды. +2 саттвы.",
+        "kind": "practice",
+        "effects": [
+          {
+            "kind": "guna",
+            "amount": 2,
+            "which": "s"
+          }
+        ]
+      },
+      {
+        "text": "Ответить",
+        "sub": "+20 Праны, но ненависть в колоде.",
+        "kind": "strength",
+        "effects": [
+          {
+            "kind": "prana",
+            "amount": 20
+          },
+          {
+            "kind": "add_card",
+            "cardId": "dvesha"
+          }
+        ]
+      }
+    ]
+  },
+  "doubt": {
+    "id": "doubt",
+    "name": "Сомнение",
+    "glyph": "question",
+    "text": "«А правильно ли я иду?» — вопрос, который не отпускает. Он не звучит громко, но выедает время, которого и так мало.",
+    "choices": [
+      {
+        "text": "Перечитать практику",
+        "sub": "Свадхьяя: вернуться к источнику. +1 знание и +2 саттвы.",
+        "kind": "practice",
+        "effects": [
+          {
+            "kind": "knowledge",
+            "amount": 1
+          },
+          {
+            "kind": "guna",
+            "amount": 2,
+            "which": "s"
+          }
+        ]
+      },
+      {
+        "text": "Не уверен — но иду",
+        "sub": "+12 Праны, но сомнение будет обесценивать твои стаки.",
+        "kind": "strength",
+        "effects": [
+          {
+            "kind": "prana",
+            "amount": 12
+          },
+          {
+            "kind": "add_card",
+            "cardId": "samshaya"
+          }
+        ]
+      }
+    ]
+  },
+  "drowsiness": {
+    "id": "drowsiness",
+    "name": "Дремота",
+    "glyph": "moon",
+    "text": "Сон находит в самый неподходящий час. Ты ещё дышишь, но уже не здесь — ум ушёл бродить, а тело осталось сидеть.",
+    "choices": [
+      {
+        "text": "Встать и подышать",
+        "sub": "Пранаяма: вернуть дыхание себе. +6 Праны и +1 саттвы.",
+        "kind": "practice",
+        "effects": [
+          {
+            "kind": "prana",
+            "amount": 6
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "s"
+          }
+        ]
+      },
+      {
+        "text": "Спать",
+        "sub": "Восстановить 6 жизни, но дремота в колоде: карты будут уходить из руки.",
+        "kind": "strength",
+        "effects": [
+          {
+            "kind": "heal",
+            "amount": 6
+          },
+          {
+            "kind": "add_card",
+            "cardId": "alasya"
+          }
         ]
       }
     ]

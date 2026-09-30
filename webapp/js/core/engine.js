@@ -30,6 +30,10 @@ export const DEFAULT_OPTIONS = {
   // Владыки чакр «сопротивляются» спокойствию (§9.4): каждый ход босса снимает
   // накопленный calm — успокоить владыку труднее, чем обычную окову.
   bossCalmDecay: 2,
+  // Дары чакры (§16.2, Hades-style boons): после боя игрок выбирает 1 из 3 даров.
+  // Дары комбинируются между собой — каждый забег уникален.
+  boons: [],
+  boonDefs: {},
 }
 
 const PRAXIS_TYPES = new Set(['practice', 'mantra', 'kiirtana', 'seva'])
@@ -45,6 +49,7 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rel
   shuffle(draw, rand)
 
   const relicMods = aggregateRelics(relics, relicDefs)
+  const boonMods = aggregateBoons(o.boons, o.boonDefs)
   const synergies = computeSynergies(deck, cards)
 
   const state = {
@@ -52,6 +57,7 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rel
     cards,
     enemyDefs,
     relicMods,
+    boonMods,
     synergies,
     player: {
       hp: o.playerHp,
@@ -131,8 +137,13 @@ export function createCombat({ deck, enemies, relics = [], cards, enemyDefs, rel
   // Стартовый блок (Шаоча-майнджуса) и память (Дхрувасмрити) — после startPlayerTurn,
   // иначе он их обнулит (блок) или сотрёт (peek)
   if (relicMods.combatStartBlock) state.player.block += relicMods.combatStartBlock
-  // Ветвь кшатрии «Щит смелости» (§12.1): мужество встаёт перед первым ударом.
+  // Ветвь кшatriи «Щит смелости» (§12.1): мужество встаёт перед первым ударом.
   if (branch(state, 'kshatriya') === 'shield') state.player.block += 3
+  // Дар Каруны (§16.2): сострадание защищает — +2 блока в начале боя
+  // за каждого успокоенного врага в предыдущих боях.
+  if (boonMods.karunaBlock > 0 && state.pacified > 0) {
+    state.player.block += boonMods.karunaBlock * state.pacified
+  }
   // Видение випры (§12.1): зрелое знание (ур.2+) читает верх колоды в начале боя —
   // как реликвия Дхрувасмрити, но как навык ума.
   const vipraSeer = branch(state, 'vipra') === 'seer'
@@ -233,6 +244,45 @@ export function aggregateRelics(relics, relicDefs = {}) {
   return m
 }
 
+// Агрегация даров чакры (§16.2, Hades-style boons). Декларативно: эффекты описаны
+// в content/boons.json (`effects`), движок лишь применяет их — новые дары
+// добавляются в контент, а не в цепочку if.
+export function aggregateBoons(boons, boonDefs = {}) {
+  const m = {
+    ahimsaBonus: 0,
+    kiirtanaSattva: 0,
+    mantraCostMod: 0,
+    pranayamaEnergy: 0,
+    tapahDamage: 0,
+    sevaHeal: 0,
+    svadhyayaDraw: 0,
+    aparigrahaPrana: 0,
+    satyaIntents: false,
+    karunaBlock: 0,
+  }
+  for (const id of boons || []) {
+    const def = boonDefs[id]
+    if (!def) continue
+    for (const fx of def.effects || []) {
+      const amt = fx.amount || 0
+      switch (fx.kind) {
+        case 'mod_boon_ahimsa': m.ahimsaBonus += amt; break
+        case 'mod_boon_kiirtana': m.kiirtanaSattva += amt; break
+        case 'mod_boon_mantra': m.mantraCostMod += amt; break
+        case 'mod_boon_pranayama': m.pranayamaEnergy += amt; break
+        case 'mod_boon_tapah': m.tapahDamage += amt; break
+        case 'mod_boon_seva': m.sevaHeal += amt; break
+        case 'mod_boon_svadhyaya': m.svadhyayaDraw += amt; break
+        case 'mod_boon_aparigraha': m.aparigrahaPrana += amt; break
+        case 'mod_boon_satya': m.satyaIntents = true; break
+        case 'mod_boon_karuna': m.karunaBlock += amt; break
+        default: break
+      }
+    }
+  }
+  return m
+}
+
 // Синергии-«потоки» (§8.5): 3+ карты одной «школы» в колоде открывают пассивный
 // бонус на забег. Колода = ум: собирая практики, игрок «становится» ими.
 export function computeSynergies(deck, cards) {
@@ -288,7 +338,9 @@ export function startPlayerTurn(state) {
 
   // Самадхи-ландшафт (идея №19): «мост силы» — ясность даёт дополнительную энергию.
   const powerBonus = p.inSamadhi && state.samadhiFocus === 'power' ? 1 : 0
-  p.energy = p.maxEnergy + (p.inSamadhi ? 1 : 0) + powerBonus
+  // Дар Пранаямы (§16.2): дыхание даёт силу — +1 энергия в первом ходу боя.
+  const pranayamaBonus = state.boonMods.pranayamaEnergy > 0 && state.turn === 1 ? state.boonMods.pranayamaEnergy : 0
+  p.energy = p.maxEnergy + (p.inSamadhi ? 1 : 0) + powerBonus + pranayamaBonus
 
   // Ветвь випры «Ясность» (§12.1): разум удерживает верх колоды постоянно.
   const clarityPeek = branch(state, 'vipra') === 'clarity'
@@ -301,6 +353,10 @@ export function startPlayerTurn(state) {
   const tamasPenalty = p.imbalance === 't' && !state.relicMods.tamasImmune && lvl(state, 'kshatriya') < 1
   // Дремота (drowsy): ум «спит» — рука на 1 карту меньше (тикает в конце хода, §9.1)
   let drawCount = state.o.drawPerTurn + (tamasPenalty ? -1 : 0) - (p.statuses.drowsy > 0 ? 1 : 0)
+  // Дар Свадхьи (§16.2): самоизучение открывает — +1 карта в ход, когда в колоде 3+ карты.
+  if (state.boonMods.svadhyayaDraw > 0 && state.piles.draw.length >= 3) {
+    drawCount += state.boonMods.svadhyayaDraw
+  }
   if (drawCount < 0) drawCount = 0
   drawCards(state, drawCount)
 
@@ -330,6 +386,33 @@ export function playCard(state, handIndex, targetEnemy = 0) {
     events,
   }
   applyEffects(state, card.effects, ctx)
+
+  // Дары чакры (§16.2): пассивные эффекты от выбранных после боёв даров.
+  // Дар Ахимсы: +1 к успокоению за каждую ахимсу-карту.
+  if (state.boonMods.ahimsaBonus > 0 && (card.id === 'ahimsa' || (card.tags && card.tags.includes('pacify')))) {
+    const pasha = state.enemies[ctx.targetEnemy]
+    if (pasha && !pasha.dead && !pasha.pacified) {
+      pasha.calm += state.boonMods.ahimsaBonus
+      events.push({ type: 'pacify_gain', enemy: ctx.targetEnemy, calm: pasha.calm })
+      if (pacifyReady(state, pasha)) {
+        pacifyEnemy(state, ctx.targetEnemy, events)
+      }
+    }
+  }
+  // Дар Кииртана: +1 саттва за каждую кииртан-карту.
+  if (state.boonMods.kiirtanaSattva > 0 && card.type === 'kiirtana') {
+    applyGuna(state, { s: state.boonMods.kiirtanaSattva }, 'player', events)
+    recomputeGunas(state)
+  }
+  // Дар Тапаха: +1 к урону от практик (Яма/Нияма).
+  if (state.boonMods.tapahDamage > 0 && card.type === 'practice') {
+    damageEnemy(state, ctx.targetEnemy, state.boonMods.tapahDamage, ctx)
+  }
+  // Дар Севы: +1 к исцелению от карт служения.
+  if (state.boonMods.sevaHeal > 0 && card.type === 'seva') {
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + state.boonMods.sevaHeal)
+    events.push({ type: 'heal', target: 'player', amount: state.boonMods.sevaHeal })
+  }
 
   // Гуна-эффект карты
   applyGuna(state, card.guna, 'player', events)
@@ -585,18 +668,23 @@ const EFFECTS = {
     }
   },
   status(state, fx, ctx) {
+    // Снятие статуса (отрицательный amount) не должно уводить счётчик в минус:
+    // «Брахма Крипахи Кевалам» смывает слабость и дремоту (content/cards.json).
+    const add = (bag, key) => {
+      bag[key] = Math.max(0, (bag[key] || 0) + fx.amount)
+    }
     if (fx.target === 'all_enemies') {
       for (const e of state.enemies) {
         if (e.dead || e.pacified) continue
-        e.statuses[fx.status] = (e.statuses[fx.status] || 0) + fx.amount
+        add(e.statuses, fx.status)
       }
       ctx.events.push({ type: 'status', target: 'enemy', status: fx.status, amount: fx.amount })
     } else if (fx.target === 'player') {
-      state.player.statuses[fx.status] = (state.player.statuses[fx.status] || 0) + fx.amount
+      add(state.player.statuses, fx.status)
       ctx.events.push({ type: 'status', target: 'player', status: fx.status, amount: fx.amount })
     } else if (ctx.source === 'player') {
       const e = state.enemies[ctx.targetEnemy]
-      e.statuses[fx.status] = (e.statuses[fx.status] || 0) + fx.amount
+      if (e) add(e.statuses, fx.status)
       ctx.events.push({ type: 'status', target: 'enemy', status: fx.status, amount: fx.amount })
     }
   },
@@ -953,6 +1041,10 @@ export function effectiveCost(state, card) {
     cost += state.relicMods.practiceCostMod
     // Поток Ямы (§8.5): 4+ практик в колоде — дисциплина удешевляет практики
     if (state.synergies.yama && card.type === 'practice') cost -= 1
+  }
+  // Дар Мантры (§16.2): стоимость всех мантр −1 энергия (минимум 0)
+  if (card.type === 'mantra' && state.boonMods.mantraCostMod > 0) {
+    cost -= state.boonMods.mantraCostMod
   }
   return Math.max(0, cost)
 }

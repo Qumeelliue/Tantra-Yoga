@@ -8,11 +8,17 @@
     "cost": 0,
     "desc": "Мусор. Беспокойство, которое ничего не даёт.",
     "effects": [],
-    "guna": { "s": 0, "r": 0, "t": 1 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 1
+    },
     "rarity": "start",
     "starter": 4,
     "quoteId": "cinta",
-    "tags": ["curse"]
+    "tags": [
+      "curse"
+    ]
   },
   "alasya": {
     "id": "alasya",
@@ -21,12 +27,23 @@
     "type": "vritti",
     "cost": 1,
     "desc": "Лень. Пропуск 1 энергии.",
-    "effects": [{ "kind": "energy", "amount": -1 }],
-    "guna": { "s": 0, "r": 0, "t": 1 },
+    "effects": [
+      {
+        "kind": "energy",
+        "amount": -1
+      }
+    ],
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 1
+    },
     "rarity": "start",
     "starter": 2,
     "quoteId": "nidra",
-    "tags": ["vritti"]
+    "tags": [
+      "vritti"
+    ]
   },
   "bhaya": {
     "id": "bhaya",
@@ -35,12 +52,24 @@
     "type": "vritti",
     "cost": 0,
     "desc": "Страх. −1 к вашей силе на этот бой.",
-    "effects": [{ "kind": "strength", "amount": -1, "target": "player" }],
-    "guna": { "s": 0, "r": 0, "t": 1 },
+    "effects": [
+      {
+        "kind": "strength",
+        "amount": -1,
+        "target": "player"
+      }
+    ],
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 1
+    },
     "rarity": "start",
     "starter": 2,
     "quoteId": "bhaya",
-    "tags": ["vritti"]
+    "tags": [
+      "vritti"
+    ]
   },
   "krodha": {
     "id": "krodha",
@@ -49,12 +78,24 @@
     "type": "vritti",
     "cost": 1,
     "desc": "Гнев. 4 урона, но −1 саттва.",
-    "effects": [{ "kind": "damage", "amount": 4 }],
-    "guna": { "s": -1, "r": 1, "t": 0 },
+    "effects": [
+      {
+        "kind": "damage",
+        "amount": 4
+      }
+    ],
+    "guna": {
+      "s": -1,
+      "r": 1,
+      "t": 0
+    },
     "rarity": "start",
     "starter": 2,
     "quoteId": "krodha",
-    "tags": ["vritti", "attack"]
+    "tags": [
+      "vritti",
+      "attack"
+    ]
   },
   "lobha": {
     "id": "lobha",
@@ -63,12 +104,23 @@
     "type": "vritti",
     "cost": 0,
     "desc": "Жадность. +1 карта, но −1 саттва.",
-    "effects": [{ "kind": "draw", "amount": 1 }],
-    "guna": { "s": -1, "r": 1, "t": 0 },
+    "effects": [
+      {
+        "kind": "draw",
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": -1,
+      "r": 1,
+      "t": 0
+    },
     "rarity": "start",
     "starter": 2,
     "quoteId": "lobha",
-    "tags": ["vritti"]
+    "tags": [
+      "vritti"
+    ]
   },
   "first_effort": {
     "id": "first_effort",
@@ -77,12 +129,29 @@
     "type": "practice",
     "cost": 1,
     "desc": "3 урона и 4 блока.",
-    "effects": [{ "kind": "damage", "amount": 3 }, { "kind": "block", "amount": 4 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "damage",
+        "amount": 3
+      },
+      {
+        "kind": "block",
+        "amount": 4
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "start",
     "starter": 2,
     "quoteId": "tapah",
-    "tags": ["practice", "attack", "defend"]
+    "tags": [
+      "practice",
+      "attack",
+      "defend"
+    ]
   },
   "ahimsa": {
     "id": "ahimsa",
@@ -91,12 +160,29 @@
     "type": "practice",
     "cost": 1,
     "desc": "2 урона. +1 успокоение: при HP врага ≤ 50% и полном успокоении враг освобождается.",
-    "effects": [{ "kind": "damage", "amount": 2 }, { "kind": "pacify", "amount": 1 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "damage",
+        "amount": 2
+      },
+      {
+        "kind": "pacify",
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "starter": 2,
     "quoteId": "ahimsa",
-    "tags": ["practice", "attack", "pacify"]
+    "tags": [
+      "practice",
+      "attack",
+      "pacify"
+    ]
   },
   "satya": {
     "id": "satya",
@@ -105,11 +191,24 @@
     "type": "practice",
     "cost": 0,
     "desc": "Враг ослаблен: −2 к атаке на 1 ход.",
-    "effects": [{ "kind": "status", "status": "weak", "amount": 1, "target": "enemy" }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "status",
+        "status": "weak",
+        "amount": 1,
+        "target": "enemy"
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "satya",
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "asteya": {
     "id": "asteya",
@@ -118,11 +217,26 @@
     "type": "practice",
     "cost": 1,
     "desc": "Честный обмен: +1 энергия и +1 карта.",
-    "effects": [{ "kind": "energy", "amount": 1 }, { "kind": "draw", "amount": 1 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "energy",
+        "amount": 1
+      },
+      {
+        "kind": "draw",
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "asteya",
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "brahmacarya": {
     "id": "brahmacarya",
@@ -132,13 +246,26 @@
     "cost": 0,
     "desc": "Контроль чувств: сбросьте 1 вртти-карту из руки, возьмите 1 карту.",
     "effects": [
-      { "kind": "discardFromHand", "filter": "vritti", "amount": 1 },
-      { "kind": "draw", "amount": 1 }
+      {
+        "kind": "discardFromHand",
+        "filter": "vritti",
+        "amount": 1
+      },
+      {
+        "kind": "draw",
+        "amount": 1
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "brahmacarya",
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "aparigraha": {
     "id": "aparigraha",
@@ -147,12 +274,28 @@
     "type": "practice",
     "cost": 0,
     "desc": "Отпускание: +2 саттвы и 2 блока. Карта сжигается.",
-    "effects": [{ "kind": "guna", "amount": 2, "which": "s" }, { "kind": "block", "amount": 2 }],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      },
+      {
+        "kind": "block",
+        "amount": 2
+      }
+    ],
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "aparigraha",
     "exhaust": true,
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "shaoca": {
     "id": "shaoca",
@@ -162,13 +305,27 @@
     "cost": 1,
     "desc": "Очистка: сожгите 1 мусорную карту из колоды. +3 блока.",
     "effects": [
-      { "kind": "removeFromDeck", "filter": "curse", "amount": 1 },
-      { "kind": "block", "amount": 3 }
+      {
+        "kind": "removeFromDeck",
+        "filter": "curse",
+        "amount": 1
+      },
+      {
+        "kind": "block",
+        "amount": 3
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "shaoca",
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   },
   "santosa": {
     "id": "santosa",
@@ -177,11 +334,23 @@
     "type": "practice",
     "cost": 1,
     "desc": "Довольство: +4 блока.",
-    "effects": [{ "kind": "block", "amount": 4 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "block",
+        "amount": 4
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "santosa",
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   },
   "tapah": {
     "id": "tapah",
@@ -190,11 +359,23 @@
     "type": "practice",
     "cost": 1,
     "desc": "Усилие горит: 6 урона, но +1 раджас.",
-    "effects": [{ "kind": "damage", "amount": 6 }],
-    "guna": { "s": 0, "r": 1, "t": 0 },
+    "effects": [
+      {
+        "kind": "damage",
+        "amount": 6
+      }
+    ],
+    "guna": {
+      "s": 0,
+      "r": 1,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "tapah",
-    "tags": ["practice", "attack"]
+    "tags": [
+      "practice",
+      "attack"
+    ]
   },
   "svadhyaya": {
     "id": "svadhyaya",
@@ -203,11 +384,26 @@
     "type": "practice",
     "cost": 1,
     "desc": "Самоизучение: посмотрите 3 верхние карты колоды, затем возьмите 1.",
-    "effects": [{ "kind": "scry", "amount": 3 }, { "kind": "draw", "amount": 1 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "scry",
+        "amount": 3
+      },
+      {
+        "kind": "draw",
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "svadhyaya",
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "ishvara_pranidhana": {
     "id": "ishvara_pranidhana",
@@ -216,40 +412,83 @@
     "type": "practice",
     "cost": 1,
     "desc": "Вверение: сбросьте весь перекос гун к балансу. +2 блока.",
-    "effects": [{ "kind": "balance", "amount": 1 }, { "kind": "block", "amount": 2 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "balance",
+        "amount": 1
+      },
+      {
+        "kind": "block",
+        "amount": 2
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "ishvara_pranidhana",
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   },
   "nama_kevalam": {
     "id": "nama_kevalam",
-    "name": "Нама Кевалам",
-    "sanskrit": "नाम केवलम्",
+    "name": "Баба Нам Кевалам",
+    "sanskrit": "बाबा नाम केवलम्",
     "type": "kiirtana",
     "cost": 1,
     "desc": "Кииртан: +2 саттвы, все враги −1 агрессия на 2 хода.",
     "effects": [
-      { "kind": "guna", "amount": 2, "which": "s" },
-      { "kind": "status", "status": "weak", "amount": 2, "target": "all_enemies" }
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      },
+      {
+        "kind": "status",
+        "status": "weak",
+        "amount": 2,
+        "target": "all_enemies"
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "kiirtana",
-    "tags": ["kiirtana"]
+    "tags": [
+      "kiirtana"
+    ]
   },
   "om": {
     "id": "om",
     "name": "Ом",
     "sanskrit": "ॐ",
-    "type": "mantra",
+    "type": "sound",
     "cost": 0,
-    "desc": "Семя-звук: сожгите 1 мусорную карту из колоды.",
-    "effects": [{ "kind": "removeFromDeck", "filter": "curse", "amount": 1 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "desc": "Пранава — семя космоса, звук для слушания. Сожги 1 мусорную карту из колоды.",
+    "effects": [
+      {
+        "kind": "removeFromDeck",
+        "filter": "curse",
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "omkara",
-    "tags": ["mantra"]
+    "tags": [
+      "sound"
+    ]
   },
   "bija": {
     "id": "bija",
@@ -258,11 +497,22 @@
     "type": "mantra",
     "cost": 0,
     "desc": "Акустический корень: +1 энергия.",
-    "effects": [{ "kind": "energy", "amount": 1 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "energy",
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "omkara",
-    "tags": ["mantra"]
+    "tags": [
+      "mantra"
+    ]
   },
   "seva": {
     "id": "seva",
@@ -271,24 +521,181 @@
     "type": "seva",
     "cost": 1,
     "desc": "Служение: восстановите 4 ХП.",
-    "effects": [{ "kind": "heal", "amount": 4 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "heal",
+        "amount": 4
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "seva",
-    "tags": ["seva"]
+    "tags": [
+      "seva"
+    ]
   },
-  "bavanam_kevalam": {
-    "id": "bavanam_kevalam",
-    "name": "Баванам Кевалам",
-    "sanskrit": "भवनम् केवलम्",
+  "seva_shudrocita": {
+    "id": "seva_shudrocita",
+    "name": "Шудрочита сева",
+    "sanskrit": "शूद्रोचित सेवा",
+    "type": "seva",
+    "cost": 1,
+    "desc": "Служение телом: помочь больному, накормить, обогреть. Даёт мало силы за ход, но снимает дремоту и слабость.",
+    "effects": [
+      {
+        "kind": "heal",
+        "amount": 3
+      },
+      {
+        "kind": "status",
+        "status": "drowsy",
+        "amount": -1,
+        "target": "player"
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
+    "rarity": "common",
+    "quoteId": "seva",
+    "tags": [
+      "seva",
+      "shudrocita"
+    ]
+  },
+  "seva_ksatriyocita": {
+    "id": "seva_ksatriyocita",
+    "name": "Кшатрийочита сева",
+    "sanskrit": "क्षत्र्योचित सेवा",
+    "type": "seva",
+    "cost": 1,
+    "desc": "Служение защитой: встать между слабым и опасностью. Даёт много блока.",
+    "effects": [
+      {
+        "kind": "block",
+        "amount": 7
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 1,
+      "t": 0
+    },
+    "rarity": "uncommon",
+    "quoteId": "seva",
+    "tags": [
+      "seva",
+      "ksatriyocita"
+    ]
+  },
+  "seva_vaeshyocita": {
+    "id": "seva_vaeshyocita",
+    "name": "Вайшйочита сева",
+    "sanskrit": "वैश्योचित सेवा",
+    "type": "seva",
+    "cost": 1,
+    "desc": "Служение нужде: снять голод, дать то, что нужно. Даёт силу и карту в руку.",
+    "effects": [
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      },
+      {
+        "kind": "draw",
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
+    "rarity": "uncommon",
+    "quoteId": "seva",
+    "tags": [
+      "seva",
+      "vaeshyocita"
+    ]
+  },
+  "seva_viprocita": {
+    "id": "seva_viprocita",
+    "name": "Випрочита сева",
+    "sanskrit": "विप्रोचित सेवा",
+    "type": "seva",
+    "cost": 1,
+    "desc": "Служение знанием: научить, объяснить, показать истину. Временные плоды первых трёх сев — здесь остаются навсегда: +3 саттвы и сжигание одной оковы из руки.",
+    "effects": [
+      {
+        "kind": "guna",
+        "amount": 3,
+        "which": "s"
+      },
+      {
+        "kind": "exhaustFromHand",
+        "filter": [
+          "vritti",
+          "curse"
+        ],
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": 2,
+      "r": 0,
+      "t": 0
+    },
+    "rarity": "rare",
+    "quoteId": "seva",
+    "tags": [
+      "seva",
+      "viprocita",
+      "defend"
+    ]
+  },
+  "brahma_krpahi_kevalam": {
+    "id": "brahma_krpahi_kevalam",
+    "name": "Брахма Крипахи Кевалам",
+    "sanskrit": "ब्रह्म कृपाहि केवलम्",
     "type": "kiirtana",
     "cost": 1,
-    "desc": "Поле единства: все враги слабеют (−2 атаки) на 2 хода.",
-    "effects": [{ "kind": "status", "status": "weak", "amount": 2, "target": "all_enemies" }],
-    "guna": { "s": 2, "r": 0, "t": 0 },
+    "desc": "Милость — как дождь. Поёт мантра — и тебя омывает: +3 саттвы, «зонт тщеславия» убран — слабость и дремота смыты.",
+    "effects": [
+      {
+        "kind": "guna",
+        "amount": 3,
+        "which": "s"
+      },
+      {
+        "kind": "status",
+        "status": "weak",
+        "amount": -1,
+        "target": "player"
+      },
+      {
+        "kind": "status",
+        "status": "drowsy",
+        "amount": -1,
+        "target": "player"
+      }
+    ],
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "rare",
-    "quoteId": "ekatva",
-    "tags": ["kiirtana", "defend"]
+    "quoteId": "krpa",
+    "tags": [
+      "kiirtana",
+      "defend"
+    ]
   },
   "guru_mantra": {
     "id": "guru_mantra",
@@ -298,13 +705,30 @@
     "cost": 1,
     "desc": "Защита: +6 блока. Сожгите 1 карту-овку или мусор из руки.",
     "effects": [
-      { "kind": "block", "amount": 6 },
-      { "kind": "exhaustFromHand", "filter": ["vritti", "curse"], "amount": 1 }
+      {
+        "kind": "block",
+        "amount": 6
+      },
+      {
+        "kind": "exhaustFromHand",
+        "filter": [
+          "vritti",
+          "curse"
+        ],
+        "amount": 1
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "rare",
     "quoteId": "guru",
-    "tags": ["mantra", "defend"]
+    "tags": [
+      "mantra",
+      "defend"
+    ]
   },
   "annadana": {
     "id": "annadana",
@@ -314,13 +738,25 @@
     "cost": 1,
     "desc": "Кормление: восстановите 3 ХП и возьмите 1 карту.",
     "effects": [
-      { "kind": "heal", "amount": 3 },
-      { "kind": "draw", "amount": 1 }
+      {
+        "kind": "heal",
+        "amount": 3
+      },
+      {
+        "kind": "draw",
+        "amount": 1
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "seva",
-    "tags": ["seva"]
+    "tags": [
+      "seva"
+    ]
   },
   "prasad": {
     "id": "prasad",
@@ -330,13 +766,27 @@
     "cost": 1,
     "desc": "Дар: превратите 1 карту-овку в руке в +2 саттвы.",
     "effects": [
-      { "kind": "exhaustFromHand", "filter": "vritti", "amount": 1 },
-      { "kind": "guna", "amount": 2, "which": "s" }
+      {
+        "kind": "exhaustFromHand",
+        "filter": "vritti",
+        "amount": 1
+      },
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "prasad",
-    "tags": ["seva"]
+    "tags": [
+      "seva"
+    ]
   },
   "bhajan": {
     "id": "bhajan",
@@ -346,13 +796,27 @@
     "cost": 1,
     "desc": "Пение: +2 саттвы и +1 сила на этот бой.",
     "effects": [
-      { "kind": "guna", "amount": 2, "which": "s" },
-      { "kind": "strength", "amount": 1, "target": "player" }
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      },
+      {
+        "kind": "strength",
+        "amount": 1,
+        "target": "player"
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "kiirtana",
-    "tags": ["kiirtana"]
+    "tags": [
+      "kiirtana"
+    ]
   },
   "mada": {
     "id": "mada",
@@ -361,11 +825,22 @@
     "type": "vritti",
     "cost": 1,
     "desc": "Гордость. Пропуск 1 энергии.",
-    "effects": [{ "kind": "energy", "amount": -1 }],
-    "guna": { "s": 0, "r": 0, "t": 1 },
+    "effects": [
+      {
+        "kind": "energy",
+        "amount": -1
+      }
+    ],
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 1
+    },
     "rarity": "start",
     "quoteId": "mada",
-    "tags": ["vritti"]
+    "tags": [
+      "vritti"
+    ]
   },
   "matsarya": {
     "id": "matsarya",
@@ -374,11 +849,22 @@
     "type": "vritti",
     "cost": 1,
     "desc": "Зависть. Сбросьте случайную карту из руки.",
-    "effects": [{ "kind": "discardRandomFromHand", "amount": 1 }],
-    "guna": { "s": -1, "r": 1, "t": 0 },
+    "effects": [
+      {
+        "kind": "discardRandomFromHand",
+        "amount": 1
+      }
+    ],
+    "guna": {
+      "s": -1,
+      "r": 1,
+      "t": 0
+    },
     "rarity": "start",
     "quoteId": "matsarya",
-    "tags": ["vritti"]
+    "tags": [
+      "vritti"
+    ]
   },
   "dvesha": {
     "id": "dvesha",
@@ -388,27 +874,57 @@
     "cost": 1,
     "desc": "Ненависть. 5 урона, но −1 саттва и враг получает силу.",
     "effects": [
-      { "kind": "damage", "amount": 5 },
-      { "kind": "guna", "amount": -1, "which": "s" },
-      { "kind": "strength", "amount": 1, "target": "enemy" }
+      {
+        "kind": "damage",
+        "amount": 5
+      },
+      {
+        "kind": "guna",
+        "amount": -1,
+        "which": "s"
+      },
+      {
+        "kind": "strength",
+        "amount": 1,
+        "target": "enemy"
+      }
     ],
-    "guna": { "s": 0, "r": 1, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 1,
+      "t": 0
+    },
     "rarity": "start",
     "quoteId": "dvesha",
-    "tags": ["vritti", "attack"]
+    "tags": [
+      "vritti",
+      "attack"
+    ]
   },
   "samshaya": {
     "id": "samshaya",
-    "name": "Самшая",
+    "name": "Шаунка",
     "sanskrit": "संशय",
     "type": "vritti",
     "cost": 0,
     "desc": "Сомнение. Враги сильнее: −1 к вашей силе.",
-    "effects": [{ "kind": "strength", "amount": -1, "target": "player" }],
-    "guna": { "s": 0, "r": 0, "t": 1 },
+    "effects": [
+      {
+        "kind": "strength",
+        "amount": -1,
+        "target": "player"
+      }
+    ],
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 1
+    },
     "rarity": "start",
     "quoteId": "samshaya",
-    "tags": ["vritti"]
+    "tags": [
+      "vritti"
+    ]
   },
   "pranayama": {
     "id": "pranayama",
@@ -418,13 +934,26 @@
     "cost": 1,
     "desc": "Дыхание: +2 энергии и +2 блока.",
     "effects": [
-      { "kind": "energy", "amount": 2 },
-      { "kind": "block", "amount": 2 }
+      {
+        "kind": "energy",
+        "amount": 2
+      },
+      {
+        "kind": "block",
+        "amount": 2
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "pranayama",
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   },
   "dhyana": {
     "id": "dhyana",
@@ -434,14 +963,30 @@
     "cost": 1,
     "desc": "Созерцание: посмотрите 2 верхние карты, возьмите 1, +2 саттвы.",
     "effects": [
-      { "kind": "scry", "amount": 2 },
-      { "kind": "draw", "amount": 1 },
-      { "kind": "guna", "amount": 2, "which": "s" }
+      {
+        "kind": "scry",
+        "amount": 2
+      },
+      {
+        "kind": "draw",
+        "amount": 1
+      },
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "dhyana",
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "satsaunga": {
     "id": "satsaunga",
@@ -451,14 +996,31 @@
     "cost": 1,
     "desc": "Благое сообщество: +1 карта, +1 сила, +1 саттва.",
     "effects": [
-      { "kind": "draw", "amount": 1 },
-      { "kind": "strength", "amount": 1, "target": "player" },
-      { "kind": "guna", "amount": 1, "which": "s" }
+      {
+        "kind": "draw",
+        "amount": 1
+      },
+      {
+        "kind": "strength",
+        "amount": 1,
+        "target": "player"
+      },
+      {
+        "kind": "guna",
+        "amount": 1,
+        "which": "s"
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "satsaunga",
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "madhuvidya": {
     "id": "madhuvidya",
@@ -468,13 +1030,27 @@
     "cost": 1,
     "desc": "Знание-мёд: 4 блока и +2 саттвы.",
     "effects": [
-      { "kind": "block", "amount": 4 },
-      { "kind": "guna", "amount": 2, "which": "s" }
+      {
+        "kind": "block",
+        "amount": 4
+      },
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "pranayama",
-    "tags": ["mantra", "defend"]
+    "tags": [
+      "mantra",
+      "defend"
+    ]
   },
   "samyama": {
     "id": "samyama",
@@ -483,11 +1059,23 @@
     "type": "mantra",
     "cost": 2,
     "desc": "Правильное использование: 8 урона.",
-    "effects": [{ "kind": "damage", "amount": 8 }],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "effects": [
+      {
+        "kind": "damage",
+        "amount": 8
+      }
+    ],
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "rare",
     "quoteId": "dhyana",
-    "tags": ["mantra", "attack"]
+    "tags": [
+      "mantra",
+      "attack"
+    ]
   },
   "nitya_anitya": {
     "id": "nitya_anitya",
@@ -497,13 +1085,26 @@
     "cost": 1,
     "desc": "Различение вечного и невечного: 5 блоков, посмотрите 1 верхнюю карту.",
     "effects": [
-      { "kind": "block", "amount": 5 },
-      { "kind": "scry", "amount": 1 }
+      {
+        "kind": "block",
+        "amount": 5
+      },
+      {
+        "kind": "scry",
+        "amount": 1
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "viveka",
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   },
   "tapasyah": {
     "id": "tapasyah",
@@ -513,13 +1114,27 @@
     "cost": 1,
     "desc": "Усилие: 4 урона и 3 блока.",
     "effects": [
-      { "kind": "damage", "amount": 4 },
-      { "kind": "block", "amount": 3 }
+      {
+        "kind": "damage",
+        "amount": 4
+      },
+      {
+        "kind": "block",
+        "amount": 3
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "tapah",
-    "tags": ["practice", "attack", "defend"]
+    "tags": [
+      "practice",
+      "attack",
+      "defend"
+    ]
   },
   "japa": {
     "id": "japa",
@@ -529,13 +1144,26 @@
     "cost": 0,
     "desc": "Повторение мантры: +1 энергия и +1 саттва.",
     "effects": [
-      { "kind": "energy", "amount": 1 },
-      { "kind": "guna", "amount": 1, "which": "s" }
+      {
+        "kind": "energy",
+        "amount": 1
+      },
+      {
+        "kind": "guna",
+        "amount": 1,
+        "which": "s"
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "omkara",
-    "tags": ["mantra"]
+    "tags": [
+      "mantra"
+    ]
   },
   "dana": {
     "id": "dana",
@@ -545,13 +1173,25 @@
     "cost": 1,
     "desc": "Щедрость: восстановите 2 ХП и возьмите 2 карты.",
     "effects": [
-      { "kind": "heal", "amount": 2 },
-      { "kind": "draw", "amount": 2 }
+      {
+        "kind": "heal",
+        "amount": 2
+      },
+      {
+        "kind": "draw",
+        "amount": 2
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "seva",
-    "tags": ["seva"]
+    "tags": [
+      "seva"
+    ]
   },
   "smarana": {
     "id": "smarana",
@@ -561,13 +1201,30 @@
     "cost": 0,
     "desc": "Памятование: +1 саттва, сожгите 1 мусор из руки.",
     "effects": [
-      { "kind": "guna", "amount": 1, "which": "s" },
-      { "kind": "exhaustFromHand", "filter": ["vritti", "curse"], "amount": 1 }
+      {
+        "kind": "guna",
+        "amount": 1,
+        "which": "s"
+      },
+      {
+        "kind": "exhaustFromHand",
+        "filter": [
+          "vritti",
+          "curse"
+        ],
+        "amount": 1
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "satsaunga",
-    "tags": ["kiirtana"]
+    "tags": [
+      "kiirtana"
+    ]
   },
   "dharana": {
     "id": "dharana",
@@ -577,13 +1234,25 @@
     "cost": 1,
     "desc": "Концентрация: посмотрите 4 верхние карты колоды, возьмите 1.",
     "effects": [
-      { "kind": "scry", "amount": 4 },
-      { "kind": "draw", "amount": 1 }
+      {
+        "kind": "scry",
+        "amount": 4
+      },
+      {
+        "kind": "draw",
+        "amount": 1
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "dhyana",
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "abhidhyana": {
     "id": "abhidhyana",
@@ -593,13 +1262,27 @@
     "cost": 1,
     "desc": "Неотступная идеация: +2 саттвы и 3 блока.",
     "effects": [
-      { "kind": "guna", "amount": 2, "which": "s" },
-      { "kind": "block", "amount": 3 }
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      },
+      {
+        "kind": "block",
+        "amount": 3
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "dhyana",
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   },
   "upavasa": {
     "id": "upavasa",
@@ -609,29 +1292,60 @@
     "cost": 1,
     "desc": "Пост: «быть вблизи Ишвары». Сожгите 1 окову или мусор из руки, +3 блока.",
     "effects": [
-      { "kind": "exhaustFromHand", "filter": ["vritti", "curse"], "amount": 1 },
-      { "kind": "block", "amount": 3 }
+      {
+        "kind": "exhaustFromHand",
+        "filter": [
+          "vritti",
+          "curse"
+        ],
+        "amount": 1
+      },
+      {
+        "kind": "block",
+        "amount": 3
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "upavasa",
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   },
   "tandava": {
     "id": "tandava",
-    "name": "Тандрава",
+    "name": "Тандава",
     "sanskrit": "ताण्डव",
     "type": "practice",
     "cost": 1,
     "desc": "Танец-борьба: 5 урона, сожгите 1 мусор из колоды.",
     "effects": [
-      { "kind": "damage", "amount": 5 },
-      { "kind": "removeFromDeck", "filter": "curse", "amount": 1 }
+      {
+        "kind": "damage",
+        "amount": 5
+      },
+      {
+        "kind": "removeFromDeck",
+        "filter": "curse",
+        "amount": 1
+      }
     ],
-    "guna": { "s": 0, "r": 1, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 1,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "tapah",
-    "tags": ["practice", "attack"]
+    "tags": [
+      "practice",
+      "attack"
+    ]
   },
   "sangacchadhvam": {
     "id": "sangacchadhvam",
@@ -641,13 +1355,26 @@
     "cost": 1,
     "desc": "«Идём вместе, умы — один ум»: +2 саттвы и +1 карта.",
     "effects": [
-      { "kind": "guna", "amount": 2, "which": "s" },
-      { "kind": "draw", "amount": 1 }
+      {
+        "kind": "guna",
+        "amount": 2,
+        "which": "s"
+      },
+      {
+        "kind": "draw",
+        "amount": 1
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "dharmacakra",
-    "tags": ["kiirtana"]
+    "tags": [
+      "kiirtana"
+    ]
   },
   "kaoshiki": {
     "id": "kaoshiki",
@@ -657,28 +1384,50 @@
     "cost": 1,
     "desc": "Танец здоровья: восстановите 3 ХП и +1 саттву.",
     "effects": [
-      { "kind": "heal", "amount": 3 },
-      { "kind": "guna", "amount": 1, "which": "s" }
+      {
+        "kind": "heal",
+        "amount": 3
+      },
+      {
+        "kind": "guna",
+        "amount": 1,
+        "which": "s"
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "pranayama",
-    "tags": ["practice"]
+    "tags": [
+      "practice"
+    ]
   },
   "vidyadhara": {
     "id": "vidyadhara",
-    "name": "Видъядхара",
+    "name": "Видьядхара",
     "sanskrit": "विद्याधर",
     "type": "mantra",
     "cost": 1,
     "desc": "Девайон знания. Положительный микровит летит к окове: +1 успокоение, −1 пелена авидьи.",
     "effects": [
-      { "kind": "microvita", "amount": 1 }
+      {
+        "kind": "microvita",
+        "amount": 1
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "common",
     "quoteId": "vidyadhara",
-    "tags": ["mantra"]
+    "tags": [
+      "mantra"
+    ]
   },
   "siddha": {
     "id": "siddha",
@@ -688,13 +1437,22 @@
     "cost": 2,
     "desc": "Лучший из девайонов: +2 успокоения окове, −2 пелены авидьи. Карта сгорает.",
     "effects": [
-      { "kind": "microvita", "amount": 2 }
+      {
+        "kind": "microvita",
+        "amount": 2
+      }
     ],
-    "guna": { "s": 2, "r": 0, "t": 0 },
+    "guna": {
+      "s": 2,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "rare",
     "quoteId": "siddha",
     "exhaust": true,
-    "tags": ["mantra"]
+    "tags": [
+      "mantra"
+    ]
   },
   "pratyahara": {
     "id": "pratyahara",
@@ -704,13 +1462,28 @@
     "cost": 1,
     "desc": "Отвод чувств: враг ослабевает (−2 урона его атак на ход) и +2 блока.",
     "effects": [
-      { "kind": "status", "status": "weak", "amount": 1, "target": "all_enemies" },
-      { "kind": "block", "amount": 2 }
+      {
+        "kind": "status",
+        "status": "weak",
+        "amount": 1,
+        "target": "all_enemies"
+      },
+      {
+        "kind": "block",
+        "amount": 2
+      }
     ],
-    "guna": { "s": 1, "r": 0, "t": 0 },
+    "guna": {
+      "s": 1,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "uncommon",
     "quoteId": "pratyahara",
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   },
   "kevala_bhakti": {
     "id": "kevala_bhakti",
@@ -720,13 +1493,27 @@
     "cost": 1,
     "desc": "Чистая преданность: «хочу Тебя одного». +3 саттвы и 2 блока. Карта сгорает.",
     "effects": [
-      { "kind": "guna", "amount": 3, "which": "s" },
-      { "kind": "block", "amount": 2 }
+      {
+        "kind": "guna",
+        "amount": 3,
+        "which": "s"
+      },
+      {
+        "kind": "block",
+        "amount": 2
+      }
     ],
-    "guna": { "s": 0, "r": 0, "t": 0 },
+    "guna": {
+      "s": 0,
+      "r": 0,
+      "t": 0
+    },
     "rarity": "rare",
     "quoteId": "kevala_bhakti",
     "exhaust": true,
-    "tags": ["practice", "defend"]
+    "tags": [
+      "practice",
+      "defend"
+    ]
   }
 }

@@ -126,10 +126,11 @@ export function combatScreen(app) {
     // самадхи-действие (§8.4): «видеть истину» → отпустить одного обычного врага
     samadhiBtn.style.display = p.inSamadhi && e && !e.dead && !e.pacified && !e.def.isBoss ? 'block' : 'none'
 
-    // колоды
+    // колоды. Значение — отдельным элементом: раньше строка с HTML внутри
+    // попадала в текстовый узел, и игрок видел на экране «колода: <b>11</b>»
     mount(pilesEl,
-      h('span', {}, `колода: <b>${combat.piles.draw.length}</b>`),
-      h('span', {}, `сброс: <b>${combat.piles.discard.length}</b>`))
+      h('span', {}, 'колода: ', h('b', {}, String(combat.piles.draw.length))),
+      h('span', {}, 'сброс: ', h('b', {}, String(combat.piles.discard.length))))
 
     // рука
     mount(handEl, combat.piles.hand.map((id, i) =>
@@ -177,6 +178,7 @@ export function combatScreen(app) {
     const from = el ? posOf(el) : { x: innerWidth / 2, y: innerHeight / 2 }
     if (card.type === 'kiirtana') { sfx.kiirtana(); kiirtanaWave() }
     else if (card.type === 'mantra') sfx.med()
+    else if (card.type === 'sound') sfx.med()   // пранава — звук, не мантра
     else sfx.play()
 
     // Кииртан-ритм (§16.2, идея №7): точное пение даёт бонус (саттва/карта)

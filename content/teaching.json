@@ -1,0 +1,81 @@
+{
+  "_comment": "Куда ложатся цитаты. Правило: каждая цитата корпуса должна быть проживаема, иначе она занимает место в файле и создаёт иллюзию, что игра больше, чем она есть. Из 100 цитат 48 не открывались ничем. Здесь они привязаны к тому, что в игре уже есть: к семи чакрам, к семи учителям Города, к местам и к финалу. Смысл не выдумывается — цитата выбирается по теме чакры или учителя, а текст берётся из content/quotes.json.",
+  "_worlds_note": "Что открывается при первом входе в локацию: чакра — это и есть учение о конкретном слое ума.",
+  "_teachers_note": "Учитель — это успокоенный владыка. У него не одна фраза, а учение: несколько цитат, которые он даёт по одной за раз. Так устроена садхана — приходишь, получаешь следующий слой, и уходишь думать.",
+  "_places_note": "Места, где знание приходит само, а не за картой.",
+  "worlds": {
+    "muladhara": "citta",
+    "svadhisthana": "ishta",
+    "manipura": "guna",
+    "anahata": "bhakti",
+    "vishuddha": "sadhana",
+    "ajna": "samadhi",
+    "sahasrara": "ananda"
+  },
+  "teachers": {
+    "moha": [
+      "sadripu",
+      "pasha"
+    ],
+    "kama_raja": [
+      "ishta",
+      "nama_nami"
+    ],
+    "krodha_maharaja": [
+      "karma",
+      "doership"
+    ],
+    "mada_natha": [
+      "three_species",
+      "first_class_person"
+    ],
+    "matsarya_kala": [
+      "vrtti",
+      "tandava"
+    ],
+    "lobha_pati": [
+      "saincara",
+      "samaja_cakra"
+    ],
+    "ahankara": [
+      "vidya_avidya",
+      "kundalini"
+    ]
+  },
+  "places": {
+    "spring": "heaven_hell",
+    "rest": "prana_dharma",
+    "shop": "samgiita",
+    "chaos": "shreya_preya",
+    "death": "liberation_from_staticity",
+    "first_room": "yama_niyama",
+    "mastery": "chakra",
+    "staticity": "tandava",
+    "unity": "ekatva",
+    "finale": [
+      "brahma",
+      "purusa",
+      "prakrti",
+      "atman",
+      "dharma",
+      "tantra",
+      "moksha",
+      "neohumanism",
+      "struggle",
+      "sadvipra",
+      "four_vargas",
+      "artha_paramartha",
+      "pancakosa",
+      "buddhi",
+      "memory",
+      "tanmatra",
+      "ota_prota_yoga",
+      "yoga_unification",
+      "grades_of_samadhi",
+      "nidra",
+      "cinta",
+      "dvesha",
+      "microvita"
+    ]
+  }
+}

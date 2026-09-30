@@ -98,7 +98,7 @@
   },
   "shaoca_mainjusa": {
     "id": "shaoca_mainjusa",
-    "name": "Шаоча-майнджуса",
+    "name": "Шаоча-манджус",
     "desc": "Сосуд чистоты: в начале каждого боя +3 блока — чистый ум защищён.",
     "effects": [{ "kind": "mod_combat_start_block", "amount": 3 }],
     "quoteId": "shaoca",
@@ -106,7 +106,7 @@
   },
   "kaopiina": {
     "id": "kaopiina",
-    "name": "Каопина",
+    "name": "Каупина",
     "desc": "Набедренная повязка странника: простота рождает ясность — стартовые гуны +2 саттвы.",
     "effects": [{ "kind": "mod_guna_start", "s": 2 }],
     "quoteId": "aparigraha",

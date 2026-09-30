@@ -1,5 +1,5 @@
 // Управление забегом: карта пути, узлы, награды, смерть/перерождение.
-import { CARDS, ENEMIES, RELICS, EVENTS, starterDeck, starterDeckForFocus, MENTALITIES, MENTALITY_ORDER, mentalityLevel, SADVIPRA_MIN_LEVEL, cardRewardPool, TRIALS, availableTrials } from './data.js'
+import { CARDS, ENEMIES, RELICS, EVENTS, BOONS, starterDeck, starterDeckForFocus, MENTALITIES, MENTALITY_ORDER, mentalityLevel, SADVIPRA_MIN_LEVEL, cardRewardPool, TRIALS, availableTrials } from './data.js'
 import { createCombat, mulberry32 } from './engine.js'
 
 export const CHAKRAS = [
@@ -60,6 +60,7 @@ export function createRun({ meta, rng, options = {} }) {
     maxHp: (options.hp || 60) + (f ? f.focusHp || 0 : 0) + shudraHp + hpBonus,
     prana: (f ? f.focusPrana || 0 : 0) + pranaBonus,
     relics: [],
+    boons: [],
     floors: [],
     done: [],
     floor: 0,
@@ -141,6 +142,20 @@ export function currentEnemyId(run) {
 // Начало боя на узле
 // ─────────────────────────────────────────────────────────────
 
+// Дары чакры: 3 случайных неповторяющихся из пула (Hades-style draft).
+export function rollBoonChoices(run, rng = Math.random) {
+  const owned = new Set(run.boons || [])
+  const pool = Object.keys(BOONS).filter((id) => !owned.has(id))
+  if (pool.length === 0) return []
+  const out = []
+  const p = [...pool]
+  for (let i = 0; i < Math.min(3, p.length); i++) {
+    const idx = Math.floor(rng() * p.length)
+    out.push(p.splice(idx, 1)[0])
+  }
+  return out
+}
+
 export function startCombatAtNode(run) {
   const node = currentNode(run)
   const enemyId = currentEnemyId(run)
@@ -167,6 +182,9 @@ export function startCombatAtNode(run) {
       gunaStart: run.gunaStart || { s: 3, r: 3, t: 3 },
       mentalities: run.mentalities,
       varnaBranches: run.branches,
+      // Дары чакры (§16.2): передаём активные дары и их определения в бой.
+      boons: run.boons || [],
+      boonDefs: BOONS,
     },
   })
 }
@@ -264,9 +282,10 @@ export function finishCombat(run, combat) {
     rewards.cardChoices = pickCardChoices(run, isElite || trialPassed ? 4 : 3)
   }
   run.prana += rewards.prana
-  if (rewards.sattvaGain > 0) {
-    run.hp = Math.min(run.maxHp, run.hp + 2)
-  }
+  // Победа в бое НЕ лечит. В Hades тоже: здоровье берут только на
+  // фонтанах, и это то, что делает их ценными. Раньше саттва давала +2
+  // жизни после каждого узла, и забег был невозможно проиграть (96%).
+  // Теперь лечит узел «медитация» и владыка после победы — как в Hades.
   return rewards
 }
 

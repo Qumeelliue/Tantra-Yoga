@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Окно дефлекта — как выглядит бой</title>
+<style>
+/* Визуальный стандарт тот же, что в visual-standard.html:
+   тушь пером + неоновые акценты (Hades). Здесь — только новое:
+   кольцо замаха, серия, панель мантр. */
+  * { box-sizing:border-box; margin:0; padding:0 }
+  :root {
+    --ink-0:#08070c; --ink-line:#2b2438; --edge:#3d3350;
+    --sattva:#f2f0e8; --rajas:#ff2d2d;
+    --gold:#ffcf4a; --cyan:#4fe8ff; --lime:#9dff5a; --purple:#b06bff;
+    --paper:#e8e2d4; --dim:#a89f8e;
+    --fd:'Cormorant Garamond',Georgia,serif;
+    --fu:'Inter',-apple-system,system-ui,sans-serif;
+  }
+  body { background:#000; color:var(--paper); font-family:var(--fu);
+    display:flex; flex-wrap:wrap; gap:44px; padding:30px 24px 70px;
+    align-items:flex-start; justify-content:center }
+  .lbl{text-align:center;margin-bottom:14px;max-width:400px}
+  .lbl b{display:block;font-family:var(--fd);font-size:19px;color:var(--gold);letter-spacing:.03em}
+  .lbl span{display:block;font-size:11.5px;color:var(--dim);margin-top:4px;line-height:1.4}
+
+  .phone{width:400px;height:700px;position:relative;background:var(--ink-0);
+    border:2px solid #241d33;border-radius:4px;overflow:hidden;flex:none;
+    box-shadow:0 0 0 1px #000,0 30px 70px rgba(0,0,0,.9)}
+  .sky{position:absolute;inset:0;
+    background:radial-gradient(90% 55% at 50% 0%,rgba(255,207,74,.10),transparent 65%),
+      linear-gradient(#07060b 0%,#0d0a14 55%,#08070c 100%)}
+  .hatch{position:absolute;inset:0;opacity:.5;
+    background:repeating-linear-gradient(58deg,rgba(255,255,255,.028) 0 1px,transparent 1px 7px)}
+  .floor{position:absolute;left:-25%;right:-25%;top:34%;bottom:-8%;
+    transform:perspective(520px) rotateX(57deg);transform-origin:50% 0}
+  .tile{position:absolute;background:rgba(30,25,42,.55);border:1px solid rgba(120,105,150,.16)}
+  .tile.alt{background:rgba(24,20,34,.6)}
+
+  /* ── ока ── */
+  .foe{position:absolute;width:56px;height:60px;z-index:20}
+  .foe .body{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:56px;height:60px;background:#120d18;box-shadow:0 0 0 1.5px #000;
+    clip-path:polygon(50% 0,72% 18%,96% 30%,88% 56%,70% 72%,50% 100%,30% 72%,12% 56%,4% 30%,28% 18%)}
+  .foe .core{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);
+    width:22px;height:26px;border-radius:50%;filter:blur(3px);background:radial-gradient(circle,var(--sattva),rgba(242,240,232,.1) 70%)}
+  .foe .eyes{position:absolute;left:50%;top:44%;transform:translateX(-50%);display:flex;gap:9px}
+  .foe .eyes b{width:11px;height:3px;background:#fff;display:block;box-shadow:0 0 8px #fff}
+  .foe .nm{position:absolute;left:50%;top:56px;transform:translateX(-50%);
+    font-family:var(--fd);font-size:13px;text-shadow:0 1px 3px #000;white-space:nowrap}
+
+  /* КОЛЬЦО ЗАМАХА — главный новый элемент */
+  .ring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    border-radius:50%;pointer-events:none}
+  .ring .lbl{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;
+    font-size:11px;letter-spacing:.14em;font-weight:700}
+  .ring.early{border:2px solid rgba(255,120,90,.75)}
+  .ring.mid{border:2.6px solid rgba(255,170,90,.9)}
+  .ring.win{border:4px solid #ffe896;box-shadow:0 0 22px rgba(255,215,106,.85),inset 0 0 12px rgba(255,215,106,.3)}
+  .ring.win .lbl{color:#ffe896;top:-26px;text-shadow:0 0 10px rgba(255,215,106,.8)}
+  .ring.early .lbl,.ring.mid .lbl{color:var(--dim);top:-22px}
+  .ring .tick{position:absolute;width:2px;height:8px;background:currentColor;opacity:.5;top:50%;margin-top:-4px}
+  @keyframes pulse{0%,100%{opacity:.5}50%{opacity:1}}
+  .ring.win{animation:pulse .16s infinite}
+
+  /* ошеломлённая */
+  .stun{position:absolute;left:50%;top:-56px;transform:translateX(-50%);
+    font-size:9px;color:var(--lime);letter-spacing:.1em;white-space:nowrap}
+
+  /* ── садхака ── */
+  .sadhu{position:absolute;left:168px;top:452px;width:70px;height:118px;z-index:22}
+  .sadhu .shadow{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);
+    width:44px;height:11px;background:rgba(0,0,0,.62);border-radius:50%}
+  .sadhu .robe{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:46px;height:74px;
+    background:linear-gradient(180deg,#f4f0e6,#ded7c6 52%,#b6ad9a);
+    clip-path:polygon(30% 0,70% 0,100% 100%,0 100%);
+    filter:drop-shadow(0 0 1px #000) drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+  .sadhu .collar{position:absolute;left:50%;bottom:74px;transform:translateX(-50%);width:24px;height:13px;
+    background:#fbf8f0;clip-path:polygon(50% 0,100% 78%,50% 100%,0 78%)}
+  .sadhu .head{position:absolute;left:50%;bottom:86px;transform:translateX(-50%);
+    width:19px;height:22px;background:#fdfaf2;border-radius:46% 46% 50% 50% / 40% 40% 60% 60%}
+  /* щит */
+  .shield{position:absolute;left:50%;top:2px;transform:translateX(-50%);
+    width:58px;height:30px;border:2.4px solid var(--cyan);border-radius:50%;
+    box-shadow:0 0 14px rgba(79,232,255,.55)}
+  /* серия */
+  .comboring{position:absolute;left:50%;bottom:2px;transform:translateX(-50%);
+    width:56px;height:17px;border:2.4px solid var(--gold);border-radius:50%;
+    box-shadow:0 0 14px rgba(255,207,74,.5)}
+
+  /* ── HUD ── */
+  .hud{position:absolute;inset:0;z-index:40;pointer-events:none}
+  .guna{position:absolute;left:12px;top:12px;display:flex;gap:12px;align-items:center;
+    padding:6px 14px;background:rgba(8,7,12,.82);border:1px solid var(--ink-line)}
+  .guna .g{display:flex;flex-direction:column;align-items:center;gap:2px;width:30px}
+  .guna .d{width:13px;height:13px;border-radius:50%}
+  .guna .n{font-family:var(--fd);font-size:11px}
+  .guna .s .d{background:var(--sattva);box-shadow:0 0 10px var(--sattva)}
+  .guna .r .d{background:var(--rajas);box-shadow:0 0 10px var(--rajas)}
+  .guna .t .d{background:#000;box-shadow:inset 0 0 0 1.5px #6b5f85}
+  .guna .p{font-size:8px;letter-spacing:.3em;color:var(--gold);text-transform:uppercase}
+  .res{position:absolute;right:12px;top:12px;width:158px}
+  .res .row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}
+  .res .lb{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .res .vl{font-family:var(--fd);font-size:14px;line-height:1}
+  .res .tk{height:7px;background:#0c0a12;border:1px solid var(--ink-line);position:relative;margin-bottom:8px;overflow:hidden}
+  .res .tk i{position:absolute;left:0;top:0;bottom:0}
+  .hp .tk i{background:linear-gradient(180deg,#ff6b5a,#c01f1f);box-shadow:0 0 8px rgba(255,80,60,.5)}
+  .hp .vl{color:#ff8a7a}
+  .sh .tk i{background:linear-gradient(180deg,#ffe07a,#d99a12);box-shadow:0 0 8px rgba(255,207,74,.5)}
+  .sh .vl{color:var(--gold)}
+  .qi .tk i{background:linear-gradient(180deg,#8ff4ff,#2b9fbf);box-shadow:0 0 8px rgba(79,232,255,.5)}
+  .qi .vl{color:var(--cyan)}
+  .av .tk i{background:linear-gradient(180deg,#b06bff,#5a1f8f);box-shadow:0 0 8px rgba(150,60,255,.5)}
+  .av .vl{color:#c48bff}
+  .sh-row{display:flex;align-items:center;gap:7px;margin-top:2px}
+  .sh-row .lb{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+  .sh-row .tk{flex:1;height:6px;background:#0b0a12;border:1px solid var(--ink-line);position:relative;overflow:hidden}
+  .sh-row .tk i{position:absolute;left:0;top:0;bottom:0;width:0;
+    background:linear-gradient(90deg,#2b9fbf,#8ff4ff);box-shadow:0 0 8px rgba(79,232,255,.5)}
+  .sh-row .vl{font-size:11px;color:#8ff4ff;min-width:18px;text-align:right}
+
+  .combo{position:absolute;left:50%;top:74px;transform:translateX(-50%);
+    font-family:var(--fd);font-size:20px;color:var(--gold);text-shadow:0 0 16px rgba(255,207,74,.7)}
+  .log{position:absolute;left:12px;bottom:196px;width:214px;display:flex;flex-direction:column-reverse;gap:3px}
+  .log div{font-size:10.5px;padding:4px 8px;background:rgba(8,7,12,.85);border-left:2px solid var(--edge);color:var(--dim)}
+  .log div.g{border-left-color:var(--gold);color:#ffe6a8}
+  .log div.l{border-left-color:var(--lime);color:#c8f0a8}
+  .log div.b{border-left-color:var(--rajas);color:#ffb0b0}
+
+  /* ── ПАНЕЛЬ МАНТР ── */
+  .mslots{position:absolute;left:0;right:0;bottom:92px;display:flex;gap:7px;justify-content:center;padding:0 10px}
+  .ms{position:relative;width:23%;max-width:168px;min-width:72px;background:rgba(10,9,16,.9);
+    border:1px solid var(--ink-line);padding:6px 7px 7px;display:flex;flex-direction:column;gap:2px}
+  .ms .k{position:absolute;top:3px;right:5px;font-size:8px;color:var(--dim)}
+  .ms .n{font-family:var(--fd);font-size:12.5px;line-height:1.1;padding-right:10px;color:var(--paper)}
+  .ms .c{font-size:9px;color:var(--cyan);letter-spacing:.05em}
+  .ms .d{font-size:9px;line-height:1.25;color:var(--dim)}
+  .ms.sel{border-color:var(--gold);background:rgba(242,196,109,.10);box-shadow:0 0 14px rgba(242,196,109,.22)}
+  .ms.sel .n{color:#ffe6a8}
+  .ms.poor{opacity:.42}
+  .ms.poor .c{color:#ff8a7a}
+
+  /* ── ДОК ── */
+  .dock{position:absolute;left:0;right:0;bottom:0;height:84px;
+    background:linear-gradient(transparent,rgba(4,3,8,.97) 40%);
+    display:flex;align-items:center;justify-content:center;gap:10px}
+  .ab{width:72px;height:70px;background:rgba(12,10,18,.92);border:1px solid var(--edge);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;position:relative}
+  .ab .ic{font-size:20px;line-height:1}
+  .ab .tx{font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+  .ab .ky{position:absolute;top:2px;left:4px;font-size:8px;color:#5a4d70}
+  .ab.fire{border-color:var(--gold);box-shadow:0 0 18px rgba(255,207,74,.28)}
+  .ab.fire .ic,.ab.fire .tx{color:var(--gold)}
+  .hint{position:absolute;left:0;right:0;bottom:2px;text-align:center;font-size:9.5px;color:#5a4d70}
+
+  /* ── пояснение ── */
+  .sheet{width:400px}
+  .row{display:flex;gap:13px;padding:11px 13px;background:rgba(12,10,18,.75);
+    border:1px solid #241d33;margin-bottom:10px;align-items:flex-start}
+  .chip{width:30px;height:30px;flex:none}
+  .row b{display:block;font-family:var(--fd);font-size:14px}
+  .row span{display:block;font-size:10.5px;color:var(--dim);margin-top:2px;line-height:1.45}
+  .step{margin-bottom:12px;padding:10px 13px;background:rgba(12,10,18,.75);border-left:2px solid var(--gold)}
+  .step b{font-family:var(--fd);font-size:14px;color:var(--gold);display:block;margin-bottom:3px}
+  .step span{font-size:10.5px;color:var(--paper);line-height:1.5}
+
+  /* ── ВЛАДЫКА ── */
+  .boss{position:absolute;z-index:21}
+  .boss .body{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:88px;height:94px;background:#150f1c;box-shadow:0 0 0 2px #000;
+    clip-path:polygon(50% 0,66% 10%,86% 16%,92% 34%,100% 52%,88% 70%,64% 78%,50% 100%,36% 78%,12% 70%,0 52%,8% 34%,14% 16%,34% 10%)}
+  .boss .core{position:absolute;left:50%;top:52%;transform:translate(-50%,-50%);
+    width:34px;height:40px;border-radius:50%;filter:blur(5px);
+    background:radial-gradient(circle,#ff7a4a,rgba(255,90,40,.06) 72%)}
+  .boss .eyes{position:absolute;left:50%;top:40%;transform:translateX(-50%);display:flex;gap:16px}
+  .boss .eyes b{width:16px;height:4px;background:#ffcf4a;display:block;box-shadow:0 0 10px #ffcf4a}
+  .boss .eyes b:nth-child(2){background:#ff5a5a;box-shadow:0 0 10px #ff5a5a}
+  .boss .nm{position:absolute;left:50%;top:64px;transform:translateX(-50%);
+    font-family:var(--fd);font-size:15px;text-shadow:0 1px 4px #000;white-space:nowrap}
+  .boss .ep{position:absolute;left:50%;top:78px;transform:translateX(-50%);
+    font-size:9.5px;color:#9a8f7e;white-space:nowrap}
+  .boss .posture{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    border-radius:50%;border:4px solid rgba(242,196,109,.9)}
+  .boss .thresh{position:absolute;left:50%;top:50%;height:16px;width:2.6px;
+    background:#ff5a5a;transform-origin:50% 50%}
+  .boss .blockring{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    border-radius:50%;border:2.6px solid var(--cyan);box-shadow:0 0 12px rgba(79,232,255,.6)}
+  .boss .blocktxt{position:absolute;left:50%;text-align:center;font-size:9px;
+    color:#8ff4ff;white-space:nowrap;transform:translateX(-50%)}
+  .boss .phase{position:absolute;left:50%;transform:translateX(-50%);white-space:nowrap;
+    font-size:9px;letter-spacing:.1em}
+  /* плашка приёма над головой — как intent в Slay the Spire */
+  .intent{position:absolute;transform:translateX(-50%);display:flex;align-items:center;gap:6px;
+    padding:4px 9px;background:rgba(8,7,12,.92);border:1px solid #d23b3b;white-space:nowrap}
+  .intent i{font-style:normal;font-size:12px}
+  .intent span{font-size:11px;color:#f0e7d6}
+  .banner{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);
+    font-family:var(--fd);font-size:34px;color:#ffd76a;white-space:nowrap;
+    text-shadow:0 0 26px rgba(255,190,60,.75),0 2px 0 #000}
+</style>
+</head>
+<body>
+
+<!-- 1. ОКНО ДЕФЛЕКТА -->
+<div>
+  <div class="lbl"><b>Окно дефлекта — сердце боя</b>
+    <span>три фазы кольца слева направо: ока замахнулась → кольцо сжимается → жёлтое окно, жми</span></div>
+  <div class="phone">
+    <div class="sky"></div><div class="hatch"></div>
+    <div class="floor">
+      <div class="tile" style="left:8%;top:2%;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:92px;top:2%;width:84px;height:84px"></div>
+      <div class="tile" style="left:176px;top:2%;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:8%;top:86px;width:84px;height:84px"></div>
+      <div class="tile" style="left:92px;top:86px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:176px;top:86px;width:84px;height:84px"></div>
+      <div class="tile" style="left:8%;top:170px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:92px;top:170px;width:84px;height:84px"></div>
+      <div class="tile" style="left:176px;top:170px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:8%;top:254px;width:84px;height:84px"></div>
+      <div class="tile" style="left:92px;top:254px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:176px;top:254px;width:84px;height:84px"></div>
+      <div class="tile" style="left:8%;top:338px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:92px;top:338px;width:84px;height:84px"></div>
+      <div class="tile" style="left:176px;top:338px;width:84px;height:84px"></div>
+    </div>
+
+    <!-- ока 1: кольцо ещё широкое -->
+    <div class="foe" style="left:60px;top:300px">
+      <div class="ring early" style="width:108px;height:108px"><span class="lbl">замах</span></div>
+      <div class="body"></div><div class="core"></div>
+      <div class="eyes"><b></b><b></b></div><div class="nm">Лобха</div>
+    </div>
+    <!-- ока 2: ОКНО — жми -->
+    <div class="foe" style="left:258px;top:266px">
+      <div class="ring win" style="width:48px;height:48px"><span class="lbl">ДЕФЛЕКТ</span></div>
+      <div class="body"></div><div class="core"></div>
+      <div class="eyes"><b></b><b></b></div><div class="nm">Кродха</div>
+    </div>
+    <!-- ока 3: ошеломлена -->
+    <div class="foe" style="left:300px;top:404px">
+      <div class="stun">ошеломлена</div>
+      <div class="body" style="opacity:.75"></div><div class="core" style="opacity:.4"></div>
+      <div class="eyes"><b style="opacity:.3"></b><b style="opacity:.3"></b></div>
+      <div class="nm" style="opacity:.7">Мада</div>
+    </div>
+
+    <div class="sadhu">
+      <div class="shield"></div>
+      <div class="shadow"></div><div class="robe"></div>
+      <div class="collar"></div><div class="head"></div>
+      <div class="comboring"></div>
+    </div>
+
+    <div class="hud">
+      <div class="guna">
+        <div class="g s"><i class="d"></i><span class="n">6</span></div>
+        <div class="g r"><i class="d"></i><span class="n">2</span></div>
+        <div class="g t"><i class="d"></i><span class="n">3</span></div>
+        <span class="p">прама</span>
+      </div>
+      <div class="res">
+        <div class="hp"><div class="row"><span class="lb">жизнь</span><span class="vl">44</span></div>
+          <div class="tk"><i style="width:73%"></i></div></div>
+        <div class="sh"><div class="row"><span class="lb">духовная</span><span class="vl">9</span></div>
+          <div class="tk"><i style="width:45%"></i></div></div>
+        <div class="qi"><div class="row"><span class="lb">Ци</span><span class="vl">9</span></div>
+          <div class="tk"><i style="width:75%"></i></div></div>
+        <div class="av"><div class="row"><span class="vl">31</span><span class="lb">авидья</span></div>
+          <div class="tk"><i style="width:31%"></i></div></div>
+        <div class="sh-row"><span class="lb">щит</span>
+          <span class="tk"><i style="width:33%"></i></span><span class="vl">4</span></div>
+      </div>
+      <div class="combo">серия 3</div>
+      <div class="log">
+        <div class="l">Кродха — распался в свет. +2 духовной силы</div>
+        <div class="g">дефлект — серия 3, Ци +5</div>
+        <div class="b">щит −4, жизнь −3</div>
+      </div>
+    </div>
+
+    <div class="mslots">
+      <div class="ms sel"><i class="k">1</i><span class="n">Джапа</span><span class="c">0 Ци</span>
+        <span class="d">+1 энергия и +1 саттва</span></div>
+      <div class="ms"><i class="k">2</i><span class="n">Пранаяма</span><span class="c">1 Ци</span>
+        <span class="d">+2 энергии и +2 блока</span></div>
+      <div class="ms sel2"><i class="k">3</i><span class="n">Мадхувидья</span><span class="c">2 Ци</span>
+        <span class="d">4 блока и +2 саттвы</span></div>
+      <div class="ms poor"><i class="k">4</i><span class="n">Упаваса</span><span class="c">2 Ци</span>
+        <span class="d">Сожгите 1 окову, +3 блока</span></div>
+    </div>
+
+    <div class="dock">
+      <div class="ab"><i class="ky">ЛКМ</i><span class="ic">✦</span><span class="tx">удар</span></div>
+      <div class="ab fire"><i class="ky">ПКМ / SHIFT</i><span class="ic">⟲</span><span class="tx">дефлект</span></div>
+      <div class="ab"><i class="ky">Q</i><span class="ic">⇉</span><span class="tx">рывок</span></div>
+      <div class="ab fire"><i class="ky">ПРОБЕЛ</i><span class="ic">ॐ</span><span class="tx">мантра</span></div>
+    </div>
+    <div class="hint">WASD — идти · ПКМ/Shift — дефлект · Пробел — мантра · 1–4 — выбрать</div>
+  </div>
+</div>
+
+<!-- 2. КАК ЭТО РАБОТАЕТ -->
+<div class="sheet">
+  <div class="lbl"><b>Один ход, по шагам</b>
+    <span>ровно то, что в Nine Sols, только слова наши</span></div>
+
+  <div class="step"><b>1. Ока подошла и замахнулась</b>
+    <span>Вокруг неё появляется широкое кольцо. Удар придёт через 0.75 секунды.
+    Ты не можешь его отбить ударом — удар по рипу не работает вообще.</span></div>
+
+  <div class="step"><b>2. Кольцо сжимается</b>
+    <span>Оно идёт от 108 пикселей к 24. Чем ближе к жёлтому — тем меньше времени.
+    Это единственный сигнал, по нему ты и играешь.</span></div>
+
+  <div class="step"><b>3. Жёлтое окно — 0.2 секунды</b>
+    <span>Кольцо вспыхивает золотым, над ним «ДЕФЛЕКТ». Жми ПКМ или Shift
+    именно сейчас. Попадёшь — её собственная сила вернётся в неё.</span></div>
+
+  <div class="step"><b>4. Серия</b>
+    <span>Каждый удачный дефлект поднимает серию: +1, +2, +3…
+    За каждое звено капает Ци. Серия горит 3.2 секунды — не лови больше,
+    и она сорвётся. В серии авидья падает сама: попадание в ритм гасит неведение.</span></div>
+
+  <div class="step"><b>5. Ока рассыпается</b>
+    <span>Спокойствие копится только от дефлектов. Набралось — ока распадается
+    в свет, остаётся зелёный цветок, тебе +2 духовной силы и Ци.</span></div>
+
+  <div class="row"><div class="chip" style="background:var(--cyan);box-shadow:0 0 14px var(--cyan)"></div>
+    <div><b>Ци — это дыхание</b><span>Ци капает только за дефлекты, и тратится
+    на мантры. Никакого отдельного «дыхания» больше нет: дыхание и есть трата
+    накопленной силы. Ровно как талисманы в Nine Sols.</span></div></div>
+
+  <div class="row"><div class="chip" style="background:var(--lime);box-shadow:0 0 14px var(--lime)"></div>
+    <div><b>Промах — не смерть</b><span>Если не попал, удар приходит как обычно:
+    щит съедает часть, потом жизнь. Серия обнуляется. Ничего больше не
+    наказывается — иначе это уже не парирование, а ловушка.</span></div></div>
+
+  <div class="row"><div class="chip" style="background:#ff5a5a;box-shadow:0 0 14px #ff5a5a"></div>
+    <div><b>Источники, откуда взято</b><span>Ядро дефлекта, окно 0.2 с, серия и
+    трата Ци на талисманы — скопировано с Nine Sols (Red Candle Games).
+    Щит — со Slay the Spire. Победа «никого не убить» — из Into the Breach.
+    Слова, термины и эффекты мантр — наши, из шастр.</span></div></div>
+</div>
+
+<!-- 3. ВЛАДЫКА -->
+<div>
+  <div class="lbl"><b>Владыка чакры — как выглядит бой с ним</b>
+    <span>слева фаза 1 (стойкость держит), справа фаза 2 «в бешенстве»</span></div>
+  <div class="phone" style="height:620px">
+    <div class="sky"></div><div class="hatch"></div>
+    <div class="floor">
+      <div class="tile" style="left:8%;top:2%;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:92px;top:2%;width:84px;height:84px"></div>
+      <div class="tile" style="left:176px;top:2%;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:8%;top:86px;width:84px;height:84px"></div>
+      <div class="tile" style="left:92px;top:86px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:176px;top:86px;width:84px;height:84px"></div>
+      <div class="tile" style="left:8%;top:170px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:92px;top:170px;width:84px;height:84px"></div>
+      <div class="tile" style="left:176px;top:170px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:8%;top:254px;width:84px;height:84px"></div>
+      <div class="tile" style="left:92px;top:254px;width:84px;height:84px"></div>
+      <div class="tile alt" style="left:176px;top:254px;width:84px;height:84px"></div>
+    </div>
+
+    <!-- ФАЗА 1: стойкость, обычный замах -->
+    <div class="boss" style="left:120px;top:270px;width:88px;height:94px">
+      <div class="intent" style="top:-108px;left:50%">
+        <i style="color:var(--cyan)">⬢</i><span>Покров очарования</span></div>
+      <div class="blockring" style="width:122px;height:122px"></div>
+      <div class="blocktxt" style="top:64px">стойкость 7</div>
+      <div class="phase" style="top:-76px;color:#cfc3b0">владыка · фаза 1</div>
+      <div class="posture" style="width:114px;height:114px;
+        border-color:rgba(242,196,109,.9);
+        -webkit-mask:radial-gradient(circle,transparent 52px,#000 52px);
+        mask:radial-gradient(circle,transparent 52px,#000 52px)"></div>
+      <div class="body"></div><div class="core"></div>
+      <div class="eyes"><b></b><b></b></div>
+      <div class="nm">Кама-Раджа</div>
+      <div class="ep">Владыка Свадхистханы</div>
+    </div>
+
+    <!-- ФАЗА 2: бешенство, окно ловится быстро -->
+    <div class="boss" style="left:298px;top:340px;width:88px;height:94px">
+      <div class="intent" style="top:-108px;left:50%">
+        <i style="color:#ff6b5a">⚔</i><span>Огонь желаний</span></div>
+      <div class="phase" style="top:-76px;color:#ff9a6a">в бешенстве</div>
+      <div class="posture" style="width:96px;height:96px;border-color:#ffd76a;
+        box-shadow:0 0 22px rgba(255,215,106,.8);
+        -webkit-mask:radial-gradient(circle,transparent 40px,#000 40px);
+        mask:radial-gradient(circle,transparent 40px,#000 40px)"></div>
+      <div class="body" style="filter:drop-shadow(0 0 14px rgba(255,90,40,.5))"></div>
+      <div class="core" style="background:radial-gradient(circle,#ffd76a,rgba(255,190,60,.06) 72%)"></div>
+      <div class="eyes"><b></b><b></b></div>
+      <div class="nm">Кама-Раджа</div>
+      <div class="ep">Владыка Свадхистханы</div>
+    </div>
+
+    <!-- садхака с серией и щитом -->
+    <div class="sadhu" style="left:190px;top:440px">
+      <div class="shield" style="width:48px;height:26px"></div>
+      <div class="shadow"></div><div class="robe"></div>
+      <div class="collar"></div><div class="head"></div>
+      <div class="comboring"></div>
+    </div>
+
+    <div class="hud">
+      <div class="res" style="left:12px;right:auto;text-align:left;width:158px">
+        <div class="hp"><div class="row"><span class="lb">жизнь</span><span class="vl">29</span></div>
+          <div class="tk"><i style="width:48%"></i></div></div>
+        <div class="qi"><div class="row"><span class="lb">Ци</span><span class="vl">6</span></div>
+          <div class="tk"><i style="width:50%"></i></div></div>
+        <div class="av"><div class="row"><span class="lb">авидья</span><span class="vl">54</span></div>
+          <div class="tk"><i style="width:54%"></i></div></div>
+      </div>
+      <div class="combo">серия 2</div>
+      <div class="log" style="bottom:120px">
+        <div class="g">дефлект — серия 2, Ци +4</div>
+        <div class="b">Огонь желаний — 9 урона</div>
+        <div class="b">щит −4, жизнь −5</div>
+      </div>
+    </div>
+    <div class="hint">порог 50% пройден — владыка сломался</div>
+    <div class="banner" style="left:200px;top:150px;font-size:26px">владыка сломался</div>
+  </div>
+</div>
+
+<!-- 4. ПОЧЕМУ ВЛАДЫКА ТАКОЙ -->
+<div class="sheet">
+  <div class="lbl"><b>Владыка: что скопировано</b>
+    <span>ничего не придумано — всё из чужих игр и из нашего контента</span></div>
+
+  <div class="step"><b>Намерение видно заранее</b>
+    <span>Над владыкой висит плашка: значок и название приёма из
+    <b>content/enemies.json</b>. Это скопировано со Slay the Spire (intent) —
+    игрок заранее решает, ловить приём или уходить.</span></div>
+
+  <div class="step"><b>Он циклит приёмы по порядку</b>
+    <span>«Закипание» → «Пламя ярости» → «Всесжигающий» → снова. Порядок
+    задан контентом, а не случайностью.</span></div>
+
+  <div class="step"><b>Порог 50% — ломается один раз</b>
+    <span>Счётчик спокойствия вокруг него — длинная золотая дуга, а
+    <b>красная засечка на половине</b> это порог. Дошёл — вспышка
+    «владыка сломался», и дальше кольца замаха <b>втрое короче</b>:
+    0.42 с вместо 0.62. Плюс срабатывает то, что написано в
+    <b>onThreshold</b>: например Кродха «впадает в бешенство».</span></div>
+
+  <div class="step"><b>Стойкость держит удар</b>
+    <span>«Покров очарования» даёт владыке голубое кольцо «стойкость 7».
+    Пока оно есть, твои дефлекты дают спокойствия почти вдвое меньше, и
+    каждый возврат силы тратит единицу стойкости. Ровно как Block в
+    Slay the Spire: твой прогресс поглощается.</span></div>
+
+  <div class="step"><b>Крепнет и давит</b>
+    <span>«Закипание» — владыка крепнет: следующие удары на +1. А
+    «Отнять» сбивает твою серию дефлектов, обрывая ритм.</span></div>
+
+  <div class="step"><b>Ему нужно втрое больше дефлектов</b>
+    <span>Запас спокойствия владыки ×3 — как в Hades, где у боссов втрое
+    больше здоровья, чем у обычных врагов.</span></div>
+
+  <div class="row"><div class="chip" style="background:#ff5a5a;box-shadow:0 0 14px #ff5a5a"></div>
+    <div><b>Источники</b><span>Slay the Spire — intent, moves, Block,
+    Strength, Weak. Hades — порог 50% и тройной запас босса.
+    Наши — термины приёмов и текст порога, всё из `content/enemies.json`.</span></div></div>
+</div>
+
+</body>
+</html>

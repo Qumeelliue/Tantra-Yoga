@@ -5,19 +5,25 @@ import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, CHALLENGES, MENTALITY_ORDER, ME
 
 const KEY = 'tantra-yoga-save-v1'
 const CS_PREFIX = 'ty'
+// Telegram CloudStorage: значение ключа — до 4096 символов (документация
+// WebApp.CloudStorage), поэтому кусок берём с запасом.
 const CS_CHUNK = 3600
 const MAX_FREEZE = 3
 const DAY_MS = 24 * 60 * 60 * 1000
+// Сколько ждать перед отправкой в облако. Забег даёт десятки сохранений
+// подряд (комната, дар, покупка), а сеть — это сеть. Значит: пишем один
+// раз на пачку, а при уходе со страницы — сразу (см. flushCloud).
+const CLOUD_DEBOUNCE_MS = 1500
 
 export const EMPTY_META = () => ({
-  compendium: { cards: {}, enemies: {}, relics: {}, events: {} },
+  compendium: { cards: {}, enemies: {}, relics: {}, events: {}, boons: {} },
   quotesUnlocked: {},
   recalled: {},
   lived: {},
   practiceDiary: [],
   stats: { runs: 0, deaths: 0, victories: 0, pacified: 0, kills: 0, awakened: 0 },
   bestRun: null,
-  seen: { cards: {}, enemies: {}, relics: {}, events: {} },
+  seen: { cards: {}, enemies: {}, relics: {}, events: {}, boons: {} },
   encounters: {},
   streak: { current: 0, best: 0, lastDay: null, freeze: 0, total: 0 },
   daily: { date: null, challengeId: null, progress: 0, done: false, claimed: false },
@@ -45,6 +51,17 @@ export const EMPTY_META = () => ({
   audioLibrary: {},
   // Дерево челленджей Ямы/Ниямы (§16.2): карты, открытые испытаниями (мета-прогресс)
   unlockedCards: [],
+  // ── Поле Ума (забег в мире, §9.1) ───────────────────────────────────
+  // Мета-растёт между побегами: знание и деньги остаются, тело — нет.
+  // fieldFloor — насколько далеко дошли (карта чакр), focusVarna — кем идём.
+  coins: 0,               // драхмы (Hades: drachma)
+  hpBonus: 0,             // +макс. ХП из комнат покоя, навсегда
+  boons: [],              // дары, копятся между побегами
+  upgrades: [],           // мастерская севы (яма-нияма), копятся
+  fieldFloor: 0,          // сколько чакр открыто
+  focusVarna: 'shudra',   // ментальность, с которой идём
+  krpaFell: 0,            // сколько раз милость падала
+  krpaMissed: 0,          // сколько раз зонт подняли, а милость не достала
   settings: { haptics: true },
   letter: { text: '', at: 0, shownAt: 0 },
   onboarded: false,
@@ -76,48 +93,144 @@ function csSet(key, value) {
   })
 }
 
-// ── CloudStorage (Telegram-аккаунт, перенос между устройствами) ──────────────
-
-export async function saveToCloud(meta) {
-  const cs = cloud()
-  if (!cs) return false
-  try {
-    const json = JSON.stringify(meta)
-    const chunks = []
-    for (let i = 0; i < json.length; i += CS_CHUNK) chunks.push(json.slice(i, i + CS_CHUNK))
-    await csSet(`${CS_PREFIX}_meta`, JSON.stringify({ n: chunks.length, t: meta.savedAt || Date.now() }))
-    for (let i = 0; i < chunks.length; i++) {
-      const ok = await csSet(`${CS_PREFIX}_${i}`, chunks[i])
-      if (!ok) return false
-    }
-    return true
-  } catch { return false }
+function csRemove(key) {
+  return new Promise((resolve) => {
+    const cs = cloud()
+    if (!cs) return resolve(false)
+    try {
+      cs.removeItem(key, () => resolve(true))
+    } catch { resolve(false) }
+  })
 }
 
-export async function loadFromCloud() {
-  const cs = cloud()
-  if (!cs) return null
+// ── CloudStorage (Telegram-аккаунт, перенос между устройствами) ──────────────
+//
+// Три правила, без которых облако однажды тихо съедало прогресс:
+//
+// 1. ОЧЕРЕДЬ. Telegram отвечает асинхронно, а saveMeta зовётся десятки раз
+//    за забег. Две записи, ушедшие подряд, без очереди перемешивали куски:
+//    в облаке лежал гибрид — часть от старой меты, часть от новой. Такой
+//    JSON не собирается, и перенос между устройствами просто переставал
+//    работать — без единой ошибки на экране.
+// 2. ВЕРСИИ. Куски пишутся под номером версии, и «головка» с этим номером
+//    записывается ПОСЛЕДНЕЙ. Головка — точка фиксации: пока её нет, облако
+//    считает, что в нём лежит предыдущее целое сохранение. Раньше головка
+//    писалась первой, и прерванная запись оставляла после себя смесь со
+//    свежей датой — телефон показывал «всё сохранено», а прогресс был мусором.
+// 3. ПРОВЕРКА. Длина собранного куска сверяется с записанной в головке.
+//    Не сошлось — облако считается пустым, игрок играет с локального.
+
+let cloudChain = Promise.resolve()
+let cloudVersion = null
+
+function inCloudQueue(fn) {
+  const next = cloudChain.then(fn, fn)   // ошибка в одной записи не рвёт очередь
+  cloudChain = next.then(() => {}, () => {})
+  return next
+}
+
+async function readHead() {
+  const raw = await csGet(`${CS_PREFIX}_head`)
+  if (!raw) return null
   try {
-    const headRaw = await csGet(`${CS_PREFIX}_meta`)
-    if (!headRaw) return null
-    const head = JSON.parse(headRaw)
-    let json = ''
-    for (let i = 0; i < head.n; i++) {
-      const part = await csGet(`${CS_PREFIX}_${i}`)
-      if (part == null) return null
-      json += part
-    }
+    const h = JSON.parse(raw)
+    return h && Number.isFinite(Number(h.n)) ? h : null
+  } catch { return null }
+}
+
+async function cloudWrite(meta) {
+  const json = JSON.stringify(meta)
+  const head = await readHead()
+  const prev = head && Number.isFinite(Number(head.v)) ? head : null
+  const v = cloudVersion ?? ((Number(prev?.v) || 0) + 1)
+  cloudVersion = v
+  const chunks = []
+  for (let i = 0; i < json.length; i += CS_CHUNK) chunks.push(json.slice(i, i + CS_CHUNK))
+  for (let i = 0; i < chunks.length; i++) {
+    if (!(await csSet(`${CS_PREFIX}_${v}_${i}`, chunks[i]))) return false
+  }
+  // Головка — последняя: облако переключается на новую версию только когда
+  // все её куски уже лежат.
+  const ok = await csSet(`${CS_PREFIX}_head`, JSON.stringify({
+    v, n: chunks.length, t: meta.savedAt || Date.now(), len: json.length,
+  }))
+  if (!ok) return false
+  // Прошлая версия больше не нужна — убираем, чтобы не копить ключи
+  // (у игрока их может быть всего 1024).
+  if (prev && Number(prev.v) !== v) {
+    for (let i = 0; i < (prev.n || 0); i++) await csRemove(`${CS_PREFIX}_${prev.v}_${i}`)
+  }
+  return true
+}
+
+/** Записать в облако прямо сейчас. Всё остальное ждёт очереди. */
+export function saveToCloud(meta) {
+  return inCloudQueue(() => {
+    if (!cloud()) return false
+    return cloudWrite(meta)
+  })
+}
+
+/**
+ * Облако, записанное до версий: куски лежали просто по номерам, головка была
+ * `ty_meta`. Читается один раз — чтобы никто не потерял прогресс из-за
+ * смены формата. Когда автор убедится, что у всех новое, этот блок можно
+ * убрать целиком.
+ */
+async function loadLegacy() {
+  const headRaw = await csGet(`${CS_PREFIX}_meta`)
+  if (!headRaw) return null
+  let head
+  try { head = JSON.parse(headRaw) } catch { return null }
+  if (!head || !Number.isFinite(Number(head.n))) return null
+  let json = ''
+  for (let i = 0; i < head.n; i++) {
+    const part = await csGet(`${CS_PREFIX}_${i}`)
+    if (part == null) return null
+    json += part
+  }
+  try {
     const meta = JSON.parse(json)
     meta.savedAt = head.t || 0
+    // Переезжаем на версии, чтобы дальше читать единым способом.
+    inCloudQueue(() => cloudWrite(meta)).then(() => {
+      for (let i = 0; i < head.n; i++) csRemove(`${CS_PREFIX}_${i}`)
+      csRemove(`${CS_PREFIX}_meta`)
+    })
     return meta
   } catch { return null }
 }
 
+export function loadFromCloud() {
+  return inCloudQueue(async () => {
+    if (!cloud()) return null
+    const head = await readHead()
+    if (!head) return loadLegacy()
+    cloudVersion = Number(head.v)
+    let json = ''
+    for (let i = 0; i < head.n; i++) {
+      const part = await csGet(`${CS_PREFIX}_${head.v}_${i}`)
+      if (part == null) return null
+      json += part
+    }
+    if (Number.isFinite(Number(head.len)) && json.length !== Number(head.len)) return null
+    try {
+      const meta = JSON.parse(json)
+      meta.savedAt = head.t || 0
+      return meta
+    } catch { return null }
+  })
+}
+
 // Синк при старте: если в облаке сохранение новее — возвращаем его (побеждает
-// последний забег). Если локальное новее — проталкиваем в облако.
+// последний забег). Если локальное новее или облако пустое — проталкиваем
+// локальное: облако должно знать о прогрессе даже на новом устройстве.
 export async function cloudSync(meta) {
   const cloudMeta = await loadFromCloud()
-  if (!cloudMeta) return null
+  if (!cloudMeta) {
+    if ((meta.savedAt || 0) > 0) saveToCloud(meta)
+    return null
+  }
   if ((cloudMeta.savedAt || 0) > (meta.savedAt || 0)) {
     saveLocal(cloudMeta)
     return cloudMeta
@@ -126,6 +239,32 @@ export async function cloudSync(meta) {
     saveToCloud(meta)
   }
   return null
+}
+
+// ── Отправка в облако не на каждый чих ─────────────────────────────────────
+// Мета меняется десятки раз за забег. Всё, что успело накопиться за пару
+// секунд, уезжает одним куском. А если игрок закрывает приложение — ждать
+// нельзя: телефон успевает убить страницу, поэтому есть flushCloud().
+let cloudTimer = null
+let cloudPending = null
+
+function scheduleCloud(meta) {
+  cloudPending = meta
+  if (cloudTimer) return
+  cloudTimer = setTimeout(() => {
+    cloudTimer = null
+    const m = cloudPending
+    cloudPending = null
+    if (m) saveToCloud(m)
+  }, CLOUD_DEBOUNCE_MS)
+}
+
+/** Дописать всё накопленное в облако немедленно — при уходе со страницы. */
+export function flushCloud() {
+  if (cloudTimer) { clearTimeout(cloudTimer); cloudTimer = null }
+  const m = cloudPending
+  cloudPending = null
+  return m ? saveToCloud(m) : Promise.resolve(false)
 }
 
 // ── localStorage ──────────────────────────────────────────────────────────────
@@ -152,6 +291,7 @@ export function loadMeta() {
 export function migrateMeta(m) {
   m = { ...EMPTY_META(), ...m }
   m.compendium = { ...EMPTY_META().compendium, ...m.compendium }
+  m.seen = { ...EMPTY_META().seen, ...(m.seen || {}) }
   m.stats = { ...EMPTY_META().stats, ...m.stats }
   m.streak = { ...EMPTY_META().streak, ...m.streak }
   m.daily = { ...EMPTY_META().daily, ...m.daily }
@@ -166,13 +306,23 @@ export function migrateMeta(m) {
   if (!Array.isArray(m.citySpoken)) m.citySpoken = []
   if (!Array.isArray(m.runLog)) m.runLog = []
   if (!m.varnaBranches || typeof m.varnaBranches !== 'object') m.varnaBranches = {}
+  // Поле Ума: старые сохранения этих полей не знают — дополняем, чтобы
+  // новая игра не ловила «undefined» на каждом шагу.
+  if (!Array.isArray(m.boons)) m.boons = []
+  if (!Array.isArray(m.upgrades)) m.upgrades = []
+  if (typeof m.coins !== 'number' || !Number.isFinite(m.coins)) m.coins = 0
+  if (typeof m.hpBonus !== 'number' || !Number.isFinite(m.hpBonus)) m.hpBonus = 0
+  if (typeof m.fieldFloor !== 'number' || !Number.isFinite(m.fieldFloor)) m.fieldFloor = 0
+  if (!m.focusVarna) m.focusVarna = 'shudra'
+  if (typeof m.krpaFell !== 'number') m.krpaFell = 0
+  if (typeof m.krpaMissed !== 'number') m.krpaMissed = 0
   return m
 }
 
 export function saveMeta(meta) {
   meta.savedAt = Date.now()
-  saveLocal(meta)
-  saveToCloud(meta) // огонь-и-забудь: не блокируем UI
+  saveLocal(meta)            // локально — сразу и синхронно: это надёжная часть
+  scheduleCloud(meta)        // в облако — пачкой, без блокировки UI
 }
 
 export function resetMeta() {
