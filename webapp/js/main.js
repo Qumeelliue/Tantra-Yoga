@@ -31,6 +31,7 @@ import {
   unlockCard, trialsProgress, markLived, gardenState, recordSound, soundState,
   cityBlessingBonus, setVarnaBranch, flushCloud,
 } from './core/save.js'
+import { processAnchorReminders, reminderStatusLine } from './core/anchorPush.js'
 
 const appEl = document.getElementById('app')
 
@@ -51,6 +52,11 @@ function boot() {
   setHaptics(app.meta.settings?.haptics !== false)
   const { event } = markVisit(app.meta)
   saveMeta(app.meta)
+  // Пуш-напоминания якорей (§11.2). Отправка идёт через серверный токен
+  // бота, которого пока нет: без него напоминание не уходит — и игра
+  // говорит об этом прямо, а не делает вид, что отправила. Результат
+  // показываем один раз на этом запуске.
+  checkAnchorReminders()
   if (event && (event.kind === 'increase' || event.kind === 'break' || event.kind === 'grace')) {
     app.bootEvent = event
   }
@@ -62,6 +68,10 @@ function boot() {
   addEventListener('pagehide', () => { flushCloud() })
   addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') flushCloud()
+    // Телефон мог пролежать неделю без открытия игры. Напоминания о
+    // якорях досылаются на ВХОДЕ в приложение, а не по таймеру: таймер в
+    // мини-аппе не живёт, когда приложение закрыто.
+    if (document.visibilityState === 'visible') checkAnchorReminders()
   })
   // фаза 2 (§17.1): синк через Telegram CloudStorage — побеждает свежее сохранение
   cloudSync(app.meta).then((fresh) => {
@@ -90,6 +100,57 @@ function applySafeArea() {
   for (const side of ['top', 'right', 'bottom', 'left']) {
     const v = Number(insets[side])
     if (Number.isFinite(v) && v > 0) root.style.setProperty(`--sa-${side}`, `${v}px`)
+  }
+}
+
+// ── Пуш-напоминания якорей (§11.2) ──────────────────────────────────────────
+//
+// Правда о том, как это работает. Уведомление в Telegram Mini App отправляет
+// ТОЛЬКО бот на сервере: `WebApp.sendData` лишь передаёт данные клиенту, а
+// клиент не может проверить подпись initData — то есть подделать push нельзя
+// и не нужно. Сервера у проекта пока нет, поэтому:
+//
+//   · если токена/эндпоинта нет — напоминание НЕ помечается как отправленное
+//     и остаётся в дневнике. Иначе якорь молча исчезал бы из расписания;
+//   · игрок видит честную строку, а не «напоминание отправлено».
+//
+// Когда сервер появится, достаточно задать window.TANTRA_PUSH_URL — остальное
+// уже написано и покрыто тестами.
+let anchorStatusShown = false
+
+function checkAnchorReminders() {
+  let res
+  try {
+    res = processAnchorReminders(app.meta, { send: pushSender() })
+  } catch { return }
+  const line = reminderStatusLine(res)
+  if (!line) return
+  // Показываем один раз: иначе всплывашка сыпется на каждом входе.
+  if (!anchorStatusShown && res.failed > 0) {
+    anchorStatusShown = true
+    toast(line, 'hl')
+  }
+  if (res.sent) saveMeta(app.meta)
+}
+
+/**
+ * Отправить одно напоминание. Возвращает функцию или null.
+ *
+ * null — значит отправлять нечем. Это НЕ ошибка: игры в браузере, без
+ * сервера, и это надо проговаривать, а не прятать.
+ */
+function pushSender() {
+  const url = (typeof window !== 'undefined' && window.TANTRA_PUSH_URL) || ''
+  if (!url) return null
+  return async (text, anchor) => {
+    const wa = window.Telegram?.WebApp
+    const initData = wa?.initData || ''
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ initData, text, situation: anchor?.situation, practice: anchor?.practice }),
+    })
+    if (!res.ok) throw new Error(`push ${res.status}`)
   }
 }
 
@@ -2623,7 +2684,28 @@ function showDiary() {
             a.strong
               ? h('div', { class: 'hint center mt', style: 'color:var(--sat)' }, 'Сильный якорь: вы устояли через него — и победили.')
               : h('div', { class: 'hint center mt' }, 'Попробуйте сегодня: правда работает.'))),
+    anchorRemindBlock(),
   ))
+}
+
+/**
+ * Напоминания о якорях (§11.2). Честно показываем, работают они или нет.
+ *
+ * Если сервера нет, здесь написано «не отправляются» — а не тишина. Иначе
+ * игрок решит, что напоминаний не бывает, и никогда об этом не узнает.
+ */
+function anchorRemindBlock() {
+  const meta = app.meta
+  const sent = (meta.practiceDiary || []).reduce((a, x) => a + ((x.reminded || []).filter(Boolean).length), 0)
+  const can = !!pushSender()
+  return h('div', { class: 'panel mt' },
+    h('div', { class: 'hint' }, 'Напоминания'),
+    h('p', { class: 'hint center mt' },
+      'Якорь возвращается трижды — через 1, 3 и 7 дней. Больше не нужно: это шум.'),
+    h('p', { class: 'hint center', style: can ? 'color:var(--sat)' : 'color:#ffb787' },
+      can ? 'Напоминания включены.' : 'Напоминания не отправляются: нет сервера. Якоря остаются здесь.'),
+    sent ? h('p', { class: 'hint center mt' }, `доставлено напоминаний: ${sent}`) : null,
+  )
 }
 
 // «Письмо себе» (§исследование, проспективная память): написал «зачем практикую» —
