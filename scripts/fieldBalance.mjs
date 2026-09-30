@@ -24,6 +24,19 @@ const RUNS = Number(process.argv[2] || 60)
 const ROOMLOG = []
 const PARRIES = [0]
 const STATS = { mantra: 0, krpa: 0, spring: 0, hurt: 0, dmg: 0, pacified: 0, strikes: 0, feints: 0, rooms: 0, bossPacified: 0 }
+
+// Сколько урона съел щит. Раньше замер считал ТОЛЬКО попадания по жизни, и
+// строка «попаданий 25 · урона 0» читалась как «бьют, но не hurts» — то есть
+// как читерство бота. На деле щит (Slay the Spire: block) стоял на потолке 12
+// и съедал всё. Без этого числа нельзя сказать, МЯГКО игра или ЩИТ мягкий:
+// «25 попаданий, 0 урона» одинаково выглядит при неуязвимости и при щите.
+const SHIELD = { blocked: 0, absorbed: 0, samples: 0, atCap: 0, sum: 0, seen: 0, max: 0 }
+
+// Ци — «психическая сила». Считаем, сколько бот тратит и сколько он
+// получает: если трат больше, чем приходит из дефлектов, то мантры не
+// должны идти так часто, и щит не должен стоять на потолке. Если равен —
+// щит льётся сам из себя, и это главный подозреваемый в мягкости поля.
+const QI = { spent: 0, gained: 0, fromDeflect: 0, casts: 0, noShield: 0, noQi: 0 }
 const HPLOG = []
 const TIMELOG = []
 const FLOORS = 7
@@ -82,7 +95,12 @@ function playRoom(st, rng, maxSec = 90) {
     // 1) ока в окне удара — возвращаем удар. Это главное действие боя.
     const target = parryHint(st)
     const inWindow = target && target.timer <= st.o.parryWindow
-    if (inWindow && rng() >= SLOPPY) { for (const e of parry(st)) { STATS.pacified += (e.type === 'pacified' ? 1 : 0) } PARRIES[0]++ }
+    if (inWindow && rng() >= SLOPPY) {
+      const q0 = p.psychic
+      for (const e of parry(st)) { STATS.pacified += (e.type === 'pacified' ? 1 : 0) }
+      QI.fromDeflect += Math.max(0, p.psychic - q0)
+      PARRIES[0]++
+    }
 
     // 2) идём к ближайшей окове; если жизни мало — сначала к амбросии
     let walk = nearest(st)
@@ -110,8 +128,25 @@ function playRoom(st, rng, maxSec = 90) {
     const m = mantraById(p.mantraId)
     if (!inWindow && t - lastMantra > 0.8) {
       const qi = Math.max(0, m.cost - (st.o.mantraCostCut || 0))
-      if (p.psychic >= qi) { castMantra(st); STATS.mantra++; lastMantra = t }
+      if (p.psychic >= qi) {
+        const q0 = p.psychic, s0 = p.shield
+        castMantra(st)
+        QI.spent += Math.max(0, q0 - p.psychic)
+        QI.gained += Math.max(0, p.psychic - q0)
+        QI.casts++
+        // Мантра без щита — это Джапа: она гасит неведение, а не защищает.
+        // Отдельно от «не хватило Ци»: это разные вещи, и раньше они были
+        // слиты в одно число, из-за чего нельзя было понять, чем именно
+        // поле держит игрока.
+        if (p.shield <= s0) QI.noShield++
+        STATS.mantra++; lastMantra = t
+      } else QI.noQi++
     }
+
+    // Щит ДО шага боя. Раньше он мерялся после, а `damagePlayer` уже вычел
+    // из него съеденный урон, и замер показывал 4 при ударе на 8: то есть
+    // показывал остаток вместо того, что было.
+    const shieldBefore = p.shield
 
     // Шаг боя ВСЕГДА идёт. Раньше бот в ветке «подошёл вплотную» забывал
     // двигать мир, и бой просто стоял: подсказка была, а удара не было.
@@ -120,7 +155,21 @@ function playRoom(st, rng, maxSec = 90) {
       if (e.type === 'krpa') STATS.krpa++
       else if (e.type === 'spring') STATS.spring++
       else if (e.type === 'pacified') STATS.pacified++
-      else if (e.type === 'hurt') { STATS.hurt++; STATS.dmg += e.amount || 0 }
+      else if (e.type === 'hurt') {
+        STATS.hurt++
+        STATS.dmg += e.amount || 0
+        // Щит мог съесть урон (не обошёл) или стоять вхолостую (щит был, но
+        // удар прошёл мимо него — такое бывает при 0.55 с неуязвимости).
+        SHIELD.samples++
+        SHIELD.absorbed += e.absorbed || 0
+        if ((e.absorbed || 0) > 0) SHIELD.blocked++
+        // Щит в момент удара: стоял ли он на потолке? Если да — поле даёт
+        // игроку бесконечный запас прочности, и никакие числа не исправят
+        // этого, пока мантра льёт щит быстрее, чем ока его тратит.
+        if (shieldBefore >= st.o.shieldMax - 0.001) SHIELD.atCap++
+        SHIELD.sum += shieldBefore; SHIELD.seen++
+        if (shieldBefore > SHIELD.max) SHIELD.max = shieldBefore
+      }
       else if (e.type === 'feint') STATS.feints++
       else if (e.type === 'pacified') STATS.pacified++
     }
@@ -241,6 +290,8 @@ function afterBoss(floor, boons, rng, fullHp, setHp, addMaxHp) {
 /** Обнулить счётчики — чтобы повторить замер с другой рассеянностью. */
 function resetStats() {
   for (const k of Object.keys(STATS)) STATS[k] = 0
+  for (const k of Object.keys(SHIELD)) SHIELD[k] = 0
+  for (const k of Object.keys(QI)) QI[k] = 0
   HPLOG.length = 0; TIMELOG.length = 0; ROOMLOG.length = 0; PARRIES[0] = 0
   for (let i = 0; i < CURVE.length; i++) CURVE[i] = { hp: [], dmg: 0, rooms: 0, runs: 0 }
   for (const k of Object.keys(DRAFTS)) delete DRAFTS[k]
@@ -304,6 +355,15 @@ function simulate(quiet = false) {
     console.log(`дары (как в игре: один за этап): ${draftTotal} — ${top}`)
   }
   console.log(`статистика бота: комнат ${STATS.rooms} · снято оков ${STATS.pacified} · мантр ${STATS.mantra} · крипа ${STATS.krpa} · амбросия ${STATS.spring} · попаданий ${STATS.hurt} на ${Math.round(STATS.dmg)} урона · блефов ${STATS.feints}`)
+  if (SHIELD.samples) {
+    const total = SHIELD.absorbed + Math.round(STATS.dmg)
+    const pct = Math.round((SHIELD.absorbed / (total || 1)) * 100)
+    const avgShield = SHIELD.seen ? (SHIELD.sum / SHIELD.seen).toFixed(1) : '—'
+    console.log(`щит: сработал в ${SHIELD.blocked} из ${SHIELD.samples} попаданий · съел ${SHIELD.absorbed} урона из ${total} (${pct}%) · на потолке в ${SHIELD.atCap} · средний щит в момент удара ${avgShield} · максимум ${SHIELD.max} из потолка ${DEFAULT_FIELD_OPTIONS.shieldMax}`)
+  }
+  if (QI.casts) {
+    console.log(`ци: мантр ${QI.casts} · потрачено ${QI.spent} · вернулось мантрой ${QI.gained} · пришло из дефлектов ${QI.fromDeflect} · без щита (Джапа) ${QI.noShield} · не хватило Ци ${QI.noQi}`)
+  }
   if (STATS.hurt && !STATS.dmg) {
     console.log('  ВНИМАНИЕ: попадания есть, урона нет — весь урон съеден щитом.')
     console.log('  Значит замер ничего не говорит о сложности: идеальный бот неуязвим.')
@@ -343,11 +403,13 @@ if (!IS_MAIN) {
   console.log('── Поле Ума: лестница рассеянности ──')
   console.log(`Рассеянность = доля окон дефлекта, которые бот ПРОПУСКАЕТ. Забегов на ступень: ${RUNS}.`)
   console.log('Вопрос не «сколько процентов побед», а «насколько неточным ещё можно быть».')
-  console.log('  рассеянность · побед · попаданий · урона · комнат · зависло')
+  console.log('  рассеянность · побед · попаданий · урона · комнат · зависло · щит съел')
   for (const v of values) {
     SLOPPY = v
     const r = simulate(true)
-    console.log(`  ${String(Math.round(v * 100)).padStart(11)} % · ${String(Math.round((r.wins / r.runs) * 100)).padStart(4)} % · ${String(r.hits).padStart(8)} · ${String(r.dmg).padStart(5)} · ${String(r.rooms).padStart(6)} · ${r.stuck}`)
+    const total = SHIELD.absorbed + r.dmg
+    const pct = total ? Math.round((SHIELD.absorbed / total) * 100) : 0
+    console.log(`  ${String(Math.round(v * 100)).padStart(11)} % · ${String(Math.round((r.wins / r.runs) * 100)).padStart(4)} % · ${String(r.hits).padStart(8)} · ${String(r.dmg).padStart(5)} · ${String(r.rooms).padStart(6)} · ${r.stuck} · ${String(pct).padStart(3)}% (на потолке ${SHIELD.atCap})`)
   }
 } else {
   simulate()

@@ -78,7 +78,15 @@ export const DEFAULT_FIELD_OPTIONS = {
   krpaCalm: 1.2,         // оковы отпускают столько
   krpaStun: 2.2,         // и перестают наступать на это время
   // ── ЩИТ (Slay the Spire — block) ───────────────────────────────────────
+  // В Spire блок снимается в начале твоего хода: он живёт ровно один ход и
+  // НЕ копится. У нас ходов нет, поэтому ход — это время, ровно как для
+  // «слабости» (weakTurn). Без этого щит копился до потолка и стоял на
+  // нём: замер показывал «сработал в 25 попаданий из 25, на потолке 25» —
+  // то есть мантра заливала щит быстрее, чем ока его тратила, и ловить
+  // окно дефлекта переставало быть обязательным.
   shieldMax: 12,
+  shieldTurn: 4,           // «ход Spire» для щита, секунды
+  shieldDecay: 0,          // сколько щита спадает за ход (0 = весь)
   // Потолок Ци (психической силы). Поднимается усилением «Брахмачарья»
   // в мастерской севы — см. core/workshop.js.
   psychicMax: 12,
@@ -271,6 +279,8 @@ export function createField({ player, foes = [], wares = [], field = null, rng =
       // навешивает слабость каждый приём, и к четвёртому циклу снять окову
       // становится физически невозможно — бой превращался в стену.
       weak: 0, weakT: 0,
+      // Щит и его «ход»: в Spire блок не переживает ход (см. shieldTurn).
+      shieldT: 0,
       // Серия дефлектов (Nine Sols: combo)
       combo: 0, comboT: 0, bestCombo: 0,
       mantras: null,             // выбор слотов убран: мантра одна, по чакре
@@ -421,6 +431,19 @@ export function stepField(st, dt, input = {}) {
       pp.weak = Math.max(0, pp.weak - 1)
     }
   } else if (pp.weakT > 0) pp.weakT = 0
+
+  // Щит тает на «ходе Spire» — ровно как в самой Spire, где блок снимается
+  // в начале твоего хода и не переносится дальше. Порядок тот же, что у
+  // «слабости» выше: ход у нас — это время.
+  if (pp.shield > 0 && st.o.shieldTurn > 0) {
+    pp.shieldT += dt
+    while (pp.shieldT >= st.o.shieldTurn) {
+      pp.shieldT -= st.o.shieldTurn
+      const drop = st.o.shieldDecay > 0 ? st.o.shieldDecay : pp.shield
+      pp.shield = Math.max(0, pp.shield - drop)
+      if (pp.shield > 0) ev.push({ type: 'shield_decay', left: pp.shield })
+    }
+  } else if (pp.shieldT > 0) pp.shieldT = 0
 
   // Вес удара: пока стоит заморозка, мир не идёт — только тает тряска.
   // Это и есть «удар». Пропустим — дефлект станет пустым щелчком.

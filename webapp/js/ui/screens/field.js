@@ -400,6 +400,11 @@ export function fieldScreen(state, opts = {}) {
       case 'no_qi':
         say('не хватает Ци — поймай дефлектом', 'bad')
         break
+      case 'shield_decay':
+        // Щит истёк на «ходе». Без этой строки он таял бы молча, и игрок
+        // думал бы, что щит пропал из-за бага.
+        say(`щит истёк${e.left > 0 ? ` — осталось ${Math.round(e.left)}` : ''}`, 'tip')
+        break
       case 'whiff':
         say('мимо — никого рядом', 'bad')
         break
