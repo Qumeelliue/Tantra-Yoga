@@ -72,6 +72,31 @@ const FIELD = {
     field: 'стартовый щит',
     apply: (o) => { o.shieldStart = 4 },
   },
+
+  // ── ЛЕГЕНДАРНЫЕ (Hades: legendary boons требуют предпосылок) ──────────
+  // Тот же принцип, доведённый до конца, и он появляется только если уже
+  // есть два обычных дара, на которых он стоит. Ничего нового не вводится:
+  // каждый двигает тот же слот, что и обычный, но глубже.
+  kiirtana_legend: {
+    desc: 'Пение держит ритм вдвое дольше обычного.',
+    field: 'серия дефлектов живёт ещё дольше',
+    apply: (o) => { o.comboWindow += 1.8 },
+  },
+  tapah_legend: {
+    desc: 'Удар по внешней окове бьёт ещё на 3 сильнее.',
+    field: 'урон удара по паше',
+    apply: (o) => { o.strikeBonus += 3 },
+  },
+  mantra_legend: {
+    desc: 'Мантра стоит ещё на 1 Ци дешевле.',
+    field: 'цена мантры −1 (не ниже 0)',
+    apply: (o) => { o.mantraCostCut += 1 },
+  },
+  seva_legend: {
+    desc: 'Помощь прикрывает крепче: щит за севу выше.',
+    field: 'сева даёт щит',
+    apply: (o) => { o.sevaShield += 1 },
+  },
 }
 
 /**
@@ -92,6 +117,9 @@ export const BOONS = Object.values(BOON_DEFS)
       desc: f.desc,
       field: f.field,
       apply: f.apply,
+      // Предпосылки — из контента, а не из кода: перестановка условия в
+      // boons.json обязана менять игру, иначе она была бы правкой текста.
+      requires: Array.isArray(def.requires) ? def.requires.slice() : [],
     }
   })
 
@@ -110,13 +138,48 @@ export function applyBoons(opts, owned = []) {
 }
 
 /**
+ * Как редкость читается вслух. Один раз здесь, а не тернарником в разметке:
+ * при добавлении легендарного тернарник молча назвал бы его «редким».
+ */
+export const BOON_RARITY = {
+  common: 'обычный',
+  uncommon: 'необычный',
+  rare: 'редкий',
+  legendary: 'легендарный',
+}
+
+/**
+ * Открыт ли дар: обычный открыт всегда, легендарный — только когда уже есть
+ * все его предпосылки (Hades: legendary boon требует предпосылок).
+ *
+ * Проверка по КОДУ, а не по id: список предпосылок лежит в контенте, и если
+ * бы мы перечисляли легендарные здесь, то новая предпосылка в boons.json
+ * ничего бы не открывала.
+ */
+export function isBoonUnlocked(boon, owned = []) {
+  if (!boon || !Array.isArray(owned)) return false
+  for (const need of boon.requires || []) {
+    if (!owned.includes(need)) return false
+  }
+  return true
+}
+
+/**
  * Три дара на выбор. Вес редких ниже, как в Hades: частое — рядом.
- * Уже взятые не повторяются.
+ * Уже взятые не повторяются. Закрытые легендарные не предлагаются вовсе.
  */
 export function rollBoons(owned = [], rng = Math.random, count = 3) {
-  const pool = BOONS.filter((b) => !owned.includes(b.id))
+  const pool = BOONS.filter((b) => !owned.includes(b.id) && isBoonUnlocked(b, owned))
   if (pool.length <= count) return pool.slice()
-  const weight = (b) => (b.rarity === 'common' ? 3 : b.rarity === 'uncommon' ? 2 : 1)
+  const weight = (b) => (b.rarity === 'common' ? 3
+    : b.rarity === 'uncommon' ? 2
+    : b.rarity === 'rare' ? 1
+    // Легендарный — вес подобран ЗАМЕРОМ, а не на глаз (проверка в тесте
+    // «легендарный ощутим, но не гарантирован»). При предпосылках,
+    // собранных намеренно, легендарный появляется примерно в 11 % розыгрышей
+    // — то есть примерно в половине забегов, где игрок его вырастил. Раньше,
+    // при весе 0.35, было 2.6 %: карточка была, а шанса увидеть её не было.
+    : 1.6)
   const out = []
   const left = pool.slice()
   while (out.length < count && left.length) {

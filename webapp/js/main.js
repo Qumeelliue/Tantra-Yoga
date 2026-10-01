@@ -17,7 +17,7 @@ import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.j
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from './core/stageRoute.js'
 import { rollDoors, DOOR_KINDS } from './core/doors.js'
 import { chakraQuote, nextTeacherQuote, teacherChain, placeQuotes } from './core/teaching.js'
-import { BOONS as FIELD_BOONS, rollBoons, applyBoons } from './core/boons.js'
+import { BOONS as FIELD_BOONS, rollBoons, applyBoons, BOON_RARITY } from './core/boons.js'
 import { createField } from './core/field.js'
 import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, BOONS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS, WORLDS, WORLD_PATH, worldForFloor } from './core/data.js'
 import { computeSynergies } from './core/engine.js'
@@ -1212,7 +1212,7 @@ function showBoonDraft(nextFloor, caption, after) {
       if (after) after(); else startFieldRun(nextFloor)
     },
   },
-    h('span', { class: 'boon-rar' }, b.rarity === 'common' ? 'обычный' : b.rarity === 'uncommon' ? 'необычный' : 'редкий'),
+    h('span', { class: 'boon-rar' }, BOON_RARITY[b.rarity] || b.rarity),
     h('b', { class: 'boon-name' }, b.name),
     h('i', { class: 'boon-sans' }, b.sanskrit),
     h('span', { class: 'boon-desc' }, b.desc),

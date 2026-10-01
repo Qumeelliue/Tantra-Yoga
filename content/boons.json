@@ -1,104 +1,216 @@
 {
   "_comment": "Дары чакры (§16.2, Hades-style boons). После боя игрок выбирает 1 из 3 даров. Дары комбинируются между собой. Каждый дар — термин из Шастр.",
-
   "ahimsa": {
     "id": "ahimsa",
     "name": "Дар Ахимсы",
     "sanskrit": "अहिंसा",
     "desc": "Ненасилие усиливает успокоение: каждая ахимса-карта даёт +1 к успокоению оковы.",
-    "effects": [{ "kind": "mod_boon_ahimsa", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_ahimsa",
+        "amount": 1
+      }
+    ],
     "rarity": "common",
     "quoteId": "ahimsa"
   },
-
   "kiirtana": {
     "id": "kiirtana",
     "name": "Дар Кииртана",
     "sanskrit": "कीर्तन",
     "desc": "Пение несёт свет: каждая кииртан-карта даёт +1 саттву.",
-    "effects": [{ "kind": "mod_boon_kiirtana", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_kiirtana",
+        "amount": 1
+      }
+    ],
     "rarity": "common",
     "quoteId": "kiirtana"
   },
-
   "mantra": {
     "id": "mantra",
     "name": "Дар Мантры",
     "sanskrit": "मन्त्र",
     "desc": "Мантры становятся легче: стоимость всех мантр −1 энергия (минимум 0).",
-    "effects": [{ "kind": "mod_boon_mantra", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_mantra",
+        "amount": 1
+      }
+    ],
     "rarity": "uncommon",
     "quoteId": "mantra"
   },
-
   "pranayama": {
     "id": "pranayama",
     "name": "Дар Пранаямы",
     "sanskrit": "प्राणायाम",
     "desc": "Дыхание даёт силу: +1 энергия в первом ходу боя.",
-    "effects": [{ "kind": "mod_boon_pranayama", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_pranayama",
+        "amount": 1
+      }
+    ],
     "rarity": "uncommon",
     "quoteId": "pranayama"
   },
-
   "tapah": {
     "id": "tapah",
     "name": "Дар Тапаха",
     "sanskrit": "तपः",
     "desc": "Аскеза закаляет: +1 к урону от практик (Яма/Нияма).",
-    "effects": [{ "kind": "mod_boon_tapah", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_tapah",
+        "amount": 1
+      }
+    ],
     "rarity": "common",
     "quoteId": "tapah"
   },
-
   "seva": {
     "id": "seva",
     "name": "Дар Севы",
     "sanskrit": "सेवा",
     "desc": "Служение исцеляет: +1 к исцелению от карт служения.",
-    "effects": [{ "kind": "mod_boon_seva", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_seva",
+        "amount": 1
+      }
+    ],
     "rarity": "common",
     "quoteId": "seva"
   },
-
   "svadhyaya": {
     "id": "svadhyaya",
     "name": "Дар Свадхьяи",
     "sanskrit": "स्वाध्याय",
     "desc": "Самоизучение открывает: +1 карта в ход, когда в колоде 3+ карты.",
-    "effects": [{ "kind": "mod_boon_svadhyaya", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_svadhyaya",
+        "amount": 1
+      }
+    ],
     "rarity": "uncommon",
     "quoteId": "svadhyaya"
   },
-
   "aparigraha": {
     "id": "aparigraha",
     "name": "Дар Апариграхи",
     "sanskrit": "अपरिग्रह",
     "desc": "Нестяжание щедро: награда за пропуск карты в бою увеличена на +1 Пранны.",
-    "effects": [{ "kind": "mod_boon_aparigraha", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_aparigraha",
+        "amount": 1
+      }
+    ],
     "rarity": "rare",
     "quoteId": "aparigraha"
   },
-
   "satya": {
     "id": "satya",
     "name": "Дар Сатьи",
     "sanskrit": "सत्य",
     "desc": "Правда видит: интенты врагов показываются даже при слабом випре.",
-    "effects": [{ "kind": "mod_boon_satya", "amount": 1 }],
+    "effects": [
+      {
+        "kind": "mod_boon_satya",
+        "amount": 1
+      }
+    ],
     "rarity": "rare",
     "quoteId": "satya"
   },
-
   "karuna": {
     "id": "karuna",
     "name": "Дар Каруны",
     "sanskrit": "करुणा",
     "desc": "Сострадание защищает: +2 блока в начале боя за каждого успокоенного врага.",
-    "effects": [{ "kind": "mod_boon_karuna", "amount": 2 }],
+    "effects": [
+      {
+        "kind": "mod_boon_karuna",
+        "amount": 2
+      }
+    ],
     "rarity": "rare",
     "quoteId": "krpa",
     "_note": "Karuṇā (сострадание) в нашем концепт-слое — синоним Kṛpā (practice/grace.md), поэтому цитата именно о милости."
+  },
+  "kiirtana_legend": {
+    "id": "kiirtana_legend",
+    "name": "Дар Кииртана · легендарный",
+    "sanskrit": "कीर्तन",
+    "effects": [
+      {
+        "kind": "mod_boon_kiirtana",
+        "amount": 3
+      }
+    ],
+    "rarity": "legendary",
+    "quoteId": "kiirtana",
+    "requires": [
+      "kiirtana",
+      "seva"
+    ],
+    "_note": "Легендарный дар: открывается, только если уже есть Дар Кииртана и Дар Севы (Hades: legendary boons требуют предпосылок). В колоде кииртан даёт 3 саттвы за звук, а не 1."
+  },
+  "tapah_legend": {
+    "id": "tapah_legend",
+    "name": "Дар Тапаха · легендарный",
+    "sanskrit": "तपः",
+    "effects": [
+      {
+        "kind": "mod_boon_tapah",
+        "amount": 6
+      }
+    ],
+    "rarity": "legendary",
+    "quoteId": "tapah",
+    "requires": [
+      "tapah",
+      "ahimsa"
+    ],
+    "_note": "Требует Дар Тапаха и Дар Ахимсы. В колоде аскеза бьёт на 6 сильнее, а не на 3."
+  },
+  "mantra_legend": {
+    "id": "mantra_legend",
+    "name": "Дар Мантры · легендарный",
+    "sanskrit": "मन्त्र",
+    "effects": [
+      {
+        "kind": "mod_boon_mantra",
+        "amount": 2
+      }
+    ],
+    "rarity": "legendary",
+    "quoteId": "mantra",
+    "requires": [
+      "mantra",
+      "svadhyaya"
+    ],
+    "_note": "Требует Дар Мантры и Дар Свадхьяи. Мантра обходится на 2 дешевле."
+  },
+  "seva_legend": {
+    "id": "seva_legend",
+    "name": "Дар Севы · легендарный",
+    "sanskrit": "सेवा",
+    "effects": [
+      {
+        "kind": "mod_boon_seva",
+        "amount": 3
+      }
+    ],
+    "rarity": "legendary",
+    "quoteId": "seva",
+    "requires": [
+      "seva",
+      "ahimsa"
+    ],
+    "_note": "Требует Дар Севы и Дар Ахимсы. Служение лечит на 3 за раз, а не на 1."
   }
 }

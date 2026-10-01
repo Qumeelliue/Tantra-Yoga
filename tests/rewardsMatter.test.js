@@ -15,7 +15,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, relative } from 'node:path'
-import { BOONS } from '../webapp/js/core/boons.js'
+import { BOONS, BOON_RARITY } from '../webapp/js/core/boons.js'
 import { KEEPSAKES } from '../webapp/js/core/keepsakes.js'
 import { WORKSHOP } from '../webapp/js/core/workshop.js'
 import { VARNA_KITS } from '../webapp/js/core/varnaKits.js'
@@ -97,8 +97,16 @@ describe('награды влияют на бой', () => {
     for (const u of WORKSHOP) {
       expect(u.cost, `${u.id} без цены`).toBeGreaterThan(0)
     }
+    // Список редкостей — из кода, а не повторён здесь строкой: иначе
+    // добавление легендарных даров валило бы этот тест, и правильным
+    // решением выглядело бы «ослабить тест», а не «дописать редкость».
     for (const b of BOONS) {
-      expect(['common', 'uncommon', 'rare']).toContain(b.rarity)
+      expect(Object.keys(BOON_RARITY), `редкость ${b.rarity} не описана словами`).toContain(b.rarity)
+    }
+    // Легендарный дар обязан быть тяжелее обычного — иначе «легендарность»
+    // была бы только подписью на карточке.
+    for (const b of BOONS.filter((x) => x.rarity === 'legendary')) {
+      expect(b.requires.length, `${b.id}: легендарный без предпосылок`).toBeGreaterThan(0)
     }
   })
 })
