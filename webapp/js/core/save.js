@@ -421,6 +421,10 @@ export function recordRunEnd(meta, result, info = {}) {
     pacified: info.pacified || 0,
     kills,
     bosses,
+    // Возвраты из смерти (Nine Sols: Revival, МЕХАНИКА 49). Пишутся в историю,
+    // потому что забег с возвратом и забег без него — разные забеги, и
+    // «мирный финал» из одного и того же числа оков значил бы разное.
+    revivals: Number(info.revivals) || 0,
     awakened: peaceful ? 1 : 0,
     at: Date.now(),
   })

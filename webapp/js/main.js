@@ -889,7 +889,8 @@ function showStats() {
             h('div', { class: 'run-row-sub' },
               r.bosses ? `владык ${r.bosses}/7` : (r.floor != null ? `этаж ${r.floor + 1}` : '—'),
               r.pacified > 0 ? ` · освобождено ${r.pacified}` : '',
-              r.kills > 0 ? ` · сломано силой ${r.kills}` : '')),
+              r.kills > 0 ? ` · сломано силой ${r.kills}` : '',
+              r.revivals > 0 ? ` · возвратов ${r.revivals}` : '')),
           h('div', { class: 'run-row-date' }, date))
       })
 
@@ -908,6 +909,15 @@ function showStats() {
       gauges.map(([l, v]) => h('div', { class: 'stats-cell' },
         h('div', { class: 'stats-n' }, v),
         h('div', { class: 'stats-l' }, l)))),
+    // РЕКОРД (Dead Cells / StS: лучший результат виден в статистике). Раньше
+    // он жил только на экране входа в Поле Ума: игрок, сыгравший двадцать
+    // забегов, в Городе не видел ни одного своего числа. И то, что стояло
+    // вместо него — «лучший забег» про `meta.bestRun`, — считалось с 2026-08
+    // и описывало победу, а не лучший результат.
+    h('div', { class: 'panel mt' },
+      h('div', { class: 'row between' },
+        h('span', { class: 'hint' }, 'рекорд забега'),
+        h('span', { style: 'color:var(--gold-soft);font-weight:800' }, reasonsToRun(meta).line))),
     meta.bestRun
       ? h('div', { class: 'panel mt' },
           h('div', { class: 'row between' },
@@ -1779,9 +1789,10 @@ function showFieldVictory(meta, floor, summary) {
     // сравнивает его с прошлым. Молчаливый рекорд не мотивирует ничего.
     isRecord
       ? h('div', { class: 'win-record' },
-        prev
+        (prev
           ? `Рекорд побит: было ${prev.pacified} оков${prev.kills === 0 ? ' без крови' : ''} — стало ${pacified}.`
-          : `Первый рекорд: ${pacified} оков${kills === 0 ? ' без единой крови' : ''}.`)
+          : `Первый рекорд: ${pacified} оков${kills === 0 ? ' без единой крови' : ''}.`) +
+        (revivals ? ` Возвратов из смерти: ${revivals} — рекорд взят с ними, это видно.` : ''))
       : (prev
         ? h('div', { class: 'win-record dim' }, `Рекорд: ${prev.pacified} оков${prev.kills === 0 ? ' без крови' : ''}. Этот забег — ${pacified}.`)
         : null),
@@ -1916,6 +1927,7 @@ function finishFieldRun(result) {
     pacified: r.pacified,
     kills: r.kills,
     bosses: r.bosses,
+    revivals: r.revivals || 0,
   })
   // РЕКОРД. Считается здесь, а не на экране финала: экран можно закрыть,
   // а забег всё равно случился. И только победа — мера мастерства, а не

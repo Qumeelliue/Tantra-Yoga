@@ -47,6 +47,11 @@ export function recordRun(meta, run) {
     pacified: run.pacified || 0,
     kills: run.kills || 0,
     time: Math.round(run.time || 0),
+    // Возвраты из смерти (Nine Sols: Revival, МЕХАНИКА 49). Рекорд без них
+    // и рекорд с ними — РАЗНЫЕ забеги по difficulty, и молча сравнивать их
+    // нельзя: игрок покупал нефрит за жизнь и получал рекорд «в обход»
+    // собственной смертности.
+    revivals: run.revivals || 0,
   }
   const prev = (meta.records && meta.records[BEST_KEY]) || null
   if (!prev) {
@@ -55,6 +60,10 @@ export function recordRun(meta, run) {
   }
   // Что считать мастерством: больше освобождённых оков, при равенстве —
   // меньше крови. Время НЕ сравнивается: см. шапку модуля.
+  //
+  // Возвраты не «улучшают» забег и не «ухудшают»: они просто названы. Иначе
+  // забег с возвратом вытеснял бы забег без него при тех же оках, а это была
+  // бы мера удачи, а не мастерства.
   const better = now.pacified > prev.pacified
     || (now.pacified === prev.pacified && now.kills < prev.kills)
   if (!better) return { isRecord: false, prev, now }
@@ -80,7 +89,8 @@ export function reasonsToRun(meta) {
     heat: meta?.heatLevel || 0,
     // Одна строка для игрока. Если рекорда нет — приглашение, а не отчёт.
     line: b
-      ? `Рекорд: ${b.pacified} оков снято${b.kills === 0 ? ', без единой крови' : `, крови ${b.kills}`}`
+      ? `Рекорд: ${b.pacified} оков снято${b.kills === 0 ? ', без единой крови' : `, крови ${b.kills}`}` +
+        (b.revivals ? ` · с ${b.revivals} возвратом из смерти` : '')
       : 'Рекорда ещё нет — первый забег станет первым.',
   }
 }
