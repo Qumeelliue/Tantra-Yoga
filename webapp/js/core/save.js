@@ -365,11 +365,37 @@ export function addAnchor(meta, anchor) {
   return false
 }
 
+/**
+ * Исход ЗАБЕГА. Ровно один раз за побег — не за комнату.
+ *
+ * Раньше эта функция звалась на выходе из каждой комнаты Поля Ума, а комнат
+ * в забеге 28. В Городу игрок видел «1 забег · 28 побед» и «% побед» = 2800 %.
+ * `stats.awakened` («пробуждений») рос дважды за событие: за каждого
+ * успокоенного владыка и ещё раз на экране финала. Смысла в таком числе не
+ * было — см. `design/BASE-GAME.md`, МЕХАНИКА 36.
+ *
+ * @param {'death'|'victory'|'retreat'|'awakening'} result
+ *   `death` — ум не выдержал, `retreat` — игрок сам оставил забег,
+ *   `victory` — седьмой владыка снят, `awakening` — путь карты (второй путь).
+ * @param {{floor?:number, pacified?:number, kills?:number, bosses?:number}} info
+ *   `kills` и `bosses` — **за весь забег**, а не за последнюю комнату.
+ */
 export function recordRunEnd(meta, result, info = {}) {
   // runs считает startNewRun — здесь только исходы (иначе двойной счёт)
   if (result === 'death') meta.stats.deaths += 1
   if (result === 'victory') meta.stats.victories += 1
-  if (result === 'awakening') meta.stats.awakened += 1
+  if (result === 'retreat') meta.stats.deaths += 1
+  // МИРНЫЙ ФИНАЛ (решение автора 2026-09-30) = забег без единой крови.
+  //
+  // В Поле Ума ударом не ранится рипу вовсе, сломать силой можно только
+  // пашу, поэтому «без единой крови» = «ни одного сломанного паши за забег».
+  // Число владык тоже должно быть полным: забег, в который игрок вошёл с
+  // пятой чакры, мирным финалом не является — «Вершина Света» не достигнута.
+  const kills = Number(info.kills) || 0
+  const bosses = Number(info.bosses) || 0
+  const fullPath = bosses >= 7
+  const peaceful = result === 'awakening' || (result === 'victory' && kills === 0 && fullPath)
+  if (peaceful) meta.stats.awakened += 1
   // История забегов (§16.2, «статистика» локально): последние 12 исходов
   // с деталями для экрана статистики.
   if (!Array.isArray(meta.runLog)) meta.runLog = []
@@ -377,8 +403,9 @@ export function recordRunEnd(meta, result, info = {}) {
     result,
     floor: info.floor ?? null,
     pacified: info.pacified || 0,
-    kills: info.kills || 0,
-    awakened: result === 'awakening' ? 1 : 0,
+    kills,
+    bosses,
+    awakened: peaceful ? 1 : 0,
     at: Date.now(),
   })
   if (meta.runLog.length > 12) meta.runLog = meta.runLog.slice(-12)

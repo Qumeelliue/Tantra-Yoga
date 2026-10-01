@@ -82,7 +82,27 @@ describe('Структура забега', () => {
 // крутился по кругу вечно. Пройти игру было невозможно.
 describe('Финал забега', () => {
   it('после седьмого владыки забег заканчивается, а не зацикливается', () => {
-    expect(main).toContain('if (isLastFloor(floor)) { showFieldVictory(meta, floor, st2); return }')
+    // Раньше здесь стояло `if (isLastFloor(floor)) { showFieldVictory(meta,
+    // floor, st2); return }` — и эта строка была НЕДОСТИЖИМОЙ: onNext звали
+    // только при `nextFloor <= 6` (floor ≤ 5), а isLastFloor значит floor ≥ 6.
+    // Вместе это `5 >= 6`, всегда ложь. Экран «Вершина Света» был обещан
+    // игроку и недостижим (design/BASE-GAME.md, МЕХАНИКА 37).
+    expect(main).toContain('if (isLastFloor(floor)) {')
+    expect(main).toContain('showFieldVictory(meta, floor, finishFieldRun(\'victory\'))')
+  })
+
+  it('победа в комнате ВСЕГДА уходит вызывающему коду, а не решается на месте', () => {
+    // Второе условие, из-за которого финал был недостижим. Победа не должна
+    // решаться внутри экрана поля: роутинг — у вызывающего, и путь к финалу
+    // должен быть один, а не два, каждое из которых выглядит правильным.
+    // Комментарии вырезаны: строка `won && nextFloor <= 6` осталась бы в
+    // комментарии, где я объяснял, что её убрал, — и проверка враньём
+    // жаловалась бы сама на себя.
+    const ui = read('webapp/js/ui/screens/field.js')
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/(^|[^:])\/\/.*$/gm, '$1')
+    expect(ui).toContain('if (won && opts.onNext) {')
+    expect(ui).not.toContain('won && nextFloor <= 6')
   })
 
   it('последняя чакра — седьмая, и это одно число на весь проект', () => {
@@ -97,17 +117,33 @@ describe('Финал забега', () => {
     expect(main).not.toContain('floor + 1 <= 6')
   })
 
-  it('экран итога показывает время, освобождённых, убитых и знания', () => {
+  it('экран итога говорит о ВСЕМ забеге, а не о последней комнате', () => {
     expect(main).toContain('function showFieldVictory')
-    for (const row of ['время забега', 'освобождено', 'убито', 'монет', 'открыто знаний']) {
+    for (const row of ['комнат пройдено', 'освобождено за забег', 'сломано силой', 'монет', 'открыто знаний']) {
       expect(main, row).toContain(`'${row}'`)
     }
+    // Кровь берётся из сводки забега. Раньше здесь было
+    // `st.foes.filter((f) => f.dead).length` — то есть про СЕДЬМУЮ комнату
+    // писалось «никого не убито», хотя по дороге можно было перебить всех.
+    expect(main).toContain('const kills = summary?.kills || 0')
+    expect(main).not.toContain('const kills = st ? st.foes.filter((f) => f.dead).length : 0')
   })
 
-  it('мирный финал и кровавый различаются — и мирный считает ахимсу', () => {
-    expect(main).toContain('const peaceful = kills === 0')
+  it('мирный финал = забег без единой крови И полный путь', () => {
+    // Решение автора 2026-09-30. Ударом в Поле Ума не ранится рипу вовсе,
+    // ломать силой можно только пашу — так что «без крови» = «ни одного
+    // сломанного паши за весь забег». Плюс полный путь: вошёл на пятую
+    // чакру — «Вершина Света» не достигнута, и врать не о чем.
+    expect(main).toContain('const peaceful = kills === 0 && full')
     expect(main).toContain("const quoteId = peaceful ? 'ahimsa' : 'liberation_from_staticity'")
     expect(main).toContain('Вершина Света — без крови')
+  })
+
+  it('слова на экране не спорят с числами на нём же', () => {
+    // Игрок может войти в Поле Ума с любой открытой чакры, и «семь владык
+    // снято» тогда — враньё. Текст обязан считать то же, что и строки.
+    expect(main).toContain("const bossesWord = full ? 'Семь владык снято'")
+    expect(main).toContain('Владык снято: ${bosses} из ${CHAKRAS.length}')
   })
 
   it('из финала есть два выхода: ещё раз и в Город', () => {

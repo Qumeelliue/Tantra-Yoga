@@ -8,6 +8,7 @@ import { meditationScreen } from './ui/screens/meditation.js'
 import { fieldScreen } from './ui/screens/field.js'
 import { buildFieldFloor, fieldHead } from './core/fieldBuild.js'
 import { WORKSHOP, workshopCost, canBuy, sevaPointsFor, applyUpgrades } from './core/workshop.js'
+import { HEAT_TIERS, HEAT_MAX, applyHeat, heatReward } from './core/heat.js'
 import { FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS } from './core/field.js'
 import { applyVarna } from './core/varnaKits.js'
 import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.js'
@@ -191,7 +192,14 @@ function showTitle() {
     Object.keys(meta.compendium.relics).length
   const quoteCount = Object.keys(meta.quotesUnlocked).length
 
-  const cityStage = Math.min(4, meta.stats.pacified + meta.stats.awakened)
+  // Город просыпается по ВЛАДЫКАМ — так и написано в тексте ниже
+  // («Бывшие владыки становятся учителями»), и именно они становятся
+  // учителями. Раньше стояло `pacified + awakened`, где `pacified` —
+  // накопительный счётчик оку (их за забег десятки), а `awakened` рос
+  // дважды за событие. Вместе это давало 4-й уровень города уже в первом
+  // забеге: четыре ступени означали путь, который проходился за минуту.
+  const bossesFreed = (meta.pacifiedBosses || []).length
+  const cityStage = Math.min(4, bossesFreed)
   const CITY_TEXT = [
     'Город спит под пеленой Тамаса. Начните восхождение.',
     'В Городе зажигаются первые огни.',
@@ -205,11 +213,21 @@ function showTitle() {
         `Учителя города: ${meta.pacifiedBosses.join(' · ')}`)
     : null
 
+  // Подписи обязаны совпадать со смыслом числа (2026-09-30).
+  // Раньше здесь стояло «мирных» над счётчиком ОК, а «пробуждений» росло
+  // дважды за событие — за каждого успокоенного владыка и ещё раз на экране
+  // финала. Игрок видел «1 забег · 28 побед» и «% побед» = 2800 %, потому
+  // что исход писался на каждую комнату, а их в забеге 28. Теперь:
+  //   забегов        — сколько раз игрок входил в Поле Ума
+  //   побед          — сколько забегов дошло до седьмого владыки
+  //   мирных финалов — сколько забегов прошло без единой крови
+  //   освобождений   — сколько оков снято терпением за всё время; это
+  //                    накопительный счётчик, а НЕ число финалов
   const gauges = [
-    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.runs), h('div', { class: 'lbl' }, 'забеги')),
-    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.pacified), h('div', { class: 'lbl' }, 'мирных')),
+    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.runs), h('div', { class: 'lbl' }, 'забегов')),
+    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.pacified), h('div', { class: 'lbl' }, 'освобождений')),
     h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.victories), h('div', { class: 'lbl' }, 'побед')),
-    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.awakened), h('div', { class: 'lbl' }, 'пробуждений')),
+    h('div', { class: 'gauge' }, h('div', { class: 'num' }, meta.stats.awakened), h('div', { class: 'lbl' }, 'мирных финалов')),
     h('div', { class: 'gauge' }, h('div', { class: 'num' }, `${quoteCount}/${Object.keys(QUOTES).length}`), h('div', { class: 'lbl' }, 'цитат')),
   ]
 
@@ -240,17 +258,23 @@ function showTitle() {
         ? 'Успокойте владык чакр — и они зажгут свет в Городе'
         : 'Успокоенные владыки стали учителями — поговорите с ними'))
 
+  // «% побед» больше не может быть 2800 %: в формуле стояло
+  // `victories + awakened`, где `awakened` рос за каждого владыку. Теперь
+  // обе величины считают забеги, и каждая — один раз за забег.
+  const winPct = meta.stats.runs > 0
+    ? Math.round((meta.stats.victories / meta.stats.runs) * 100)
+    : 0
   const statsBlock = h('div', { class: 'varna-card garden-card audio-card city-card', onclick: () => showStats() },
     h('div', { class: 'varna-head' },
       h('div', {},
         h('div', { class: 'varna-label' }, 'Статистика'),
-        h('div', { class: 'varna-name' }, `${meta.stats.runs} забегов · ${meta.stats.victories + meta.stats.awakened} побед`)),
+        h('div', { class: 'varna-name' }, `${meta.stats.runs} забегов · ${meta.stats.victories} побед`)),
       h('div', { class: 'varna-next' }, 'смотреть →')),
     h('div', { class: 'stats-mini' },
-      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.runs), h('div', { class: 'stats-mini-l' }, 'забеги')),
-      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.awakened), h('div', { class: 'stats-mini-l' }, 'пробуждений')),
-      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.pacified), h('div', { class: 'stats-mini-l' }, 'мирных')),
-      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, (meta.stats.runs > 0 ? Math.round(((meta.stats.victories + meta.stats.awakened) / meta.stats.runs) * 100) : 0)), h('div', { class: 'stats-mini-l' }, '% побед'))),
+      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.runs), h('div', { class: 'stats-mini-l' }, 'забегов')),
+      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.awakened), h('div', { class: 'stats-mini-l' }, 'мирных финалов')),
+      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, meta.stats.pacified), h('div', { class: 'stats-mini-l' }, 'освобождений')),
+      h('div', { class: 'stats-mini-cell' }, h('div', { class: 'stats-mini-n' }, winPct), h('div', { class: 'stats-mini-l' }, '% побед'))),
     h('div', { class: 'varna-hint' },
       meta.runLog && meta.runLog.length > 0
         ? 'История последних забегов — каждый прожит, ни один не зря'
@@ -389,7 +413,7 @@ function showHowto() {
 const ONBOARDING_STEPS = [
   { e: '🚶', t: 'Ты идёшь сам', d: 'Никакой карты на столе. Ты ходишь по комнате, оки приходят к тебе, и всё решают две кнопки. Комната — это комната, а не стол с картами.' },
   { e: '✋', t: 'Ока замахнулась — жми кольцо', d: 'Когда ока бьёт, нажимай «Дефлект». Попадёшь в окно — удар вернётся в неё, и она станет спокойнее. Это и есть весь бой: поймал момент.' },
-  { e: '🕊', t: 'Убивать нельзя', d: 'Окову снимают терпением: бей в ритм и жди, пока сомкнётся кольцо. Снятая ока уходит сама. Мирный путь — настоящий финал, как в Hades, где можно пройти без единого убийства.' },
+  { e: '🕊', t: 'Рипу не убить, пашу — можно', d: 'Обычную оку сдерживают: удар её не ранит, только злит. А вот пашу удар ломает — и это оставляет самскару, вернётся в следующей жизни. Обе дороги ведут к финалу, и выбор твой: бить или терпеть. Мирный путь дороже, но он и есть настоящий результат — как в Hades, где можно пройти без единого убийства.' },
   { e: '🕯', t: 'Между комнатами — выбор', d: 'У Фонтана берёшь один нефрит на весь забег. После владыки — дар: один из трёх, остаются до конца. Это единственные решения в игре, и они копятся.' },
   { e: '♻️', t: 'Смерть — это перерождение', d: 'Смерть отнимает нефрит и дары, но не знание. Цитаты, которые ты открыл, остаются навсегда: следующий забег начинается не с нуля, а с того, что ты уже понял.' },
 ]
@@ -824,12 +848,17 @@ function showStats() {
   const { meta } = app
   const s = meta.stats
   const total = s.runs || 0
-  const wins = s.victories + s.awakened
+  // Победа — это ПОБЕДА, а «пробуждение» её подвид (забег без единой
+  // крови). Раньше тут стояло `victories + awakened`, из-за чего «% побед»
+  // считался от числа, которое росло дважды за событие, и доходил до
+  // 2800 %. Суммировать надо наоборот: победа = все, из них часть — мирные.
+  const wins = s.victories
   const winPct = total > 0 ? Math.round((wins / total) * 100) : 0
   const log = (meta.runLog || []).slice().reverse()
 
   const RESULT = {
     death: { icon: '✝', label: 'перерождение', cls: 'death' },
+    retreat: { icon: '☾', label: 'оставлен забег', cls: 'death' },
     victory: { icon: '☀', label: 'завершён', cls: 'victory' },
     awakening: { icon: '🕉', label: 'пробуждение', cls: 'awakening' },
   }
@@ -839,22 +868,24 @@ function showStats() {
         const rk = RESULT[r.result] || RESULT.death
         const d = new Date(r.at)
         const date = `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}`
-        return h('div', { class: `run-row ${rk.cls}` },
-          h('div', { class: 'run-row-icon' }, rk.icon),
+        // Строка забега говорит о ВСЕМ забеге: сколько владык снято,
+        // сколько оков снято, сколько оков сломано силой.
+        return h('div', { class: `run-row ${r.awakened ? 'awakening' : rk.cls}` },
+          h('div', { class: 'run-row-icon' }, r.awakened ? RESULT.awakening.icon : rk.icon),
           h('div', { class: 'run-row-main' },
-            h('div', { class: 'run-row-name' }, rk.label),
+            h('div', { class: 'run-row-name' }, r.awakened ? 'мирный финал' : rk.label),
             h('div', { class: 'run-row-sub' },
-              r.floor != null ? `этаж ${r.floor + 1}` : '—',
-              r.pacified > 0 ? ` · мирных ${r.pacified}` : '',
-              r.kills > 0 ? ` · подавлено ${r.kills}` : '')),
+              r.bosses ? `владык ${r.bosses}/7` : (r.floor != null ? `этаж ${r.floor + 1}` : '—'),
+              r.pacified > 0 ? ` · освобождено ${r.pacified}` : '',
+              r.kills > 0 ? ` · сломано силой ${r.kills}` : '')),
           h('div', { class: 'run-row-date' }, date))
       })
 
   const gauges = [
-    ['забеги', total],
-    ['победы', wins],
-    ['пробуждения', s.awakened],
-    ['мирные', s.pacified],
+    ['забегов', total],
+    ['побед', wins],
+    ['мирных финалов', s.awakened],
+    ['освобождений', s.pacified],
     ['% побед', `${winPct}%`],
   ]
   show(h('div', { class: 'screen active comp-screen' },
@@ -983,11 +1014,34 @@ function showFountain() {
 function showFieldChakra() {
   const meta = app.meta
   const unlocked = meta.fieldFloor || 0
+  const heat = Math.max(0, Math.min(HEAT_MAX, meta.heatLevel || 0))
   show(h('div', { class: 'screen active node-screen' },
     h('div', { class: 'node-icon' }, '◉'),
     h('div', { class: 'node-title display' }, 'Поле Ума'),
     h('p', { class: 'node-text' },
-      'Иди по миру и возвращай оковы ударами. Ока замахнулась — кольцо сомкнулось — жми дефлект. Убить их нельзя.'),
+      'Иди по миру и возвращай оковы. Ока замахнулась — кольцо сомкнулось — жми дефлект. Рипу сдерживают: удар её не ранит. Пашу удар ломает — но оставляет самскару, и вернётся она в следующей жизни. Терпение или сила — выбор твой.'),
+
+    // ── ЖАР (копия из Hades) ──────────────────────────────────────────
+    // Добровольная сложность, которая платит. Без неё у игры нет причины
+    // начинать забег второй раз: прошёл 7 чакр — и всё. Игрок сам выбирает
+    // планку ДО входа, условия перечислены, награда растёт вместе с жаром.
+    h('div', { class: 'varna-card heat-card' },
+      h('div', { class: 'varna-head' },
+        h('div', {},
+          h('div', { class: 'varna-label' }, 'Жар'),
+          h('div', { class: 'varna-name' }, heat === 0 ? 'чистый путь' : `ступень ${heat} из ${HEAT_MAX}`)),
+        h('div', { class: 'varna-next' }, `+${Math.round(heat * 50)} % севы`)),
+      h('div', { class: 'heat-row' },
+        Array.from({ length: HEAT_MAX + 1 }, (_, n) => h('button', {
+          class: `heat-step${n <= heat ? ' on' : ''}${n === heat ? ' cur' : ''}`,
+          onclick: () => { meta.heatLevel = n; saveMeta(meta); sfx.buy?.(); showFieldChakra() },
+        }, String(n)))),
+      heat > 0
+        ? h('div', { class: 'varna-hint' },
+          HEAT_TIERS.slice(0, heat).map((t) => t.name).join(' · ') +
+          ` — и сева за забег ×${heatReward(heat, 1)}`)
+        : h('div', { class: 'varna-hint' }, 'Поднять жар можно в любой момент — он платит севой, но кренит ум.')),
+
     h('div', { class: 'stack', style: 'margin-top:16px' },
       CHAKRAS.map((name, i) => {
         const w = worldForFloor(i)
@@ -1205,6 +1259,14 @@ function startFieldRun(floor, stage = 'room', room = 0) {
     meta.upgrades || [],
   )
 
+  // ── ЖАР применяется последним ────────────────────────────────────────
+  // После даров, нефрита и мастерской — и это не случайно. Жар выбран
+  // ДО забега, но игрок мог купить усиление, которое его отменяет, и тогда
+  // жар не имел бы смысла. Ставим его последним, чтобы «добровольная ставка»
+  // всегда была добровольной: покупка в мастерской не должна тихо обнулять
+  // обещание награды.
+  const heatInfo = applyHeat(opts2, meta.heatLevel || 0)
+
   // Здоровье живёт весь побег, как в Hades: вышел из комнаты битый — вошёл
   // в следующую битый. Раньше каждая комната начиналась с полной жизни, и
   // весь забег становился бесконечным «сбросом»: напряжения не было вовсе,
@@ -1220,6 +1282,11 @@ function startFieldRun(floor, stage = 'room', room = 0) {
     rng: Math.random,
     opts: opts2,
   })
+  // Жар в состоянии: HUD обязан показывать ставку, а не молчать о ней.
+  // Обещание «жар платит» без показа — то же враньё, что и «убить нельзя»
+  // (design/BASE-GAME.md, МЕХАНИКА 41).
+  st.heat = heatInfo.level
+  st.heatNames = heatInfo.names
   app.field = st
   app.fieldFloor = floor
   // Отладочный доступ к состоянию поля из консоли (не влияет на игру).
@@ -1265,11 +1332,22 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       // в бою не было: «освобождение нужно во всех сферах жизни».
       const dq = QUOTES[placeQuotes('death')[0]]
       if (dq && !isQuoteLived(meta, dq.id)) markLived(meta, dq.id)
-      // Смерть — конец побега: в следующую попытку жизнь полная и дары
-      // прежние, как в Hades. Умер — начал заново, без накопленного.
+      // Смерть — конец побега: в следующую попытку жизнь полная, дары и
+      // нефрит прежние, как в Hades. Умер — начал заново, без накопленного.
+      //
+      // Нефрит здесь НЕ сбрасывался, хотя обучение и Город дважды обещают
+      // «смерть отнимает нефрит и дары». И выходы из смерти разошлись:
+      // «ещё раз» (здесь) нефрит ОСТАВАЛ, а «к чакрам» (`onClose`) его
+      // обнулял. То есть одна смерть давала два разных исхода в
+      // зависимости от кнопки, и игрок об этом не знал.
+      // Знание (цитаты, учителя) при этом не теряется — так и обещано.
       app.runHp = null
       app.boons = []
-      settleFieldRun(meta, st2, floor)
+      app.runKeepsake = null
+      settleFieldRoom(meta, st2, floor)
+      // Исход забега пишется здесь, а не в `settleFieldRoom`: смерть
+      // обрывает побег, «ещё раз» начинает новый.
+      finishFieldRun('death')
       app.field = null
       startFieldRun(floor)
     },
@@ -1277,7 +1355,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       // Запоминаем здоровье ПЕРЕД тем, как комната закончилась: дверь в
       // следующую открывается из последнего кадра боя, а не из экрана.
       if (st2?.player) app.runHp = st2.player.hp
-      settleFieldRun(meta, st2, floor)
+      settleFieldRoom(meta, st2, floor)
       app.field = null
       // Этап — это несколько комнат подряд, потом комната владыки (Hades).
       // Маршрут считает отдельная чистая функция: она покрыта тестами, и
@@ -1291,7 +1369,17 @@ function startFieldRun(floor, stage = 'room', room = 0) {
         // За седьмым владыкой забег заканчивается. Раньше он не
         // заканчивался вовсе: дар вёл в «чакру 8», которой нет, и мир
         // снова становился первым — игрок крутился по кругу вечно.
-        if (isLastFloor(floor)) { showFieldVictory(meta, floor, st2); return }
+        if (isLastFloor(floor)) {
+          // Экран финала был НЕДОСТИЖИМ из-за двойного условия: `onNext`
+          // зовёлся только при `nextFloor <= 6` (то есть floor ≤ 5), а здесь
+          // стояло `isLastFloor(floor)` (floor ≥ 6). Вместе это всегда ложь:
+          // «Вершина Света» была обещана игроку при старте и недостижима.
+          // Теперь исход пишется один раз, а экран получает сводку по
+          // ВСЕМУ забегу, а не по последней комнате.
+          // См. `design/BASE-GAME.md`, МЕХАНИКА 37.
+          showFieldVictory(meta, floor, finishFieldRun('victory'))
+          return
+        }
         showAfterBoss(meta, floor, st2)
         return
       }
@@ -1304,11 +1392,16 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       showBoonDraft(nextFloor)
     },
     onClose: (st2) => {
-      settleFieldRun(meta, st2, floor)
+      settleFieldRoom(meta, st2, floor)
       app.field = null
       app.runHp = null
       app.runKeepsake = null
       app.boons = []
+      // Пауза прямо называет кнопку «оставить забег», и игра уже обнуляла
+      // здоровье, дары и нефрит — то есть забег тут и кончался. Просто
+      // никто не записывал исход. Умер игрок или ушёл сам — пишем честно:
+      // `retreat` значит, что он выбрал уйти, а не что его убили.
+      finishFieldRun(st2?.player?.alive ? 'retreat' : 'death')
       showFieldChakra()
     },
   }))
@@ -1324,16 +1417,25 @@ function startFieldRun(floor, stage = 'room', room = 0) {
  *
  * Итог — как побег в Hades: что прошёл, сколько снял, сколько убил,
  * сколько узнал. И два выхода: ещё раз или в Город.
+ *
+ * `summary` — сводка ВСЕГО забега из `finishFieldRun`. Раньше экран брал
+ * `st.foes` последней комнаты и писал «никого не убито» по ней одной: можно
+ * было перебить полпути, а экран всё равно звал финал мирным. Теперь
+ * `kills` — это вся кровь за забег, а `bosses` — сколько владык снято
+ * на самом деле (игрок может войти в Поле Ума с пятой чакры, и тогда
+ * «семь владык» было бы враньём).
  */
-function showFieldVictory(meta, floor, st) {
-  const p = st?.player || {}
-  const kills = st ? st.foes.filter((f) => f.dead).length : 0
-  const pacified = st ? st.pacified : 0
-  const time = Math.round(st?.time || 0)
-  const peaceful = kills === 0
+function showFieldVictory(meta, floor, summary) {
+  const kills = summary?.kills || 0
+  const pacified = summary?.pacified || 0
+  const bosses = summary?.bosses || 0
+  const rooms = summary?.rooms || 0
+  const full = bosses >= CHAKRAS.length
+  // МИРНЫЙ ФИНАЛ (решение автора 2026-09-30): весь забег без единой крови.
+  // Ударом в Поле Ума не ранится рипу вовсе, ломать можно только пашу — так
+  // что «без крови» = «ни одного сломанного паши за весь забег».
+  const peaceful = kills === 0 && full
 
-  meta.stats.victories = (meta.stats.victories || 0) + 1
-  if (peaceful) meta.stats.awakened = (meta.stats.awakened || 0) + 1
   meta.fieldFloor = CHAKRAS.length
   saveMeta(meta)
 
@@ -1354,8 +1456,8 @@ function showFieldVictory(meta, floor, st) {
   const line = (k, v) => h('div', { class: 'win-row' },
     h('span', { class: 'win-k' }, k), h('b', { class: 'win-v' }, v))
 
-  const mm = String(Math.floor(time / 60)).padStart(2, '0')
-  const ss = String(time % 60).padStart(2, '0')
+  // Слова на экране не должны спорить с числами на нём же.
+  const bossesWord = full ? 'Семь владык снято' : `Владык снято: ${bosses} из ${CHAKRAS.length}`
 
   show(h('div', { class: 'screen active node-screen win-screen' },
     h('div', { class: 'node-icon' }, peaceful ? '❖' : '✦'),
@@ -1363,8 +1465,10 @@ function showFieldVictory(meta, floor, st) {
       peaceful ? 'Вершина Света — без крови' : 'Вершина Света'),
     h('p', { class: 'node-text' },
       peaceful
-        ? 'Семь владык снято, и никого не убито. Учение говорит, что высший результат — не перебить чужую жизнь, а снять с неё оковы.'
-        : 'Семь владык снято. Но кровь осталась на твоих руках: оковы, которые можно было разрубить, ты рубил.'),
+        ? `${bossesWord}, и никого не убито за весь забег. Учение говорит, что высший результат — не перебить чужую жизнь, а снять с неё оковы.`
+        : kills > 0
+          ? `${bossesWord}. Кровь осталась на твоих руках: ${kills} ${plural(kills, 'ока', 'оки', 'ок')} сломано силой, и самскары это помнят.`
+          : `${bossesWord}. Крови на руках нет, но путь пройден не целиком — мирный финал начинается с первой чакры и держится до седьмой.`),
     h('div', { class: 'win-quote' },
       q.quote ? h('p', {}, q.quote) : null,
       q.source ? h('cite', {}, q.source) : null),
@@ -1373,9 +1477,9 @@ function showFieldVictory(meta, floor, st) {
         `Вершина отдала ${given.length} ещё: ${given.map((id) => QUOTES[id].term).join(' · ')}`)
       : null,
     h('div', { class: 'win-rows' },
-      line('время забега', `${mm}:${ss}`),
-      line('освобождено', String(pacified)),
-      line('убито', String(kills)),
+      line('комнат пройдено', String(rooms)),
+      line('освобождено за забег', String(pacified)),
+      line('сломано силой', String(kills)),
       line('монет', String(meta.coins || 0)),
       line('открыто знаний', String(Object.keys(meta.lived || {}).length)),
     ),
@@ -1391,6 +1495,20 @@ function showFieldVictory(meta, floor, st) {
 function settleFloor(meta, floor) {
   if (!isLastFloor(floor) && (meta.fieldFloor || 0) < floor + 1) meta.fieldFloor = floor + 1
   saveMeta(meta)
+}
+
+/**
+ * Русское склонение по числу: 1 ока, 2 оки, 5 оков.
+ * Нужна экрану финала: он говорит словами ровно то же, что показывает
+ * числами, и разойтись они не должны.
+ */
+function plural(n, one, few, many) {
+  const a = Math.abs(n) % 100
+  const b = a % 10
+  if (a > 10 && a < 20) return many
+  if (b > 1 && b < 5) return few
+  if (b === 1) return one
+  return many
 }
 
 /** После владыки: покой, потом чередование лавка/дар, потом следующая чакра. */
@@ -1445,26 +1563,80 @@ function showRestRoom(meta, floor, st) {
 }
 
 
-// Итоги локации засчитываются в мету один раз: и владыки в город,
-// и следующая чакра открывается только за чистый путь.
-function settleFieldRun(meta, st, floor) {
+/**
+ * ГРАНИЦЫ ЗАБЕГА (решение автора 2026-09-30).
+ *
+ * Забег = от входа в Поле Ума до 7-го владыки или смерти (Hades: одна жизнь —
+ * один побег). Раньше границ не было задано нигде, и исход писался на КАЖДУЮ
+ * комнату: их в забеге 28, поэтому в Городу игрок видел «1 забег · 28 побед»,
+ * а «% побед» доходил до 2800 %. Подробно — `design/BASE-GAME.md`,
+ * МЕХАНИКА 36.
+ *
+ * Счётчики забега живут в `app.fieldRun`. Меню чакр — это мета-прогресс
+ * (вход в мир), а не начало забега, поэтому счётчик не сбрасывается там.
+ */
+function beginFieldRun() {
+  if (app.fieldRun) return app.fieldRun
+  app.fieldRun = { kills: 0, pacified: 0, bosses: 0, rooms: 0, floor: 0 }
+  return app.fieldRun
+}
+
+/**
+ * Забег окончен. Пишет исход **ровно один раз** и возвращает сводку забега —
+ * её показывает экран финала, чтобы «Вершина Света» говорила правду о всём
+ * забеге, а не о последней комнате.
+ *
+ * @param {'death'|'victory'|'retreat'} result
+ */
+function finishFieldRun(result) {
+  const r = app.fieldRun
+  app.fieldRun = null
+  if (!r) return null
+  const summary = { ...r, result }
+  recordRunEnd(app.meta, result, {
+    floor: r.floor,
+    pacified: r.pacified,
+    kills: r.kills,
+    bosses: r.bosses,
+  })
+  saveMeta(app.meta)
+  return summary
+}
+
+/**
+ * Итоги КОМНАТЫ засчитываются в мету один раз: очки севы, знание об оках,
+ * монеты, разблокировка следующей чакры.
+ *
+ * Исход забега здесь больше НЕ пишется — это делает `finishFieldRun`, один раз
+ * на весь побег. Раньше `recordRunEnd` стоял здесь, и вся статистика профиля
+ * считалась по комнатам.
+ */
+function settleFieldRoom(meta, st, floor) {
   if (st.__settled) return
   st.__settled = true
   // Очки севы — постоянная валюта мастерской (Nine Sols: 拜 → мастерская).
   const pts = sevaPointsFor(st)
   meta.sevaPoints = (meta.sevaPoints || 0) + pts
+  // Забег: копим то, из чего потом собирается «мирный финал». Сломать силой
+  // в Поле Ума можно только пашу — рипу ударом не ранится вовсе, — поэтому
+  // `kills` и есть «сколько крови осталось на руках за весь забег».
+  const run = beginFieldRun()
+  run.floor = Math.max(run.floor, floor + 1)
+  run.rooms += 1
   for (const f of st.foes) {
     if (f.pacified) {
       markSeen(meta, 'enemies', f.id)
       meta.stats.pacified += 1
+      run.pacified += 1
       if (f.isBoss) {
-        meta.stats.awakened += 1
+        run.bosses += 1
         const list = meta.pacifiedBosses || (meta.pacifiedBosses = [])
         if (!list.includes(f.name)) list.push(f.name)
       }
     } else if (f.dead) {
       markSeen(meta, 'enemies', f.id)
       meta.stats.kills += 1
+      run.kills += 1
     }
   }
   // Монеты собираются даже при смерти — как в Hades: драхма остаётся.
@@ -1474,9 +1646,6 @@ function settleFieldRun(meta, st, floor) {
     if ((meta.fieldFloor || 0) < floor + 1) meta.fieldFloor = floor + 1
   }
   meta.deathsInRow = st.player.alive ? 0 : (meta.deathsInRow || 0) + 1
-  recordRunEnd(meta, st.player.alive ? 'victory' : 'death', {
-    floor, pacified: st.pacified, kills: st.foes.filter((f) => f.dead).length,
-  })
   saveMeta(meta)
 }
 
@@ -2076,8 +2245,20 @@ function onCombatEnd(combat) {
   }
 
   if (isFinalBoss) {
-    recordRunEnd(app.meta, run.outcome === 'awakening' ? 'awakening' : 'victory', { floor: run.floor, pacified: combat.pacified, kills: combat.kills })
-    if (run.bossPacified) app.meta.stats.awakened += 1
+    // Границы забега здесь держатся правильно: исход пишется только на
+    // смерти и на последнем владыке, а не на каждом бою (2026-09-30).
+    //
+    // Убрана строка `if (run.bossPacified) app.meta.stats.awakened += 1`:
+    // `recordRunEnd` уже прибавил «пробуждение» для `outcome ===
+    // 'awakening'`, и следом его прибавляли ВТОРЫМ разом. Отсюда было
+    // «пробуждений» больше, чем забегов, — то же самое, что чинили в Поле
+    // Ума, только в карточном пути.
+    recordRunEnd(app.meta, run.outcome === 'awakening' ? 'awakening' : 'victory', {
+      floor: run.floor,
+      pacified: combat.pacified,
+      kills: combat.kills,
+      bosses: run.bossesPacified || 0,
+    })
     app.meta.bestRun = { pacified: app.meta.stats.pacified, awakened: run.bossPacified, date: Date.now() }
     saveMeta(app.meta)
     showVictory(run.outcome)

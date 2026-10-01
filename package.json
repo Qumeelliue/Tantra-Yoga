@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "balance": "node --experimental-loader ./scripts/aliases.mjs scripts/balance.mjs",
+    "road-width": "node --experimental-loader ./scripts/aliases.mjs scripts/roadWidth.mjs",
     "field-balance": "node --experimental-loader ./scripts/aliases.mjs scripts/fieldBalance.mjs",
     "audit:sanskrit": "node scripts/auditSanskrit.mjs",
     "audit:glossary": "node scripts/auditGlossary.mjs",
