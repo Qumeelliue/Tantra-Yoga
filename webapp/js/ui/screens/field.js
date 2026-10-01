@@ -1527,11 +1527,18 @@ export function fieldScreen(state, opts = {}) {
         h('span', {}, 'сева ' + st.served.size),
         h('span', {}, 'счёт ' + st.score)),
       h('div', { class: 'field-over-btns' },
+        // ВОЗВРАТ (Nine Sols: Revival). Пока нефрит ещё в руках и забег не
+        // возвращался однажды, у смерти есть третий выход. Плата — нефрит:
+        // обещание, взятое в начале забега, отдаётся здесь.
+        !won && opts.onRevive
+          ? h('button', { class: 'btn primary', onclick: () => opts.onRevive?.(st) },
+            'вернуться — отдав нефрит')
+          : null,
         // Как в Hades: смерть — это «ещё раз». Жизнь уходит, знание нет.
         !won && opts.onRetry
-          ? h('button', { class: 'btn primary', onclick: () => opts.onRetry?.(st) }, 'ещё раз')
+          ? h('button', { class: opts.onRevive ? 'btn ghost' : 'btn primary', onclick: () => opts.onRetry?.(st) }, 'ещё раз')
           : null,
-        h('button', { class: won || !opts.onRetry ? 'btn primary' : 'btn ghost',
+        h('button', { class: won || (!opts.onRetry && !opts.onRevive) ? 'btn primary' : 'btn ghost',
           onclick: () => opts.onClose?.(st) },
           won ? 'в начало' : 'к чакрам'),
       ),

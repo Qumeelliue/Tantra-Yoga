@@ -1013,6 +1013,12 @@ function showFountain() {
     h('div', { class: 'node-title display' }, 'Фонтан юности'),
     h('p', { class: 'node-text' },
       'Один нефрит на весь побег. Он не лечит и не бьёт — он меняет правила боя, и менять придётся до конца. Дары боги дадут потом, а это — твоё.'),
+    // Возврат (Nine Sols: Revival) обещан ЗДЕСЬ, а не на экране смерти.
+    // Иначе игрок узнал бы о правиле в момент, когда выбирает, — и это был бы
+    // не выбор, а сюрприз. То же, что «убить их нельзя»: обещание, которое
+    // нельзя исполнить, и обещание вслепую одинаково плохи.
+    h('div', { class: 'varna-hint record-hint' },
+      'Пока нефрит в руках, у смерти есть третий выход: отдать его и вернуться в этот же забег с половиной жизни. Один раз за побег.'),
     h('div', { class: 'wsel-row' }, picks.map(stone)),
   ))
 }
@@ -1406,6 +1412,32 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       saveMeta(meta)
     },
     // Смерть — как в Hades: знание и монеты остаются, забег начинается заново.
+    // ВОЗВРАТ (Nine Sols: Revival). Смерть предлагает третий выход: отдать
+    // нефрит и продолжить тот же забег. Раз за забег — иначе это не «выбор»,
+    // а отмена смерти, и забег перестаёт быть забегом.
+    // Кнопка «вернуться» появляется только когда возврат РЕАЛЬНО возможен:
+    // нефрит в руках и забег ещё не возвращался. Иначе на экране смерти стояла
+    // бы кнопка, которая ничего не делает, — то же враньё, что и обещание,
+    // которое нельзя исполнить.
+    onRevive: (app.runKeepsake && !app.runRevived) ? (st2) => {
+      const jadeName = KEEPSAKE_BY_ID[app.runKeepsake]?.name || 'нефрит'
+      app.runRevived = true
+      app.runKeepsake = null
+      // Считается в забеге и показывается на финале: забег с возвратом —
+      // это другой забег, и прятать это было бы враньём в отчёте.
+      const run0 = beginFieldRun()
+      run0.revivals = (run0.revivals || 0) + 1
+      // Половина жизни. Ровно половина: вернуться полным иным было бы второй
+      // попыткой без цены.
+      const maxHp = st2?.player?.maxHp || 60
+      app.runHp = Math.max(1, Math.ceil(maxHp / 2))
+      // Комната НЕ засчитывается: возврат перезапускает её с оками на месте
+      // (Nine Sols), и если бы мы засчитали монеты сейчас, игрок получил бы
+      // комнату дважды — за одну.
+      toast(`Возврат: нефрит «${jadeName}» отдан, жизнь — половина`, 'hl')
+      app.field = null
+      startFieldRun(floor, stage, room)
+    } : null,
     onRetry: (st2) => {
       // Смерть — место, которое учит. Смерть приносит слово, которого
       // в бою не было: «освобождение нужно во всех сферах жизни».
@@ -1424,6 +1456,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       app.boons = []
       app.runKeepsake = null
       app.runChaos = false      // проклятие хаос-пути не переживает смерть
+      app.runRevived = true     // возврат уже был: второй раз нельзя
       settleFieldRoom(meta, st2, floor)
       // Исход забега пишется здесь, а не в `settleFieldRoom`: смерть
       // обрывает побег, «ещё раз» начинает новый.
@@ -1481,6 +1514,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       app.runKeepsake = null
       app.boons = []
       app.runChaos = false      // «оставил забег» — забег кончился, проклятие тоже
+      app.runRevived = true     // забег закрыт: возврат в него больше невозможен
       // Пауза прямо называет кнопку «оставить забег», и игра уже обнуляла
       // здоровье, дары и нефрит — то есть забег тут и кончался. Просто
       // никто не записывал исход. Умер игрок или ушёл сам — пишем честно:
@@ -1595,6 +1629,7 @@ function showFieldVictory(meta, floor, summary) {
   // Рекорд приходит из `finishFieldRun`, а не считается здесь заново: иначе
   // экран и профиль разошлись бы при первом же пересчёте. Проброс — единственное
   // место, где эти два числа связаны, и оно проверяется тестом.
+  const revivals = summary?.revivals || 0
   const isRecord = !!summary?.isRecord
   const prev = summary?.prevRecord || null
 
@@ -1640,6 +1675,7 @@ function showFieldVictory(meta, floor, summary) {
       : null,
     h('div', { class: 'win-rows' },
       line('комнат пройдено', String(rooms)),
+      revivals ? line('возвратов из смерти', String(revivals)) : null,
       line('освобождено за забег', String(pacified)),
       line('сломано силой', String(kills)),
       line('монет', String(meta.coins || 0)),
@@ -1756,7 +1792,7 @@ function showRestRoom(meta, floor, st, after) {
  */
 function beginFieldRun() {
   if (app.fieldRun) return app.fieldRun
-  app.fieldRun = { kills: 0, pacified: 0, bosses: 0, rooms: 0, floor: 0 }
+  app.fieldRun = { kills: 0, pacified: 0, bosses: 0, rooms: 0, floor: 0, revivals: 0 }
   return app.fieldRun
 }
 
