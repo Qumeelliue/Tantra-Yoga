@@ -20,6 +20,7 @@ import { applyBoons, rollBoons } from '../webapp/js/core/boons.js'
 import { mantraById } from '../webapp/js/core/field.js'
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from '../webapp/js/core/stageRoute.js'
 import { applyHeat, HEAT_MAX, heatReward } from '../webapp/js/core/heat.js'
+import { WORKSHOP as WS, applyUpgrades, rankKey, maxRank } from '../webapp/js/core/workshop.js'
 
 const RUNS = Number(process.argv[2] || 60)
 
@@ -34,6 +35,21 @@ const heatArg = argv.find((a) => a.startsWith('--heat'))
 const HEAT = heatArg
   ? Math.max(0, Math.min(HEAT_MAX, Number(heatArg.split('=')[1] || 0)))
   : 0
+// ── МАСТЕРСКАЯ (2026-09-30) ─────────────────────────────────────────────
+// Проверяется то, ради чего ранги и делались: прокачанная мастерская не
+// должна ломать забег. Два разных вопроса, и оба честные:
+//
+//   · `--ws=all`  — владелец ВСЕХ рангов. Поле обязано остаться проходимым,
+//     иначе усиления не «работают», а ломают;
+//   · без флага — владелец НИЧЕГО. Это базовая линия, и она не должна
+//     сдвинуться от того, что мастерская расширилась.
+//
+// Флаги только через `--` (правило проекта):
+//   node … fieldBalance.mjs 20 -- --ws=all
+const wsArg = process.argv.slice(3).find((a) => a.startsWith('--ws'))
+const WS_KEYS = wsArg && wsArg.split('=')[1] === 'all'
+  ? WS.flatMap((u) => Array.from({ length: maxRank(u.id) }, (_, i) => rankKey(u.id, i + 1)))
+  : []
 const ROOMLOG = []
 const PARRIES = [0]
 const STATS = { mantra: 0, krpa: 0, spring: 0, hurt: 0, dmg: 0, pacified: 0, strikes: 0, feints: 0, rooms: 0, bossPacified: 0 }
@@ -81,7 +97,13 @@ function optsFor(floor, rng, varna, keepsake, boons) {
     mantraId: FLOOR_MANTRA[floor] || 'japa',
     coins: 0, varna, keepsake, deaths: 0,
   }
-  return applyBoons(applyKeepsake(applyVarna(base, varna), keepsake), boons)
+  // Мастерская — последней в цепочке, ровно как в `startFieldRun`: усиление
+  // дороже дара и перекрывает его. Без этого замер мерил бы не тот бой, в
+  // котором игрок реально стоит.
+  return applyUpgrades(
+    applyBoons(applyKeepsake(applyVarna(base, varna), keepsake), boons),
+    WS_KEYS,
+  )
 }
 
 /** Один бой: бот ходит, дефлектит, тратит мантру. Возвращает итог боя. */
@@ -353,7 +375,8 @@ function simulate(quiet = false) {
   console.log('проходим. Сложность судится руками: сколько врагов бьёт разом,')
   console.log('с какой частотой и сколько снимает за удар.')
   console.log(`забегов: ${RUNS} | побед: ${wins.length} (${Math.round((wins.length / RUNS) * 100)}%)` +
-    (HEAT > 0 ? ` | ЖАР ${HEAT} из ${HEAT_MAX} · сева за забег ×${heatReward(HEAT, 1)}` : ''))
+    (HEAT > 0 ? ` | ЖАР ${HEAT} из ${HEAT_MAX} · сева за забег ×${heatReward(HEAT, 1)}` : '') +
+    (WS_KEYS.length ? ` | МАСТЕРСКАЯ: все ранги (${WS_KEYS.length} покупок)` : ''))
   if (wins.length) {
     const avg = wins.reduce((a, b) => a + b, 0) / wins.length
     console.log(`среднее время побега: ${avg.toFixed(1)} с · комнат на этап: ${ROOMS_PER_STAGE}`)

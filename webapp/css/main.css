@@ -2474,3 +2474,12 @@ body {
    правил. Поэтому приглушён ровно настолько, чтобы читаться как закрытый. */
 .daily-card { margin-top: 16px; }
 .daily-card.locked { opacity: .5; }
+
+/* Ранг усиления в мастерской. Без цифры «купил второе» и «купил третье» —
+   одно и то же, и прогресс не читается. */
+.ws-rank {
+  margin-left: 8px; padding: 1px 6px;
+  font: 600 10px/1.6 var(--font-ui, system-ui);
+  color: var(--muted); background: rgba(255,255,255,.06);
+  border-radius: 4px; vertical-align: middle;
+}
