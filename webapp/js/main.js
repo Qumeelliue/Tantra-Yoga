@@ -2887,10 +2887,73 @@ function notifySynergy(before, after) {
 // ─────────────────────────────────────────────────────────────
 
 function showMeditation() {
-  // Медитация — это и есть узел восстановления (Hades: fountain). В карточном
-  // пути больше нечему лечиться: победа в бое не даёт жизни, как и в Hades.
-  // Практика возвращает часть тела — и это честно: ты сел и дышал.
-  show(meditationScreen(app, { onDone: (res) => {
+  // Практика — узел восстановления (Hades: fountain). В карточном пути больше
+  // нечему лечиться: победа в бою не даёт жизни, как и в Hades.
+  //
+  // Но узел теперь даёт ВЫБОР, а не только действие (StS: костёр — лечиться
+  // ИЛИ улучшить). Второй вариант здесь — отпустить практику: убрать одну карту
+  // из колоды навсегда. Это самое копируемое решение колодостроителей в
+  // жанре, и у нас его не было: колода только росла, ум становился всё гуще,
+  // и никогда — легче.
+  //
+  // Выбор сделан ПЕРВЫМ экраном: если сначала показать дыхание, а потом
+  // спросить, игрок уже отмедitated и «отпустить» читается как наказание.
+  const choose = () => {
+    show(h('div', { class: 'screen active node-screen' },
+      h('div', { class: 'node-icon' }, '☾'),
+      h('div', { class: 'node-title display' }, 'Практика'),
+      h('p', { class: 'node-text' },
+        'Одно из двух. Восстановиться — или отпустить одну практику из колоды навсегда.'),
+      h('div', { class: 'boon-row' },
+        h('button', { class: 'boon-card r-rare', onclick: () => breathe() },
+          h('span', { class: 'boon-rar' }, 'практика'),
+          h('b', { class: 'boon-name' }, 'Дыхание'),
+          h('span', { class: 'boon-desc' }, 'Вернуть часть жизни сев')),
+        h('button', { class: 'boon-card r-rare', onclick: () => letGo() },
+          h('span', { class: 'boon-rar' }, 'отпустить'),
+          h('b', { class: 'boon-name' }, 'Отпустить практику'),
+          h('span', { class: 'boon-desc' }, 'Убрать одну карту из колоды — навсегда'))),
+      h('button', { class: 'btn ghost small', onclick: () => { markNodeDone(app.run); afterNode() } },
+        'ничего не делать'),
+    ))
+  }
+
+  // Отпустить практику: выбор карты из колоды (StS: снять карту).
+  const letGo = () => {
+    // Только уникальные: два одинаковых «Ом» отпустить нельзя, потому что
+    // отпустить можно ПРАКТИКУ, а не её копию.
+    const ids = [...new Set((app.run.deck || []).filter((id) => CARDS[id]))]
+    if (!ids.length) { choose(); return }
+    show(h('div', { class: 'screen active node-screen' },
+      h('button', { class: 'btn ghost small', onclick: choose }, '← Назад'),
+      h('div', { class: 'node-icon' }, '☾'),
+      h('div', { class: 'node-title display' }, 'Отпустить практику'),
+      h('p', { class: 'node-text' }, 'Выбери одну. Она уйдёт из колоды до конца жизни.'),
+      h('div', { class: 'stack', style: 'margin-top:12px' }, ids.map((id) => h('button', {
+        class: 'ws-row can',
+        onclick: () => {
+          // Убираем ВСЕ копии: карта — это практика, а не её распечатка.
+          // Иначе «отпустил» значило бы «убрал одну из шести одинаковых», и
+          // игрок считал бы, что колода стала легче, а она не стала.
+          app.run.deck = app.run.deck.filter((x) => x !== id)
+          toast(`Отпущено: ${CARDS[id].name}`, 'hl')
+          saveMeta(app.meta)
+          markNodeDone(app.run)
+          afterNode()
+        },
+      },
+        h('i', { class: 'ws-mark' }, '☾'),
+        h('div', { class: 'ws-tx' },
+          h('b', {}, CARDS[id].name),
+          h('span', {}, CARDS[id].desc || '')),
+        h('i', { class: 'ws-cost' }, 'отпустить'),
+      ))),
+    ))
+  }
+
+  // Само дыхание — как было; экран выбора стоит первым, и медитация зовётся из
+  // него, а не наоборот.
+  const breathe = () => show(meditationScreen(app, { onDone: (res) => {
     if (res && res.quality >= 3) progressDaily(app.meta, 'meditate_q3', 1)
     const heal = Math.round(app.run.maxHp * (res && res.quality >= 3 ? 0.4 : 0.22))
     const before = app.run.hp
@@ -2908,6 +2971,8 @@ function showMeditation() {
     markNodeDone(app.run)
     afterNode()
   } }))
+
+  choose()
 }
 
 // ─────────────────────────────────────────────────────────────

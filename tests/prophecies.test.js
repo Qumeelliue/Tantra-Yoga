@@ -184,3 +184,47 @@ describe('Прорицания — копия, а не своя идея', () =>
     expect(base).toContain('Prophecies')
   })
 })
+describe('Отпустить практику — копия, а не своя идея', () => {
+  it('записана в BASE-GAME со своим источником', () => {
+    expect(base).toContain('МЕХАНИКА 52')
+    expect(base).toContain('Slay the Spire')
+  })
+
+  it('колода умеет легчать: узел практики даёт выбор', () => {
+    // Раньше узел просто лечил, и колода за забег только росла. «Ум» мог
+    // стать гуще, но никогда — легче.
+    const m = read('webapp/js/main.js')
+    const i = m.indexOf('function showMeditation()')
+    const fn = m.slice(i, m.indexOf('\nfunction ', i + 10))
+    expect(fn).toContain('Отпустить практику')
+    expect(fn).toContain('const letGo')
+    expect(fn).toContain('const breathe')
+    // Выбор ПЕРВЫМ экраном: если сначала дыхание, «отпустить» читается как
+    // наказание за лечение.
+    // Вызов экрана выбора — ПОСЛЕДНИЙ оператор функции. Ищем последнее вхождение
+    // `choose()`: первое — это объявление `const choose = ...`, и сравнение с ним
+    // проверяло бы не порядок, а место объявления.
+    const lastChoose = fn.lastIndexOf('choose()')
+    const lastBreathe = fn.lastIndexOf('const breathe')
+    expect(lastChoose, 'экран выбора должен зваться в конце').toBeGreaterThan(lastBreathe)
+    // Хвост функции — `choose()`, а после него комментарий-разделитель идёт
+    // уже ПОСЛЕ тела функции, поэтому сравнение идёт по последнему оператору
+    // без учёта хвостовых комментариев.
+    const body = fn.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '')
+    expect(body.trimEnd().endsWith('choose()\n}'), 'последним должен зваться экран выбора').toBe(true)
+  })
+
+  it('снимаются ВСЕ копии карты, а не одна', () => {
+    const m = read('webapp/js/main.js')
+    const i = m.indexOf('function showMeditation()')
+    const fn = m.slice(i, m.indexOf('\nfunction ', i + 10))
+    expect(fn).toContain('app.run.deck.filter((x) => x !== id)')
+  })
+
+  it('выбираются только уникальные карты', () => {
+    const m = read('webapp/js/main.js')
+    const i = m.indexOf('function showMeditation()')
+    const fn = m.slice(i, m.indexOf('\nfunction ', i + 10))
+    expect(fn).toContain('[...new Set((app.run.deck || [])')
+  })
+})
