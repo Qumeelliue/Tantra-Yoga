@@ -13,6 +13,7 @@ import { recordRun as recordRunSummary, reasonsToRun, bestRecord } from './core/
 import { dailyOffer, dailyRng, markDailyRunPlayed, dailySeed } from './core/dailyRun.js'
 import { FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS } from './core/field.js'
 import { applyVarna } from './core/varnaKits.js'
+import { ASPECTS, aspectsFor, applyAspect } from './core/aspects.js'
 import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.js'
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from './core/stageRoute.js'
 import { rollDoors, DOOR_KINDS } from './core/doors.js'
@@ -61,6 +62,10 @@ function boot() {
     // Живёт в app, а не в meta: это выбор на один забег, а не
     // прогресс или содержание сессии.
     oath: null,
+    // ПОЧЕРК на забег (Hades: weapon aspects): id почерка или null.
+    // Живёт рядом с нефритом: почерк берётся до выбора варны,
+    // а сменился варны — делай изданной снова.
+    runAspect: null,
     // Возврат из смерти входит с половиной жизни. Флаг живёт один вход.
     runReviveHalf: false,
     // Флаг испытания силы: текущая комната — элитная. Сбрасывается при любом
@@ -1036,7 +1041,7 @@ function showWeaponSelect() {
     return h('button', {
       class: `wsel-card w-${id}`,
       style: `--wcolor:${m.color}`,
-      onclick: () => { meta.focusVarna = id; saveMeta(meta); sfx.unlock?.(); showFountain() },
+      onclick: () => { meta.focusVarna = id; saveMeta(meta); sfx.unlock?.(); showAspectSelect(id) },
     },
       h('div', { class: 'wsel-top' },
         h('i', { class: 'wsel-mark' }, m.sanskrit),
@@ -1054,6 +1059,47 @@ function showWeaponSelect() {
     h('div', { class: 'node-title display' }, 'Кем ты идёшь'),
     h('p', { class: 'node-text' },
       'Варны — не классы и не «класс души», а психология ума (Human Society Part 2). Выбери, с кем пойдёшь: у каждой свой навык, и он меняет бой.'),
+    h('div', { class: 'wsel-row' }, cards),
+  ))
+}
+
+/**
+ * ПОЧЕРК на забег (Hades: weapon aspects). Второй слой выбора после
+ * варны: варна живёт вечно, почерк — на эту же варны, но иначе иначе.
+ *
+ * Варны четыре на всю игру — это четыре игры, и после десяти забего выбор
+ * перестаёт быть выбором. Почерк возвращает это весь забег, и у него есть плоского выбора.
+ *
+ * Один почерк из двух не обязан делать нельзя: лобой выбор шурше нового боя, а
+ * затем каждый почерк — увидимый похерк того же вида.
+ */
+function showAspectSelect(varnaId) {
+  const meta = app.meta
+  const list = aspectsFor(varnaId)
+  const cards = list.map((a) => h('button', {
+    class: 'wsel-card',
+    onclick: () => {
+      app.runAspect = a.id
+      markLived(meta, a.quoteId)
+      saveMeta(meta)
+      sfx.unlock?.()
+      showFountain()
+    },
+  },
+    h('div', { class: 'wsel-top' },
+      h('i', { class: 'wsel-mark' }, '☗'),
+      h('b', {}, a.name),
+      h('span', { class: 'wsel-lv' }, a.label)),
+    h('p', { class: 'wsel-desc' }, a.desc),
+    h('p', { class: 'wsel-focus' }, `получаи: ${a.gain} · цена: ${a.cost}`),
+  ))
+
+  show(h('div', { class: 'screen active node-screen wsel-screen' },
+    h('button', { class: 'btn ghost small', onclick: showWeaponSelect }, '← Назад'),
+    h('div', { class: 'node-icon' }, '☗'),
+    h('div', { class: 'node-title display' }, 'Почерк'),
+    h('p', { class: 'node-text' },
+      'Сама варна, другой почерк уыскления. В нём есть и сила, и цена: любой почерк имеет свою цену.'),
     h('div', { class: 'wsel-row' }, cards),
   ))
 }
@@ -1450,7 +1496,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
   // порядок: варна → дары → мастерская (позднее перекрывает раньше)
   // порядок: варна → нефрит → дары → мастерская (позднее перекрывает раньше)
   const opts2 = applyUpgrades(
-    applyBoons(applyKeepsake(applyVarna(base, vId), app.runKeepsake), runBoons()),
+    applyBoons(applyKeepsake(applyAspect(applyVarna(base, vId), app.runAspect), app.runKeepsake), runBoons()),
     meta.upgrades || [],
   )
 
@@ -1590,6 +1636,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       app.boons = []
       app.runKeepsake = null
       app.runChaos = false      // проклятие хаос-пути не переживает смерть
+      app.runAspect = null     // почерк — на забег: новый побег выбирает свой
       app.runRevived = true     // возврат уже был: второй раз нельзя
       app.runReviveHalf = false
       app.fieldElite = false    // умер в испытании — следующий забег не начинается с него
@@ -1659,6 +1706,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       app.runKeepsake = null
       app.boons = []
       app.runChaos = false      // «оставил забег» — забег кончился, проклятие тоже
+      app.runAspect = null     // почерк не переживает забег
       app.runRevived = true     // забег закрыт: возврат в него больше невозможен
       app.fieldElite = false
       // Пауза прямо называет кнопку «оставить забег», и игра уже обнуляла

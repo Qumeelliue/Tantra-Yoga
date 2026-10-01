@@ -43,7 +43,12 @@ describe('обет проходит весь путь: выбор → бой →
     }
     if (/Понятно/.test(here())) targets().find((x) => /Понятно/.test(textOf(x))).dispatch('click')
     if (/Кем ты идёшь/.test(here())) targets().find((x) => /Шудра/.test(textOf(x))).dispatch('click')
-    const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
+    if (/Почерк/i.test(here())) {
+    const a = targets().find((x) => /wsel-card/.test(x.className || ''))
+    expect(a, 'на экране почерка нет карточек').toBeTruthy()
+    a.dispatch('click')
+  }
+  const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
     expect(jade.length, 'фонтан даёт три нефрита').toBe(3)
     jade[0].dispatch('click')
 

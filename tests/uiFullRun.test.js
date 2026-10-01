@@ -63,6 +63,9 @@ describe('забег до конца через настоящие экраны'
     }
     if (/Понятно/.test(here())) find(/Понятно/).dispatch('click')
     if (/Кем ты идёшь/.test(here())) find(/Шудра/).dispatch('click')
+    // Экран «Почерк» (Hades: weapon aspects) стоит между выбором варны и
+    // фонтаном. Без шага тест падал бы не из-за игры, а из-за забытого экрана.
+    if (/Почерк/i.test(here())) targets().find((x) => /wsel-card/.test(x.className || '')).dispatch('click')
     const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
     expect(jade.length, 'фонтан даёт три нефрита').toBe(3)
     jade[0].dispatch('click')

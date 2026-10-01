@@ -73,7 +73,12 @@ describe('забег через двери: каждый вид двери од�
     }
     if (/Понятно/.test(here())) find(/Понятно/).dispatch('click')
     if (/Кем ты идёшь/.test(here())) find(/Шудра/).dispatch('click')
-    const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
+    if (/Почерк/i.test(here())) {
+    const a = targets().find((x) => /wsel-card/.test(x.className || ''))
+    expect(a, 'на экране почерка нет карточек').toBeTruthy()
+    a.dispatch('click')
+  }
+  const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
     jade[0].dispatch('click')
     const first = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
     first.dispatch('click')

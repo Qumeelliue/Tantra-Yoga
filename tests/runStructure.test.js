@@ -160,7 +160,7 @@ describe('Финал забега', () => {
 describe('Фонтан юности (Hades: Fountain of Youth)', () => {
   it('после выбора ментальности — фонтан, и только потом карта чакр', () => {
     expect(main).toContain('function showFountain')
-    expect(main).toMatch(/onclick: \(\) => \{ meta\.focusVarna = id; saveMeta\(meta\); sfx\.unlock\?\.\(\); showFountain\(\) \},/)
+    expect(main).toMatch(/onclick: \(\) => \{ meta\.focusVarna = id; saveMeta\(meta\); sfx\.unlock\?\.\(\); showAspectSelect\(id\) \},/)
     // из фонтана — сразу на карту чакр
     expect(main).toMatch(/app\.runKeepsake = k\.id[\s\S]{0,200}showFieldChakra\(\)/)
   })
@@ -172,7 +172,7 @@ describe('Фонтан юности (Hades: Fountain of Youth)', () => {
   })
 
   it('нефрит надевается ДО даров и мастерской', () => {
-    expect(main).toContain('applyKeepsake(applyVarna(base, vId), app.runKeepsake)')
+    expect(main).toContain('applyKeepsake(applyAspect(applyVarna(base, vId), app.runAspect), app.runKeepsake)')
   })
 
   it('надетый нефрит виден в бою, а не прячется', () => {

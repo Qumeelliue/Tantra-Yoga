@@ -68,6 +68,12 @@ function enterField() {
   if (!backToCity()) throw new Error('не вернулся в город')
   clickRe(/В путь по миру/, 'с титула')
   clickRe(/Шудра/, 'выбор оружия')
+  // Экран «Почерк» (Hades: weapon aspects) стоит между варной и фонтаном.
+  // Пропущенный шаг выглядел бы как «игра сломалась», а не как «забыли экран».
+  if (/Почерк/i.test(here())) {
+    const a = targets().find((x) => /wsel-card/.test(x.className || ''))
+    if (a) a.dispatch('click')
+  }
   if (/Фонтан|нефрит/i.test(here())) {
     const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
     if (jade[0]) jade[0].dispatch('click')

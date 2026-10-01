@@ -88,7 +88,14 @@ describe('проход по игре глазами игрока', () => {
     expectClean('выбор оружия')
 
     click(/Шудра/)
-    expect(here(), 'после оружия — фонтан юности').toMatch(/Фонтан|нефрит/i)
+    // После оружия — почерк (Hades: weapon aspects), потом фонтан. Порядок
+    // проверяется целиком: почерк выбирается до нефрита, потому что оба
+    // меняют забег, а нефрит — уже про оковы.
+    expect(here(), 'после оружия — выбор почерка').toMatch(/Почерк/i)
+    const asp = targets().find((x) => /wsel-card/.test(x.className || ''))
+    expect(asp, 'на экране почерка нет карточек').toBeTruthy()
+    asp.dispatch('click')
+    expect(here(), 'после почерка — фонтан юности').toMatch(/Фонтан|нефрит/i)
     expectClean('фонтан')
 
     const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
@@ -161,6 +168,7 @@ describe('бой в поле идёт и не падает', () => {
     if (!backToCity()) throw new Error('не вернулся в город')
     click(/В путь по миру/)
     click(/Шудра/)
+    if (/Почерк/i.test(here())) targets().find((x) => /wsel-card/.test(x.className || '')).dispatch('click')
     const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
     jade[0].dispatch('click')
     const world = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
@@ -216,6 +224,7 @@ describe('второй путь: колода', () => {
     expectClean('выбор ментальности')
 
     click(/Шудра/)
+    if (/Почерк/i.test(here())) targets().find((x) => /wsel-card/.test(x.className || '')).dispatch('click')
     expect(here(), 'после ментальности — карта забега').toMatch(/восхождение|владыка|бой/i)
     expectClean('карта забега')
 
@@ -274,6 +283,7 @@ function enterField() {
   if (!backToCity()) throw new Error('не вернулся в город')
   click(/В путь по миру/)
   click(/Шудра/)
+  if (/Почерк/i.test(here())) targets().find((x) => /wsel-card/.test(x.className || '')).dispatch('click')
   if (/Фонтан|нефрит/i.test(here())) {
     const jade = targets().filter((x) => /jade-card/.test(x.className || ''))
     jade[0].dispatch('click')
