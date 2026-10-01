@@ -76,9 +76,20 @@ describe('Каждое условие жара меняет то, что бой 
     // это мусор: игрок читает «терпеть труднее», а в бою ничего не меняется.
     // Первая версия жара так и сделала: `sevaHeal` и `gunaStartShift` в бою
     // не существовали.
-    const slots = ['deflectCalm', 'clockRamp', 'avidyaGain', 'shieldMax', 'gunaStart']
-    for (const s of slots) {
-      expect(fieldSrc, `слот ${s} не читается полем — условие жара было бы мусором`).toContain(s)
+    // Список берётся ИЗ САМИХ ступеней, а не написан здесь: иначе проверка
+    // проверяла бы саму себя (и ровно так она себя и проверяла, пока список
+    // из пяти имён совпадал с пятью прежними ступенями).
+    const base = { ...DEFAULT_FIELD_OPTIONS }
+    const prev = { ...base }
+    for (let lv = 1; lv <= HEAT_MAX; lv++) {
+      const o = { ...base }
+      applyHeat(o, lv)
+      const touched = Object.keys(o).filter((k) => o[k] !== prev[k] && k !== 'heat')
+      expect(touched.length, `ступень ${lv} не меняет ни одной величины`).toBeGreaterThan(0)
+      for (const k of touched) {
+        expect(fieldSrc, `слот ${k} не читается полем — условие жара было бы мусором`).toContain(k)
+      }
+      Object.assign(prev, o)
     }
   })
 
@@ -97,25 +108,22 @@ describe('Каждое условие жара меняет то, что бой 
   it('каждая ступень делает что-то, и делает это нарастающим', () => {
     // Проверяем по ПАРЕ: соседние ступени не должны выглядеть одинаково, иначе
     // это пять одинаковых ярлыков.
+    // Подпись — по ВСЕМ изменившимся слотам. Прежняя проверка смотрела на пять
+    // захардкоженных имён и поэтому «видела» различия там, где их не было, а
+    // после пересборки лестницы ругалась на собственную неполноту.
     const seen = []
     for (let lv = 0; lv <= HEAT_MAX; lv++) {
       const o = optsWithHeat(lv)
-      seen.push(JSON.stringify({
-        calm: o.deflectCalm, clock: o.clockRamp, avid: o.avidyaGain,
-        shield: o.shieldMax, guna: o.gunaStart,
-      }))
+      const sig = Object.keys(o)
+        .filter((k) => o[k] !== DEFAULT_FIELD_OPTIONS[k] && k !== 'heat')
+        .sort()
+        .map((k) => `${k}=${o[k]}`)
+        .join(',')
+      seen.push(sig || 'жар 0')
     }
     expect(new Set(seen).size, `ступени жара неразличимы: ${seen.join(' / ')}`).toBe(HEAT_MAX + 1)
   })
 
-  it('перекос действительно появляется в бое, а не только в настройках', () => {
-    // Сдвиг гун обязан дойти до состояния. Раньше гуны стояли в теле
-    // `createField` захардкоженно, и ступень 1 была бы мёртвой.
-    const st = fightWithHeat(1)
-    expect(st.player.guna.r, 'жар не довёл сдвиг раджаса до игрока').toBe(DEFAULT_GUNA_START.r + 1)
-    const st0 = fightWithHeat(0)
-    expect(st0.player.guna.r, 'на жаре 0 гуны должны быть как были').toBe(DEFAULT_GUNA_START.r)
-  })
 })
 
 describe('Жар остаётся проходимым', () => {
@@ -202,5 +210,42 @@ describe('Жар виден игроку', () => {
 
   it('уровень жара хранится в профиле и не сбрасывается', () => {
     expect(main).toContain('meta.heatLevel = n')
+  })
+})
+describe('Гуны в Поле Ума не читаются ниже пяти', () => {
+  it('поэтому сдвига гун в лестнице жара нет — и это зафиксировано', () => {
+    // Первая ступень прежней лестницы была «раджас кренится» (гуны r + 1).
+    // Замер (60 забегов, рассеянность 0.85) показал, что Поле Ума гуны читает
+    // только выше 5: условие было, а последствий ноль — 55 % побед при жаре 0
+    // и 55 % при жаре 1.
+    //
+    // Тест нужен, чтобы сдвиг гун не вернули обратно, посчитав его «смыслом
+    // жара». Это ровно тот класс ошибки, когда красивая идея стоит дороже
+    // работающей.
+    const st = fightWithHeat(1)
+    expect(st.player.guna).toEqual({ ...DEFAULT_GUNA_START })
+    expect(fieldSrc, 'ожидание про чтение гун изменилось — перечитай вывод замера')
+      .toContain('p.guna.t > 5')
+  })
+
+  it('каждая ступень лестницы измеряема: условие трогает слот, который читает бой', () => {
+    // Не «каждая ступень выглядит иначе», а «каждая ступень имеет последствия».
+    // Прежняя проверка сравнивала пять захардкоженных имён, и четыре ступени
+    // из пяти проходили её, ни на что не влияя.
+    const touchedByTier = []
+    const base = { ...DEFAULT_FIELD_OPTIONS }
+    const prev = { ...base }
+    for (let lv = 1; lv <= HEAT_MAX; lv++) {
+      const o = { ...base }
+      applyHeat(o, lv)
+      const touched = Object.keys(o).filter((k) => o[k] !== prev[k] && k !== 'heat')
+      expect(touched.length, `ступень ${lv}: ни одной изменённой величины`).toBeGreaterThan(0)
+      touchedByTier.push(...touched)
+      Object.assign(prev, o)
+    }
+    // Ни одна ступень не должна трогать один и тот же слот дважды: иначе
+    // «пять условий» — это два условия, написанные пять раз.
+    expect(new Set(touchedByTier).size, `слоты повторяются: ${touchedByTier.join(', ')}`)
+      .toBe(touchedByTier.length)
   })
 })

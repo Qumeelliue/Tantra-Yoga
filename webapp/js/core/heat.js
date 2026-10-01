@@ -53,51 +53,37 @@ export const HEAT_REWARD_SCORE = 0.35
 export const HEAT_TIERS = [
   {
     id: 'h1',
-    name: 'Раджас кренится',
-    desc: 'Ум с самого начала кренится в раджас.',
-    // Слот читается в `field.js`: `guna: o.gunaStart`. До этой правки гуны
-    // были ЗАХАРДКОЖЕНЫ (`{s:4, r:2, t:3}`), и жар на них бы не подействовал.
-    //
-    // Здесь была своя арифметическая ошибка: счётчик `o.heat` сначала
-    // увеличивался, потом считалось `HEAT_START_R * (o.heat - 1)` — на первой
-    // ступени это давало ноль, то есть сдвига не происходило ВООБЩЕ, хотя
-    // ступень отображалась и обещала награду. Поймал тест на достижимости
-    // сдвига. Счётчик нужен для показа, а не для арифметики.
-    apply: (o) => {
-      o.heat = (o.heat || 0) + 1
-      const g = { ...(o.gunaStart || HEAT_GUNA_START) }
-      g.r += HEAT_START_R
-      o.gunaStart = g
-    },
-  },
-  {
-    id: 'h2',
     name: 'Тяжелее терпеть',
     desc: 'Спокойствие копится на треть медленнее.',
     apply: (o) => { o.heat = (o.heat || 0) + 1; o.deflectCalm = Math.round(o.deflectCalm * (1 - HEAT_CALM_CUT) * 1000) / 1000 },
   },
   {
+    id: 'h2',
+    name: 'Ока достаёт дальше',
+    desc: 'Оковы бьют с большего расстояния: длина удара +10.',
+    apply: (o) => { o.heat = (o.heat || 0) + 1; o.enemyReach = (o.enemyReach ?? 40) + 10 },
+  },
+  {
     id: 'h3',
-    name: 'Оки злее',
-    desc: 'Часы смерти идут быстрее.',
-    apply: (o) => { o.heat = (o.heat || 0) + 1; o.clockRamp = Math.round((o.clockRamp || 1) * HEAT_CLOCK_MULT * 1000) / 1000 },
+    name: 'Жизни меньше',
+    desc: 'Запас жизни ниже на 15.',
+    apply: (o) => { o.heat = (o.heat || 0) + 1; o.playerHp = Math.max(20, (o.playerHp ?? 60) - 15) },
   },
   {
     id: 'h4',
-    name: 'Щит короче',
-    desc: 'Потолок щита ниже: держать удар в серии больше не выйдет.',
-    // Первая версия этого условия была «Никакой севы» (`sevaShield = 0`) —
-    // и она была МЁРТВОЙ: `sevaShield` по умолчанию УЖЕ равен нулю, так что
-    // ступени 3 и 4 давали одно и то же. Поймал тест на попарной различности
-    // ступеней. Условие обязано менять величину, которая сейчас ненулевая,
-    // иначе это ярлык без последствий.
-    apply: (o) => { o.heat = (o.heat || 0) + 1; o.shieldMax = Math.round(o.shieldMax * (1 - HEAT_SHIELD_CUT)) },
+    name: 'Оки злее',
+    desc: 'Оковы и владыки идут быстрее на треть.',
+    apply: (o) => {
+      o.heat = (o.heat || 0) + 1
+      o.enemySpeed = Math.round((o.enemySpeed ?? 46) * 1.35)
+      o.bossSpeed = Math.round((o.bossSpeed ?? 34) * 1.35)
+    },
   },
   {
     id: 'h5',
-    name: 'Тьма смотрит',
-    desc: 'Авидья растёт быстрее.',
-    apply: (o) => { o.heat = (o.heat || 0) + 1; o.avidyaGain = Math.round((o.avidyaGain ?? 1) * HEAT_AVIDYA_MULT * 1000) / 1000 },
+    name: 'Окно уже',
+    desc: 'Окно дефлекта уже на 0.03 с: 0.20 → 0.17.',
+    apply: (o) => { o.heat = (o.heat || 0) + 1; o.parryWindow = Math.max(0.12, Math.round(((o.parryWindow ?? 0.2) - 0.03) * 1000) / 1000) },
   },
 ]
 
