@@ -108,6 +108,16 @@ function playRun(seed, sloppy = 0, opts = {}) {
     while (guard++ < 20) {
       const built = buildFieldFloor(floor, {
         field: F, room, opts: { calmMul: DEFAULT_FIELD_OPTIONS.foeCalmMul },
+        // Раздача комнат идёт ЧЕРЕЗ переданный rng, иначе seed ни на что не
+        // влияет. Здесь `rng` не передавался, поэтому «десять забегов» были
+        // на самом деле десятью случайными розыгрышами — и проверка плавала:
+        // она падала примерно один раз из пяти прогонов набора, причём падала
+        // с seed 9008, который иначе проходит.
+        //
+        // Тот же класс, что и все находки сессии: проверка написана ≠ проверка
+        // детерминирована. `tests/copyingRule.test.js` завела отдельную проверку
+        // на этот класс после четвертой подряд ложной тревоги в regex.
+        rng: rand,
       })
       const foes = stage === 'boss' ? (built.boss ? [built.boss] : []) : built.foes.slice()
       const base = {
