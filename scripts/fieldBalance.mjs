@@ -21,6 +21,7 @@ import { mantraById } from '../webapp/js/core/field.js'
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from '../webapp/js/core/stageRoute.js'
 import { applyHeat, HEAT_MAX, heatReward } from '../webapp/js/core/heat.js'
 import { WORKSHOP as WS, applyUpgrades, rankKey, maxRank } from '../webapp/js/core/workshop.js'
+import { rollDoors, hasCombatDoor } from '../webapp/js/core/doors.js'
 
 const RUNS = Number(process.argv[2] || 60)
 
@@ -50,6 +51,10 @@ const wsArg = process.argv.slice(3).find((a) => a.startsWith('--ws'))
 const WS_KEYS = wsArg && wsArg.split('=')[1] === 'all'
   ? WS.flatMap((u) => Array.from({ length: maxRank(u.id) }, (_, i) => rankKey(u.id, i + 1)))
   : []
+// Сколько дверей выпадало: сколько было двух, сколько трёх. Печатается, потому
+// что «двери всегда одинаковые» — это тоже поломка, и без счётчика её не
+// видно.
+const DOORLOG = {}
 const ROOMLOG = []
 const PARRIES = [0]
 const STATS = { mantra: 0, krpa: 0, spring: 0, hurt: 0, dmg: 0, pacified: 0, strikes: 0, feints: 0, rooms: 0, bossPacified: 0 }
@@ -287,6 +292,22 @@ function playRun(rng) {
         return { win: false, stuck: true, why: `владыка чакры ${floor + 1} не успокоен`, floor, time }
       }
       const step = nextStage(stage, room, !!built.boss)
+      // ДВЕРИ. Замер обязан идти тем же путём, что игра (правило проекта):
+      // если пропустить выбор двери, симулятор мерил бы лестницу, которой в
+      // игре больше нет, и все числа после этого были бы выдуманными.
+      //
+      // Бот выбирает дверь боя — так же, как поступил бы человек, который
+      // хочет измерить ПРОХОДИМОСТЬ. Двери «лавка/покой» бот не берёт
+      // сознательно: ими можно заменить бой, и тогда замер перестал бы
+      // мерить проходимость, а мерил бы «сколько оков можно не встретить».
+      if (step.kind === 'room') {
+        const doors = rollDoors({ room: step.room, hasBoss: !!built.boss, rng })
+        const door = doors.find((d) => d.kind === 'room') || doors.find((d) => d.kind === 'boss')
+        DOORLOG[doors.length] = (DOORLOG[doors.length] || 0) + 1
+        if (!door || !hasCombatDoor(doors)) {
+          return { win: false, stuck: true, why: 'в двери не оказалось боя — правило нарушено', floor, time }
+        }
+      }
       if (step.kind === 'done') {
         if (stage === 'boss') {
           afterBoss(floor, boons, rng, fullHp, (hp) => { runHp = hp }, (n) => { maxHpBonus += n })
@@ -374,6 +395,7 @@ function simulate(quiet = false) {
   console.log('тайминге он не мера сложности — только доказательство, что забег')
   console.log('проходим. Сложность судится руками: сколько врагов бьёт разом,')
   console.log('с какой частотой и сколько снимает за удар.')
+  console.log(`двери: ${Object.entries(DOORLOG).sort().map(([n, c]) => `${n} шт. × ${c}`).join(' · ') || 'ни разу'}`)
   console.log(`забегов: ${RUNS} | побед: ${wins.length} (${Math.round((wins.length / RUNS) * 100)}%)` +
     (HEAT > 0 ? ` | ЖАР ${HEAT} из ${HEAT_MAX} · сева за забег ×${heatReward(HEAT, 1)}` : '') +
     (WS_KEYS.length ? ` | МАСТЕРСКАЯ: все ранги (${WS_KEYS.length} покупок)` : ''))

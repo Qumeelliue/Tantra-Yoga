@@ -15,6 +15,7 @@ import { FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS } from './core/field.js'
 import { applyVarna } from './core/varnaKits.js'
 import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.js'
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from './core/stageRoute.js'
+import { rollDoors, DOOR_KINDS } from './core/doors.js'
 import { chakraQuote, nextTeacherQuote, teacherChain, placeQuotes } from './core/teaching.js'
 import { BOONS as FIELD_BOONS, rollBoons, applyBoons } from './core/boons.js'
 import { createField } from './core/field.js'
@@ -1109,7 +1110,12 @@ function showFieldChakra() {
  * и покупают дары. Лавка стоит не в каждой комнате (в Hades тоже не в каждой).
  * Монеты **живут между забегами** — их не тратишь, а копишь, как в игре.
  */
-function showFieldShop(st, nextFloor) {
+/**
+ * @param {object} [opts]
+ * @param {function} [opts.after] куда идти, когда ушёл из лавки. Не задан —
+ *   старое поведение: собрать монеты и показать выбор дара.
+ */
+function showFieldShop(st, nextFloor, opts = {}) {
   const meta = app.meta
   const purse = meta.coins || 0
   app.fieldShopDiscount = st?.o?.shopDiscount || 0
@@ -1134,7 +1140,7 @@ function showFieldShop(st, nextFloor) {
         if (app.fieldShopBought[key]) return
         if (price > purse) return
         app.fieldShopBought[key] = true
-        meta.coins = purse - price; buy(); saveMeta(meta); sfx.buy?.(); showFieldShop(st, nextFloor)
+        meta.coins = purse - price; buy(); saveMeta(meta); sfx.buy?.(); showFieldShop(st, nextFloor, opts)
       },
     },
       h('i', { class: 'shop-mark' }, mark),
@@ -1144,7 +1150,7 @@ function showFieldShop(st, nextFloor) {
   }
 
   show(h('div', { class: 'screen active node-screen' },
-    h('button', { class: 'btn ghost small', onclick: () => { collectCoins(meta, st); showBoonDraft(nextFloor) } }, '← уйти'),
+    h('button', { class: 'btn ghost small', onclick: () => { collectCoins(meta, st); if (opts.after) opts.after(); else showBoonDraft(nextFloor) } }, '← уйти'),
     h('div', { class: 'node-icon' }, '◈'),
     h('div', { class: 'node-title display' }, 'Лавка'),
     h('div', { class: 'ws-points' }, h('b', {}, String(purse)), h('span', {}, 'монет')),
@@ -1182,7 +1188,11 @@ function runBoons() {
 /** Дары чакры — выбор 1 из 3, как в Hades. Стоит между локациями:
  * окно просто и ясно, три карточки, одна кнопка на каждой.
  */
-function showBoonDraft(nextFloor, caption) {
+/**
+ * Выбор дара. `after` — куда идти после выбора (Hades: следующая дверь).
+ * Не задан — старое поведение: начать следующий этаж.
+ */
+function showBoonDraft(nextFloor, caption, after) {
   const meta = app.meta
   // Дары живут ОДИН ЗАБЕГ, как в Hades. Раньше они копились в meta между
   // побегами, и к третьему забегу их не оставалось ни одного: пул кончался,
@@ -1190,7 +1200,7 @@ function showBoonDraft(nextFloor, caption) {
   // не плавная сложность, а поломка петли.
   const owned = runBoons()
   const options = rollBoons(owned, Math.random, 3)
-  if (!options.length) { startFieldRun(nextFloor); return }
+  if (!options.length) { if (after) after(); else startFieldRun(nextFloor); return }
 
   const cards = options.map((b) => h('button', {
     class: `boon-card r-${b.rarity}`,
@@ -1199,7 +1209,7 @@ function showBoonDraft(nextFloor, caption) {
       markLived(meta, b.quoteId)          // дар открывает цитату
       saveMeta(meta)
       sfx.buy?.()
-      startFieldRun(nextFloor)
+      if (after) after(); else startFieldRun(nextFloor)
     },
   },
     h('span', { class: 'boon-rar' }, b.rarity === 'common' ? 'обычный' : b.rarity === 'uncommon' ? 'необычный' : 'редкий'),
@@ -1347,6 +1357,10 @@ function startFieldRun(floor, stage = 'room', room = 0) {
     rng: Math.random,
     opts: opts2,
   })
+  // Проклятие хаос-пути держится до конца забега, как и в бою: брал дар
+  // даром — платишь весь побег. Ставится на игрока, потому что там же считает
+  // урон (`field.js`).
+  if (app.runChaos) st.player.chaosCurse = true
   // Жар в состоянии: HUD обязан показывать ставку, а не молчать о ней.
   // Обещание «жар платит» без показа — то же враньё, что и «убить нельзя»
   // (design/BASE-GAME.md, МЕХАНИКА 41).
@@ -1409,6 +1423,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       app.runHp = null
       app.boons = []
       app.runKeepsake = null
+      app.runChaos = false      // проклятие хаос-пути не переживает смерть
       settleFieldRoom(meta, st2, floor)
       // Исход забега пишется здесь, а не в `settleFieldRoom`: смерть
       // обрывает побег, «ещё раз» начинает новый.
@@ -1426,7 +1441,10 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       // Маршрут считает отдельная чистая функция: она покрыта тестами, и
       // ошибиться в ней нельзя молча.
       const step = nextStage(stage, room, !!built.boss)
-      if (step.kind === 'room') { startFieldRun(floor, 'room', step.room); return }
+      // ДВЕРИ (Hades). После комнаты игрок выбирает, куда идти. Раньше здесь
+      // был прямой переход в следующую комнату: три одинаковых подряд, без
+      // выбора, и забег читался как повтор.
+      if (step.kind === 'room') { showFieldDoors(floor, stage, step.room, !!built.boss); return }
       if (step.kind === 'boss') { startFieldRun(floor, 'boss', step.room); return }
       if (stage === 'boss') {
         settleFloor(meta, floor)
@@ -1462,6 +1480,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       app.runHp = null
       app.runKeepsake = null
       app.boons = []
+      app.runChaos = false      // «оставил забег» — забег кончился, проклятие тоже
       // Пауза прямо называет кнопку «оставить забег», и игра уже обнуляла
       // здоровье, дары и нефрит — то есть забег тут и кончался. Просто
       // никто не записывал исход. Умер игрок или ушёл сам — пишем честно:
@@ -1470,6 +1489,79 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       showFieldChakra()
     },
   }))
+}
+
+/**
+ * ДВЕРИ (копия из Hades). После каждой комнаты игрок выбирает, куда идти
+ * дальше, и на каждой двери написано, что внутри.
+ *
+ * Правило, которое держит остальное: **дверь боя есть всегда.** Иначе можно
+ * было бы пройти весь забег по лавкам и покоям, не встретив ни одной оковы, —
+ * и «мирный финал» стал бы достижим не умением, а маршрутом. Это враньё
+ * ровно того же класса, что «убить их нельзя» (МЕХАНИКА 41).
+ *
+ * Куда ведёт каждая дверь — то же самое, что уже есть в игре (лавка, покой,
+ * дар, хаос-путь, владыка). Новых экранов не вводится: только выбор между
+ * уже существующими.
+ */
+function showFieldDoors(floor, stage, room, hasBoss) {
+  const doors = rollDoors({
+    room,
+    hasBoss,
+    // Тот же генератор, что у комнат забега: если бы двери брались из
+    // `Math.random` напрямую, замер дверей мерил бы не тот забег, который
+    // играется, — ровно та ошибка, что была с `fieldBalance` и `calmMul`.
+    rng: app.daily
+      ? dailyRng(`${app.daily.dayKey}|door|${floor}|${room}`)
+      : Math.random,
+  })
+  // `room` здесь — уже следующая комната: маршрут посчитан до дверей, чтобы
+  // дверь «владыка» знала, что она последняя.
+  const nextRoom = Math.min(ROOMS_PER_STAGE, room + 1)
+  const toNextRoom = () => startFieldRun(floor, 'room', nextRoom)
+  const enter = (kind) => {
+    sfx.unlock?.()
+    if (kind === 'room') { toNextRoom(); return }
+    if (kind === 'boss') { startFieldRun(floor, 'boss', nextRoom); return }
+    if (kind === 'boon') { showBoonDraft(floor, 'Дверь дара — боя нет', toNextRoom); return }
+    if (kind === 'shop') { showFieldShop(app.field, floor + 1, { after: toNextRoom }); return }
+    if (kind === 'rest') { showRestRoom(app.meta, floor, app.field, toNextRoom); return }
+    if (kind === 'chaos') {
+      // Тот же хаос-путь, что и раньше: дар даром, но в проклятие. Проклятие
+      // держится до конца забега, как и раньше — «платишь не сейчас, платишь
+      // весь побег», и это единственный смысл двери.
+      const owned = runBoons()
+      const opts3 = rollBoons(owned, Math.random, 1)
+      if (opts3[0]) {
+        owned.push(opts3[0].id)
+        markLived(app.meta, opts3[0].quoteId)
+        saveMeta(app.meta)
+      }
+      // Проклятие ставится на ИГРОКА в следующей комнате. Первая версия
+      // писала `app.chaosCurse = true` — величину, которую никто не читает:
+      // дверь обещала «урон вдвое» и не давала его. Тот же класс, что «экран
+      // обещал, а код делал иначе» (МЕХАНИКА 41).
+      app.runChaos = true
+      toast('Хаос-путь: дар даром, урон вдвое до конца забега', 'warn')
+      toNextRoom()
+      return
+    }
+    toNextRoom()
+  }
+
+  show(h('div', { class: 'screen active node-screen door-screen' },
+    h('div', { class: 'node-icon' }, '⇢'),
+    h('div', { class: 'node-title display' }, 'Двери'),
+    h('p', { class: 'node-text' }, 'Выбери дверь. На ней написано, что внутри.'),
+    h('div', { class: 'door-row' }, doors.map((d) => h('button', {
+      class: `door-card d-${d.kind}`,
+      onclick: () => enter(d.kind),
+    },
+      h('span', { class: 'door-icon' }, d.icon),
+      h('b', {}, d.name),
+      h('span', { class: 'door-hint' }, d.hint),
+    ))),
+  ))
 }
 
 /** Этаж пройден: владыка падён — чакра открыта. */
@@ -1614,7 +1706,14 @@ function afterRest(meta, next, st) {
 }
 
 /** Комната покоя: выбрать — лечиться или стать крепче. */
-function showRestRoom(meta, floor, st) {
+/**
+ * Комната покоя: лечиться или стать крепче.
+ *
+ * `after` — куда идти после покоя. Не задан — старое поведение (`afterRest`).
+ * Покой поставлен ТОЛЬКО в забеге: в Городе он не появится, потому что
+ * «отдохнуть в городе» означало бы «забег не считается».
+ */
+function showRestRoom(meta, floor, st, after) {
   // Покой — место, которое учит: стоять нужно во всех сферах жизни.
   const rq = QUOTES[placeQuotes('rest')[0]]
   if (rq) markLived(meta, rq.id)
@@ -1624,7 +1723,7 @@ function showRestRoom(meta, floor, st) {
   const next = floor + 1
   const card = (mark, name, desc, buy) => h('button', {
     class: 'boon-card r-rare',
-    onclick: () => { buy(); saveMeta(meta); sfx.buy?.(); afterRest(meta, next, st) },
+    onclick: () => { buy(); saveMeta(meta); sfx.buy?.(); if (after) after(); else afterRest(meta, next, st) },
   },
     h('span', { class: 'boon-rar' }, 'покой'),
     h('b', { class: 'boon-name' }, name),
