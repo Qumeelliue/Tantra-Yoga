@@ -31,6 +31,11 @@ export const EMPTY_META = () => ({
   // «сколько раз прошёл» не отвечает на вопрос «прошёл ли лучше, чем в
   // прошлый раз». Это и была вторая недостающая причина повторить забег.
   records: {},
+  // ПРОРИЦАНИЯ (копия из Hades, Prophecies). Список целей с прогрессом;
+  // награда забирается руками и один раз. Прогресс считается из счётчиков
+  // профиля, а не из событий, — поэтому не откатывается назад.
+  // Подробно: `core/prophecies.js`.
+  prophecies: { claimed: [] },
   // ЖАР (копия механики «Heat» из Hades): выбранная ступень 0..HEAT_MAX.
   heatLevel: 0,
   seen: { cards: {}, enemies: {}, relics: {}, events: {}, boons: {} },
@@ -309,6 +314,10 @@ export function migrateMeta(m) {
   // уже есть) `meta.records` был бы `undefined`, и `reasonsToRun` показал бы
   // «рекорда нет» даже после десяти побед.
   if (!m.records || typeof m.records !== 'object') m.records = {}
+  // Миграция прорицаний: у игроков сохранения уже есть, а поля не будет —
+  // и экран целей показывал бы «прорицания не найдены» вместо списка.
+  if (!m.prophecies || typeof m.prophecies !== 'object') m.prophecies = { claimed: [] }
+  if (!Array.isArray(m.prophecies.claimed)) m.prophecies.claimed = []
   if (typeof m.heatLevel !== 'number') m.heatLevel = 0
   m.heatLevel = Math.max(0, m.heatLevel)
   // Миграция: старые сохранения с одной шкалой «очков варны» (начислялись за

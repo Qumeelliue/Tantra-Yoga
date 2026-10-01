@@ -16,6 +16,7 @@ import { applyVarna } from './core/varnaKits.js'
 import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.js'
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from './core/stageRoute.js'
 import { rollDoors, DOOR_KINDS } from './core/doors.js'
+import { prophecyState, unclaimedPoints, claimAll } from './core/prophecies.js'
 import { chakraQuote, nextTeacherQuote, teacherChain, placeQuotes } from './core/teaching.js'
 import { BOONS as FIELD_BOONS, rollBoons, applyBoons, BOON_RARITY } from './core/boons.js'
 import { createField } from './core/field.js'
@@ -249,6 +250,7 @@ function showTitle() {
 
   const streakBlock = streakCard(meta)
   const challengeBlock = challengeCard(meta)
+  const prophecyBlock = prophecyCard(meta)
   const varnaBlock = varnaCard(meta)
   const trialsBlock = trialsCard(meta)
   const gardenBlock = gardenCard(meta)
@@ -323,7 +325,7 @@ function showTitle() {
   // Мета-прогресс (стрики, ментальности, испытания, сад, город…) — под аккордеон,
   // чтобы титул не выглядел «стеной окон»: разворачивается по желанию.
   const metaBodyEl = h('div', { class: 'meta-fold-body' },
-    streakBlock, challengeBlock, varnaBlock, trialsBlock, gardenBlock, audioBlock, cityBlock, statsBlock)
+    streakBlock, challengeBlock, prophecyBlock, varnaBlock, trialsBlock, gardenBlock, audioBlock, cityBlock, statsBlock)
   const metaHeadEl = h('button', { class: 'meta-fold-head', onclick: () => {
     const open = metaBodyEl.style.display !== 'block'
     metaBodyEl.style.display = open ? 'block' : 'none'
@@ -495,6 +497,62 @@ function challengeCard(meta) {
     h('div', { class: 'challenge-name' }, `${ch.name} · ${ch.sanskrit}`),
     h('div', { class: 'challenge-desc' }, ch.desc),
     prog)
+}
+
+/**
+ * ПРОРИЦАНИЯ (copy from Hades, Prophecies).
+ */
+function prophecyCard(meta) {
+  const list = prophecyState(meta)
+  const done = list.filter((p) => p.done).length
+  const wait = unclaimedPoints(meta)
+  return h('div', { class: 'challenge-card', onclick: () => showProphecies() },
+    h('div', { class: 'challenge-term' }, 'прорицания'),
+    h('div', { class: 'challenge-name' }, `${done} из ${list.length}${wait ? ` · ждёт ${wait} севы` : ''}`),
+    h('div', { class: 'challenge-desc' },
+      wait > 0
+        ? 'Награды готовы — забрать можно в прорицаниях.'
+        : 'Долгие цели, а не «ещё один забег». Каждая награда — в севу мастерской.'),
+    h('div', { class: 'challenge-progress' }, wait > 0 ? 'нажми, чтобы забрать' : 'список целей'))
+}
+
+/**
+ * Экран прорицаний.
+ */
+function showProphecies() {
+  const meta = app.meta
+  const render = () => {
+    const list = prophecyState(meta)
+    const rows = list.map((p) => h('button', {
+      class: `ws-row ${p.claimed ? 'has' : p.done ? 'can' : 'poor'}`,
+      disabled: p.claimed,
+      onclick: () => {
+        if (p.claimed) return
+        const r = claimAll(meta)
+        saveMeta(meta)
+        sfx.buy?.()
+        if (r.points > 0) toast(`Забрано севы: ${r.points}`, 'hl')
+        render()
+      },
+    },
+      h('i', { class: 'ws-mark' }, p.claimed ? '✦' : p.done ? '✧' : '◇'),
+      h('div', { class: 'ws-tx' },
+        h('b', {}, p.name),
+        h('span', {}, p.text),
+        h('em', {}, `${p.progress} / ${p.target}`)),
+      h('i', { class: 'ws-cost' }, p.claimed ? 'получено' : `${p.reward} севы`),
+    ))
+    show(h('div', { class: 'screen active node-screen' },
+      h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
+      h('div', { class: 'node-icon' }, '✧'),
+      h('div', { class: 'node-title display' }, 'Прорицания'),
+      h('p', { class: 'node-text' },
+        'Долгие цели вместо «ещё одного забега». Награда — очки севы, то же валюта, что и в мастерской: цель не выкидывает, а входит туда же.'),
+      h('div', { class: 'stack', style: 'margin-top:12px' }, rows),
+      h('div', { class: 'hint center mt' }, 'Награда забирается один раз и остаётся забратой.'),
+    ))
+  }
+  render()
 }
 
 // Четыре ментальности ума (§12): шудра/кшатрия/випра/вайшья растут параллельно.
