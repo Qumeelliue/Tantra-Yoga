@@ -17,6 +17,7 @@ import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.j
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from './core/stageRoute.js'
 import { rollDoors, DOOR_KINDS } from './core/doors.js'
 import { prophecyState, unclaimedPoints, claimAll } from './core/prophecies.js'
+import { OATHS, checkOath } from './core/oath.js'
 import { chakraQuote, nextTeacherQuote, teacherChain, placeQuotes } from './core/teaching.js'
 import { BOONS as FIELD_BOONS, rollBoons, applyBoons, BOON_RARITY } from './core/boons.js'
 import { createField } from './core/field.js'
@@ -56,6 +57,10 @@ function boot() {
     // путь. null = обычный забег. Живёт в app, а не в meta, потому что
     // это не прогресс, а выбор на один забег.
     daily: null,
+    // ОБЕТ на забег (Hades: Nya). id обета или null.
+    // Живёт в app, а не в meta: это выбор на один забег, а не
+    // прогресс или содержание сессии.
+    oath: null,
     // Возврат из смерти входит с половиной жизни. Флаг живёт один вход.
     runReviveHalf: false,
     // Флаг испытания силы: текущая комната — элитная. Сбрасывается при любом
@@ -1106,6 +1111,7 @@ function showFieldChakra() {
   // игрока, как и делает `ensureDaily` в save.js, — иначе «сегодня» у игрока
   // и у мета могло бы разойтись на сутки.
   const daily = dailyOffer(meta, dayKey())
+  const oath = OATHS.find((o) => o.id === app.oath) || null
   show(h('div', { class: 'screen active node-screen' },
     h('div', { class: 'node-icon' }, '◉'),
     h('div', { class: 'node-title display' }, 'Поле Ума'),
@@ -1180,6 +1186,25 @@ function showFieldChakra() {
           h('div', { class: 'varna-hint' }, w.teach || w.land || ''),
         )
       })),
+    // ОБЕТ (Hades: Nya). Выбирается ДО ЗАБЕГА: называть, от чего ты не
+    // будешь делать, и получить награду, если сдержишь. Все остальные
+    // выборы — «что взять»; обет — «от чего отказаться»,
+    // и это другой выбор.
+    h('div', { class: 'varna-head', style: 'margin-top:18px' },
+      h('div', {},
+        h('div', { class: 'varna-label' }, 'Обет'),
+        h('div', { class: 'varna-name' }, oath ? oath.name : 'без обета'))),
+    h('div', { class: 'heat-row' },
+      OATHS.map((o) => h('button', {
+        class: `heat-step${app.oath === o.id ? ' cur' : ''}`,
+        title: `${o.text} — ${o.reward} севы`,
+        onclick: () => { app.oath = app.oath === o.id ? null : o.id; sfx.buy?.(); showFieldChakra() },
+      }, o.name.split(' ')[1] || o.name))),
+    oath
+      ? h('div', { class: 'varna-hint record-hint' },
+        `${oath.text} Соблюдён — ${oath.reward} севы в мастерскую.`)
+      : h('div', { class: 'varna-hint' }, 'Обет не обязателен: тогда и без них никого страшного.'),
+
     h('div', { class: 'btn-row mt' },
       h('button', { class: 'btn ghost', onclick: showTitle }, '← Город')),
   ))
@@ -1286,6 +1311,9 @@ function showBoonDraft(nextFloor, caption, after) {
     class: `boon-card r-${b.rarity}`,
     onclick: () => {
       owned.push(b.id)
+      // Счётчик для обета. Списывается по факту взятия дара, а не по флагу:
+      // флаг можно забыть сбоьть, а забытый забег — нельзя.
+      if (b.rarity === 'legendary') { const rn = beginFieldRun(); rn.legendary = (rn.legendary || 0) + 1 }
       markLived(meta, b.quoteId)          // дар открывает цитату
       saveMeta(meta)
       sfx.buy?.()
@@ -1487,7 +1515,13 @@ function startFieldRun(floor, stage = 'room', room = 0) {
     onChaos: (st2) => {
       const owned = runBoons()
       const opts3 = rollBoons(owned, Math.random, 1)
-      if (opts3[0]) { owned.push(opts3[0].id); markLived(meta, opts3[0].quoteId); saveMeta(meta) }
+      if (opts3[0]) {
+        owned.push(opts3[0].id)
+        if (opts3[0].rarity === 'legendary') { const rn4 = beginFieldRun(); rn4.legendary = (rn4.legendary || 0) + 1 }
+        markLived(meta, opts3[0].quoteId)
+        saveMeta(meta)
+      }
+      { const rn5 = beginFieldRun(); rn5.chaos = (rn5.chaos || 0) + 1 }
     },
     // Крипа пала под дождём: метка в профиле. «Побывал под крипой» —
     // и есть настоящая статистика: сколько раз милость тебя достала.
@@ -1719,6 +1753,7 @@ function showFieldDoors(floor, stage, room, hasBoss) {
       // игрок решает, чего ему нужнее в этом забеге: лишняя страховка или
       // правило боя.
       app.fieldElite = true
+      { const rn3 = beginFieldRun(); rn3.elites = (rn3.elites || 0) + 1 }
       startFieldRun(floor, 'room', nextRoom)
       return
     }
@@ -1730,9 +1765,11 @@ function showFieldDoors(floor, stage, room, hasBoss) {
       const opts3 = rollBoons(owned, Math.random, 1)
       if (opts3[0]) {
         owned.push(opts3[0].id)
+        if (opts3[0].rarity === 'legendary') { const rn0 = beginFieldRun(); rn0.legendary = (rn0.legendary || 0) + 1 }
         markLived(app.meta, opts3[0].quoteId)
         saveMeta(app.meta)
       }
+      { const rn1 = beginFieldRun(); rn1.chaos = (rn1.chaos || 0) + 1 }
       // Проклятие ставится на ИГРОКА в следующей комнате. Первая версия
       // писала `app.chaosCurse = true` — величину, которую никто не читает:
       // дверь обещала «урон вдвое» и не давала его. Тот же класс, что «экран
@@ -1792,6 +1829,14 @@ function showFieldVictory(meta, floor, summary) {
   // экран и профиль разошлись бы при первом же пересчёте. Проброс — единственное
   // место, где эти два числа связаны, и оно проверяется тестом.
   const revivals = summary?.revivals || 0
+  // Обет — часть итога, а не только строка статьи. Разница —
+  // «собюден / нарушен»: игрок должен видеть, чемо только небьзя.
+  const oathLine = summary?.oath
+    ? h('div', { class: summary.oath.kept ? 'win-record' : 'win-record dim' },
+      summary.oath.kept
+        ? `Обет «${summary.oath.name}» соблюдён: +${summary.oathPoints} севы.`
+        : `Обет «${summary.oath.name}» нарушен: ${summary.oath.why}.`)
+    : null
   const isRecord = !!summary?.isRecord
   const prev = summary?.prevRecord || null
 
@@ -1845,6 +1890,7 @@ function showFieldVictory(meta, floor, summary) {
     ),
     // РЕКОРД. Показывается сразу: игрок узнаёт результат своего забега и
     // сравнивает его с прошлым. Молчаливый рекорд не мотивирует ничего.
+    oathLine,
     isRecord
       ? h('div', { class: 'win-record' },
         (prev
@@ -1955,7 +2001,11 @@ function showRestRoom(meta, floor, st, after) {
  */
 function beginFieldRun() {
   if (app.fieldRun) return app.fieldRun
-  app.fieldRun = { kills: 0, pacified: 0, bosses: 0, rooms: 0, floor: 0, revivals: 0 }
+  // legendary/chaos/elites — факты забега, по которым проверяется обет
+  // (`core/oath.js`). Считаются здесь, а не по флагам: флаг можно
+  // забыть сбросить, факт — нельзя.
+  app.fieldRun = { kills: 0, pacified: 0, bosses: 0, rooms: 0, floor: 0, revivals: 0,
+    legendary: 0, chaos: 0, elites: 0 }
   return app.fieldRun
 }
 
@@ -1969,6 +2019,11 @@ function beginFieldRun() {
 function finishFieldRun(result) {
   const r = app.fieldRun
   app.fieldRun = null
+  // ОБЕТ расчётывается ТУТ — на любом выходе из забега,
+  // потому что условие могло быть преврено в судье. По флагу именно
+  // обет не проверяется: флаг могло забыть, а сводка — нельзя.
+  const oathId = app.oath
+  app.oath = null
   // Ежедневный путь закрывается на ВСЯкое завершение — и на смерть, и на
   // победу, и на «оставил забег». Иначе игрок, умерший на седьмой чакре,
   // получал бы второй шанс в тот же день, а выигравший — нет: правило
@@ -1994,6 +2049,16 @@ function finishFieldRun(result) {
   summary.isRecord = rec.isRecord
   summary.record = rec.now
   summary.prevRecord = rec.prev
+  // Обет — проверка по сводке забега. Награда — сева в
+  // мастерскую, того же валюты проицания и проицания.
+  if (oathId) {
+    const chk = checkOath(oathId, summary)
+    summary.oath = chk
+    if (chk.kept) {
+      app.meta.sevaPoints = (app.meta.sevaPoints || 0) + chk.reward
+      summary.oathPoints = chk.reward
+    }
+  }
   saveMeta(app.meta)
   return summary
 }
