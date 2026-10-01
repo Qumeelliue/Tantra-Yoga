@@ -1493,6 +1493,10 @@ function startFieldRun(floor, stage = 'room', room = 0) {
   show(fieldScreen(st, {
     floor,
     room,
+    // Обет виден в бою: условие, которое надо помнить, должно быть перед
+    // глазами. Обет «без возврата» без этой плашки означал бы «не возвращайся,
+    // если не помнишь», а это не условие.
+    oathName: (OATHS.find((o) => o.id === app.oath) || {}).name || null,
     placeQuotes,
     onKnowledge: (qid, name) => {
       markLived(meta, qid)

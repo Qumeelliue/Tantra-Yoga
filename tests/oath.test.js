@@ -120,6 +120,16 @@ describe('Обет живёт по законам честности', () => {
       .toContain('revivals: 0')
   })
 
+  it('обет виден В БОЮ, а не только на экране входа', () => {
+    // Обещание, записанное в шапке модуля: «обет виден во время забега».
+    // Если его нет в бою, условие надо помнить наизусть — а это не условие,
+    // это загадка. Обещание в модуле и код в бою должны совпадать.
+    const ui = read('webapp/js/ui/screens/field.js')
+    expect(ui, 'в бою нет плашки обета').toContain('opts.oathName')
+    expect(ui).toContain('`⇤ обет: ${oathName}`')
+    expect(main, 'обет не передаётся в экран боя').toContain('oathName: (OATHS.find((o) => o.id === app.oath) || {}).name || null')
+  })
+
   it('нарушенный обет пишется в отчёт, а не списывается молча', () => {
     expect(main).toContain('нарушен:')
     expect(main).toContain('соблюдён: +${summary.oathPoints} севы')

@@ -2525,3 +2525,15 @@ body {
   font: 600 11px/1 var(--font-ui, system-ui);
   color: var(--muted); letter-spacing: .02em;
 }
+
+/* Обет в бою (Hades: Fear-обет виден всегда). Условие, которое надо помнить,
+   должно быть перед глазами, а не в логе. */
+.foath {
+  position: absolute; top: 42px; left: 8px;
+  padding: 3px 8px; border-radius: 6px;
+  font: 600 11px/1.5 var(--font-ui, system-ui);
+  color: var(--gold-soft, #ffe6a8);
+  background: rgba(255,207,74,.10);
+  border: 1px solid rgba(255,207,74,.28);
+  pointer-events: none;
+}

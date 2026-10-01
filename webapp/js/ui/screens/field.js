@@ -142,7 +142,17 @@ export function fieldScreen(state, opts = {}) {
       ? 'веди пальцем · тапни по окове · двойной тап — рывок'
       : 'идти WASD · дефлект ПКМ или Shift · мантра Пробел · окову — тапни')
 
-  root.append(cv, h('div', { class: 'field-ui' }, head, top, log, prompt, dock, hint, pauseEl))
+  // ОБЕТ ВИДЕН ВО БОЯ. Условие, о котором игрок обещался на
+  // экране входа, могут забыть в конце заега и домать. Условие, о котором игрок
+  // не знает, нельзя собюдить: вошёдую что обет собюдён, а в конце
+  // забыть него неизвестно.
+  const oathName = opts.oathName || null
+  const oathChip = oathName
+    ? h('div', { class: 'foath' }, `⇤ обет: ${oathName}`)
+    : null
+
+  root.append(cv, h('div', { class: 'field-ui' },
+    head, oathChip, top, log, prompt, dock, hint, pauseEl))
 
   // ── Лог событий ──
   const lines = []
