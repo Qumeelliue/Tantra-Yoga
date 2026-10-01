@@ -2517,3 +2517,11 @@ body {
 }
 .door-card.d-boss .door-icon, .door-card.d-chaos .door-icon { color: #e07a6a; }
 .door-card.d-shop .door-icon, .door-card.d-rest .door-icon { color: #9fd8c8; }
+
+/* Где я в забеге (Hades: регион и прогресс видны всегда). Шапка Поля Ума
+   называла только локацию, и забег из семи чакр читался как один длинный
+   коридор без конца. */
+.fh-run {
+  font: 600 11px/1 var(--font-ui, system-ui);
+  color: var(--muted); letter-spacing: .02em;
+}
