@@ -19,8 +19,21 @@ import { applyKeepsake, rollKeepsakes } from '../webapp/js/core/keepsakes.js'
 import { applyBoons, rollBoons } from '../webapp/js/core/boons.js'
 import { mantraById } from '../webapp/js/core/field.js'
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from '../webapp/js/core/stageRoute.js'
+import { applyHeat, HEAT_MAX, heatReward } from '../webapp/js/core/heat.js'
 
 const RUNS = Number(process.argv[2] || 60)
+
+// ── ЖАР в замере (2026-09-30) ───────────────────────────────────────────
+// Проверяется то, ради чего жар и делался: он не должен превращаться в
+// кирпич. «Проходимо» и «интересно» — разные числа, и сперва нужно первое.
+//
+// Флаги только через `--` (правило проекта):
+//   node … fieldBalance.mjs 20 -- --heat=3
+const argv = process.argv.slice(3)
+const heatArg = argv.find((a) => a.startsWith('--heat'))
+const HEAT = heatArg
+  ? Math.max(0, Math.min(HEAT_MAX, Number(heatArg.split('=')[1] || 0)))
+  : 0
 const ROOMLOG = []
 const PARRIES = [0]
 const STATS = { mantra: 0, krpa: 0, spring: 0, hurt: 0, dmg: 0, pacified: 0, strikes: 0, feints: 0, rooms: 0, bossPacified: 0 }
@@ -205,13 +218,27 @@ function playRun(rng) {
     while (guard++ < 30) {
       const built = buildFieldFloor(floor, {
         field: { w: 412, h: 600 }, room,
-        opts: { calmMul: DEFAULT_FIELD_OPTIONS.foeCalmMul },
+        // `calmMul` НЕ передаётся — и это важно. Раньше здесь стояло
+        // `opts: { calmMul: DEFAULT_FIELD_OPTIONS.foeCalmMul }`, то есть
+        // замер подставлял свою константу 1.5 и ПЕРЕКРЫВАЛ ею рост спокойствия
+        // по чакрам, который делает игра (`calmMulFor(floor)`, 1.5 → 2.25).
+        // Итог: седьмая чакра в замере была легче, чем в игре, и вся
+        // лестница рассеянности мерила не ту игру.
+        //
+        // Значение `foeCalmMul` в DEFAULT_FIELD_OPTIONS при этом было МЁРТВЫМ:
+        // поле его не читало, читал только замер. Теперь не читает никто —
+        // единственный источник правды один, игра.
+        opts: {},
         // Случай идёт через rng забега: иначе симулятор нельзя повторить,
         // а состав комнаты теперь розыгрыш (Hades).
         rng,
       })
       const foes = stage === 'boss' ? (built.boss ? [built.boss] : []) : built.foes.slice()
       const opts = optsFor(floor, rng, varna, keepsake, boons)
+      // Жар — ПОСЛЕ опций, ровно как в `startFieldRun`. Иначе замер мерил бы
+      // не то, что игра: усиление из мастерской перекрыло бы условие жара,
+      // и на экране ставка выглядела бы, а в бою её не было бы.
+      if (HEAT > 0) applyHeat(opts, HEAT)
       // амбросия стоит в последней комнате этапа — ровно как в игре
       if (stage === 'room' && room === ROOMS_PER_STAGE - 1) opts.spring = true
       const fullHp = (opts.playerHp || 60) + maxHpBonus
@@ -325,7 +352,8 @@ function simulate(quiet = false) {
   console.log('тайминге он не мера сложности — только доказательство, что забег')
   console.log('проходим. Сложность судится руками: сколько врагов бьёт разом,')
   console.log('с какой частотой и сколько снимает за удар.')
-  console.log(`забегов: ${RUNS} | побед: ${wins.length} (${Math.round((wins.length / RUNS) * 100)}%)`)
+  console.log(`забегов: ${RUNS} | побед: ${wins.length} (${Math.round((wins.length / RUNS) * 100)}%)` +
+    (HEAT > 0 ? ` | ЖАР ${HEAT} из ${HEAT_MAX} · сева за забег ×${heatReward(HEAT, 1)}` : ''))
   if (wins.length) {
     const avg = wins.reduce((a, b) => a + b, 0) / wins.length
     console.log(`среднее время побега: ${avg.toFixed(1)} с · комнат на этап: ${ROOMS_PER_STAGE}`)
