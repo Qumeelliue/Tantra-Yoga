@@ -27,7 +27,16 @@ import { heatReward } from './heat.js'
 //   2. каждый следующий ранг дороже;
 //   3. ранг не переписывает купленное: применяются по порядку, 1 → 2 → 3;
 //   4. рангов не больше трёх (в Hades тоже три: редкое, героическое,
-//      легендарное).
+//      легендарное);
+//   5. **предпосылки по числу купленных** (StS: улучшения открываются по
+//      мере накопления; Hades: в зеркале ночи часть улучшений требует
+//      других купленных): ранг 2 — когда куплено хотя бы 2 других
+//      усиления, ранг 3 — когда хотя бы 4.
+//
+// Зачем пятое правило. Без него мастерская — список покупок без порядка:
+// «купить раньше» нечего, и весь выбор сводится к тому, у кого больше
+// очков. С предпосылками появляется ВТОРАЯ ось решения: кроме «что
+// купить» есть «что купить раньше».
 //
 // Каждое усиление меняет ОДИН существующий слот боя. Ничего нового не
 // вводится (AGENTS.md §2, design/BASE-GAME.md).
@@ -59,6 +68,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 3, desc: 'Удар больше почти не кормит авидью.', apply: (o) => { o.avidyaGainStrike = 2 } },
       { cost: 5, desc: 'Удар больше не кормит авидью вовсе.', apply: (o) => { o.avidyaGainStrike = 0 } },
+      { cost: 8, desc: 'Удар не кормит авидью совсем, а дыхание гасит неведение сильнее.', apply: (o) => { o.avidyaGainStrike = 0; o.avidyaCalmBreath = Math.round(o.avidyaCalmBreath * 1.6) } },
     ],
   },
   {
@@ -72,6 +82,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 3, desc: 'Серия дефлектов горит дольше на 2 секунды.', apply: (o) => { o.comboWindow += 2 } },
       { cost: 5, desc: 'Серия горит дольше ещё на 2 секунды.', apply: (o) => { o.comboWindow += 2 } },
+      { cost: 8, desc: 'Серия горит дольше и возвращает больше спокойствия.', apply: (o) => { o.comboWindow += 2; o.deflectCalm += 0.15 } },
     ],
   },
   {
@@ -85,6 +96,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 4, desc: 'Неведение растёт на треть медленнее.', apply: (o) => { o.avidyaGainIdle = Math.round(o.avidyaGainIdle * 0.66 * 100) / 100 } },
       { cost: 6, desc: 'Неведение растёт ещё на треть медленнее.', apply: (o) => { o.avidyaGainIdle = Math.round(o.avidyaGainIdle * 0.66 * 100) / 100 } },
+      { cost: 8, desc: 'Стоишь — неведение почти не растёт.', apply: (o) => { o.avidyaGainIdle = Math.min(o.avidyaGainIdle, 0.3) } },
     ],
   },
   {
@@ -98,6 +110,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 5, desc: 'Крипа отпускает оковы сильнее.', apply: (o) => { o.krpaCalm = 1.6 } },
       { cost: 8, desc: 'Крипа отпускает оковы и оглушает дольше.', apply: (o) => { o.krpaCalm = 2.0; o.krpaStun = 2.8 } },
+      { cost: 9, desc: 'Крипа отпускает оковы и оглушает надолго.', apply: (o) => { o.krpaCalm = 2.4; o.krpaStun = 3.4 } },
     ],
   },
   {
@@ -111,6 +124,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 6, desc: 'Окно дефлекта шире: 0.20 → 0.24 с.', apply: (o) => { o.parryWindow = 0.24 } },
       { cost: 9, desc: 'Окно дефлекта ещё шире: 0.24 → 0.28 с.', apply: (o) => { o.parryWindow = 0.28 } },
+      { cost: 10, desc: 'Окно дефлекта самое широкое: 0.28 → 0.32 с.', apply: (o) => { o.parryWindow = 0.32 } },
     ],
   },
   {
@@ -124,6 +138,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 5, desc: 'Запас Ци выше: 12 → 16.', apply: (o) => { o.psychicMax = 16 } },
       { cost: 8, desc: 'Запас Ци ещё выше: 16 → 22.', apply: (o) => { o.psychicMax = 22 } },
+      { cost: 9, desc: 'Запас Ци наибольший: 22 → 30.', apply: (o) => { o.psychicMax = 30 } },
     ],
   },
 
@@ -143,6 +158,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 4, desc: 'Расхождение гун замечается: порог прамы 8.', apply: (o) => { o.pramaWindow = 8 } },
       { cost: 7, desc: 'Порог прамы ниже: 8 → 5.', apply: (o) => { o.pramaWindow = 5 } },
+      { cost: 9, desc: 'Порог прамы совсем низкий: 5 → 3.', apply: (o) => { o.pramaWindow = 3 } },
     ],
   },
   {
@@ -156,6 +172,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 4, desc: 'Монет с комнаты больше: ×1.25.', apply: (o) => { o.coinMul = Math.round((o.coinMul || 1) * 1.25 * 100) / 100 } },
       { cost: 7, desc: 'Монет ещё больше: ×1.5 суммарно.', apply: (o) => { o.coinMul = Math.round((o.coinMul || 1) * 1.2 * 100) / 100 } },
+      { cost: 9, desc: 'Монет заметно больше: ×1.6 суммарно.', apply: (o) => { o.coinMul = Math.round((o.coinMul || 1) * 1.25 * 100) / 100 } },
     ],
   },
   {
@@ -169,6 +186,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 5, desc: 'Освобождение оковы гасит неведение сильнее: 12 → 16.', apply: (o) => { o.avidyaCalmPacify = 16 } },
       { cost: 8, desc: 'Гасит ещё сильнее: 16 → 20.', apply: (o) => { o.avidyaCalmPacify = 20 } },
+      { cost: 9, desc: 'Освобождение гасит неведение сильнее всех: 20 → 26.', apply: (o) => { o.avidyaCalmPacify = 26 } },
     ],
   },
   {
@@ -182,6 +200,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 5, desc: 'Рывок возвращается чаще: 0.85 → 0.72 с.', apply: (o) => { o.dashCooldown = 0.72 } },
       { cost: 8, desc: 'Рывок ещё чаще: 0.72 → 0.60 с.', apply: (o) => { o.dashCooldown = 0.60 } },
+      { cost: 9, desc: 'Рывок почти не ждёт: 0.60 → 0.50 с.', apply: (o) => { o.dashCooldown = 0.50 } },
     ],
   },
   {
@@ -195,6 +214,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 4, desc: 'Мантра обходится на 1 севу дешевле.', apply: (o) => { o.mantraCostCut += 1 } },
       { cost: 7, desc: 'Мантра обходится ещё на 1 севу дешевле.', apply: (o) => { o.mantraCostCut += 1 } },
+      { cost: 9, desc: 'Мантра обходится ещё на 1 севу дешевле.', apply: (o) => { o.mantraCostCut += 1 } },
     ],
   },
   {
@@ -208,6 +228,7 @@ export const WORKSHOP = [
     ranks: [
       { cost: 6, desc: 'Любая сева даёт 1 щит.', apply: (o) => { o.sevaShield += 1 } },
       { cost: 9, desc: 'Любая сева даёт 2 щита.', apply: (o) => { o.sevaShield += 1 } },
+      { cost: 10, desc: 'Каждая сева прикрывает на 3 щита.', apply: (o) => { o.sevaShield += 1 } },
     ],
   },
 ]
@@ -215,6 +236,46 @@ export const WORKSHOP = [
 /** Сколько рангов у усиления (минимум один — ради старых сохранений). */
 export function maxRank(id) {
   return WORKSHOP.find((u) => u.id === id)?.ranks?.length || 1
+}
+
+/**
+ * Сколько ДРУГИХ усилений надо иметь, чтобы открыть этот ранг.
+ *
+ * `needs` считается по числу купленных РАНГОВ, а не усилений: игрок, купивший
+ * два первых ранга одного усиления, купил одно усиление, и открывать ему
+ * второй ранг другого рано. Иначе предпосылка обходится одной покупкой.
+ */
+export function needsOwned(id, rank) {
+  if (rank <= 1) return 0
+  const u = WORKSHOP.find((w) => w.id === id)
+  const step = u && u.ranks ? u.ranks[rank - 1] : null
+  const base = rank === 2 ? 2 : 4
+  return typeof step?.needs === 'number' ? step.needs : base
+}
+
+/**
+ * Сколько рангов куплено всего по профилю.
+ *
+ * Считается ВЫСШИЙ ранг по каждому усилению, а не по сумме ключей.
+ * Первая версия сложила одну и то же три: `['a', 'a#2']` — это
+ * ДВА ранга, а не три. Слузит суммой строки: усиление было бы куплено
+ * выгодатно, а предпосылка для всего слободилась бы вовсе.
+ *
+ * Мусор в профиле не считается: неизвестные id и ранги выше максимума
+ * пропускаются и достижени не дают ни одного лишнего.
+ */
+export function ownedCount(owned = []) {
+  const best = new Map()
+  for (const key of owned || []) {
+    const p = parseRankKey(key)
+    if (!WORKSHOP.some((w) => w.id === p.id)) continue
+    const cap = maxRank(p.id)
+    if (p.rank > cap) continue                 // мусор: ранга больше всех
+    if (p.rank > (best.get(p.id) || 0)) best.set(p.id, p.rank)
+  }
+  let n = 0
+  for (const r of best.values()) n += r
+  return n
 }
 
 /** Ключ ранга в профиле. Ранг 1 лежит голым `id` — так было раньше. */
@@ -311,5 +372,9 @@ export function canBuy(id, points, owned = [], rank = null) {
   if (want < 1 || want > maxRank(id)) return false
   // Первый ранг — всегда. Второй и третий — только после предыдущего.
   if (want > 1 && have < want - 1) return false
+  // И только когда в мастерской есть другие купленные усиления.
+  // Без этого покупка идёт «все первые, потом все вторые», и выбора
+  // порядка не существует вовсе.
+  if (ownedCount(owned) < needsOwned(id, want)) return false
   return points >= workshopCost(id, want)
 }

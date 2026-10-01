@@ -7,7 +7,7 @@ import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
 import { fieldScreen } from './ui/screens/field.js'
 import { buildFieldFloor, fieldHead, stageHasBoss } from './core/fieldBuild.js'
-import { WORKSHOP, workshopCost, canBuy, sevaPointsFor, applyUpgrades, ownedRank, maxRank, rankKey } from './core/workshop.js'
+import { WORKSHOP, workshopCost, canBuy, sevaPointsFor, applyUpgrades, ownedRank, maxRank, rankKey, needsOwned, ownedCount } from './core/workshop.js'
 import { HEAT_TIERS, HEAT_MAX, applyHeat, heatReward } from './core/heat.js'
 import { recordRun as recordRunSummary, reasonsToRun, bestRecord } from './core/records.js'
 import { dailyOffer, dailyRng, markDailyRunPlayed, dailySeed } from './core/dailyRun.js'
@@ -1359,6 +1359,8 @@ function showSevaWorkshop() {
     const afford = canBuy(u.id, pts, owned, next)
     const done = have >= max
     const cost = done ? 0 : workshopCost(u.id, next)
+    const needNext = done ? 0 : needsOwned(u.id, next)
+    const haveCount = ownedCount(owned)
     return h('button', {
       class: `ws-row ${done ? 'has' : afford ? 'can' : 'poor'}`,
       disabled: done || !afford,
@@ -1381,7 +1383,12 @@ function showSevaWorkshop() {
         // одно и то же, и прогресс в мастерской не читается.
         h('b', { class: 'ws-rank' }, max > 1 ? `ранг ${Math.max(1, have)} из ${max}` : 'без рангов'),
         h('span', {}, step?.desc || u.desc),
-        h('em', {}, u.why),
+        // ПРЕДПОСЫЛКА ранга названа явно: иначе у тебя не
+        // понятно, потому что должно сделать и почему — на городе
+        // страшно впязь севы и не указывает никуда тратить.
+        h('em', {}, needNext > 0
+          ? `нужно сначала ${needNext} усилений, у тебя ${haveCount}`
+          : u.why),
       ),
       h('i', { class: 'ws-cost' }, done ? 'изучено' : `${cost} сева`),
     )
@@ -1392,7 +1399,7 @@ function showSevaWorkshop() {
     h('div', { class: 'node-icon' }, '◈'),
     h('div', { class: 'node-title display' }, 'Мастерская севы'),
     h('p', { class: 'node-text' },
-      'Очки севы набегают за помощь и за оковы, снятые без удара. Тратятся не на силу, а на практику: каждый принцип меняет одно правило боя и открывает цитату. У каждого — до трёх рангов: купил первый, открылся второй, и он дороже.'),
+      'Очки севы набегают за помощь и за оковы, снятые без удара. Тратятся не на силу, а на практику: каждый принцип меняет одно правило боя и открывает цитату. У каждого — до трёх рангов: купил первый, открылся второй, и он дороже. Второй ранг открывается, когда в мастерской есть два купленных усиления, третий — когда четыре: сначала решай, что купить раньше.'),
     h('div', { class: 'ws-points' },
       h('b', {}, String(pts)), h('span', {}, 'очков севы накоплено')),
     h('div', { class: 'stack', style: 'margin-top:12px' }, rows),
