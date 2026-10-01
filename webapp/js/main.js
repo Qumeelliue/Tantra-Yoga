@@ -10,6 +10,7 @@ import { buildFieldFloor, fieldHead } from './core/fieldBuild.js'
 import { WORKSHOP, workshopCost, canBuy, sevaPointsFor, applyUpgrades } from './core/workshop.js'
 import { HEAT_TIERS, HEAT_MAX, applyHeat, heatReward } from './core/heat.js'
 import { recordRun as recordRunSummary, reasonsToRun, bestRecord } from './core/records.js'
+import { dailyOffer, dailyRng, markDailyRunPlayed, dailySeed } from './core/dailyRun.js'
 import { FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS } from './core/field.js'
 import { applyVarna } from './core/varnaKits.js'
 import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.js'
@@ -31,8 +32,7 @@ import {
   loadMeta, saveMeta, markSeen, addAnchor, recordRunEnd, recordDeath, resetMeta, quoteById, cloudSync,
   markVisit, progressDaily, varnaState, addVarnaPoints, isSadvipra,
   unlockCard, trialsProgress, markLived, gardenState, recordSound, soundState,
-  cityBlessingBonus, setVarnaBranch, flushCloud,
-} from './core/save.js'
+  cityBlessingBonus, setVarnaBranch, flushCloud, dayKey} from './core/save.js'
 import { processAnchorReminders, reminderStatusLine } from './core/anchorPush.js'
 
 const appEl = document.getElementById('app')
@@ -49,7 +49,11 @@ function boot() {
     window.Telegram?.WebApp?.ready()
     window.Telegram?.WebApp?.expand()
   } catch {}
-  app = { meta: loadMeta(), run: null, combat: null }
+  app = { meta: loadMeta(), run: null, combat: null,
+    // Режим ежедневного забега: ключ дня, если игрок выбрал ежедневный
+    // путь. null = обычный забег. Живёт в app, а не в meta, потому что
+    // это не прогресс, а выбор на один забег.
+    daily: null }
   app.onCombatEnd = onCombatEnd
   setHaptics(app.meta.settings?.haptics !== false)
   const { event } = markVisit(app.meta)
@@ -1016,6 +1020,11 @@ function showFieldChakra() {
   const meta = app.meta
   const unlocked = meta.fieldFloor || 0
   const heat = Math.max(0, Math.min(HEAT_MAX, meta.heatLevel || 0))
+  // Ежедневный путь предлагается только сегодняшним: вчерашний закрыт, а
+  // завтрашний ещё не существует. `dayKey()` считает дату по местному времени
+  // игрока, как и делает `ensureDaily` в save.js, — иначе «сегодня» у игрока
+  // и у мета могло бы разойтись на сутки.
+  const daily = dailyOffer(meta, dayKey())
   show(h('div', { class: 'screen active node-screen' },
     h('div', { class: 'node-icon' }, '◉'),
     h('div', { class: 'node-title display' }, 'Поле Ума'),
@@ -1048,7 +1057,30 @@ function showFieldChakra() {
       // Жар — «пройти сильнее», рекорд — «пройти чище». Показывается здесь,
       // то есть там, где игрок решает, входить ли в забег (Dead Cells держит
       // best time на экране уровня, StS — в статистике).
-      h('div', { class: 'varna-hint record-hint' }, reasonsToRun(meta).line)),
+      h('div', { class: 'varna-hint record-hint' }, reasonsToRun(meta).line),
+
+      // ── ЕЖЕДНЕВНЫЙ ПУТЬ (копия из Dead Cells) ────────────────────────
+      // Кнопка стоит здесь, а не в отдельном меню: игрок решает, играть ли
+      // сегодня, именно тут. И это НЕ счётчик заданий (тот уже есть) — это
+      // один и тот же путь у всех, кто зашёл сегодня.
+      daily.on ? h('div', {
+        class: `varna-card daily-card${daily.done ? ' locked' : ''}`,
+        onclick: () => {
+          if (daily.done) return
+          app.daily = { dayKey: daily.dayKey }
+          startFieldRun(Math.min(unlocked, CHAKRAS.length - 1))
+        },
+      },
+        h('div', { class: 'varna-head' },
+          h('div', {},
+            h('div', { class: 'varna-label' }, 'Ежедневный путь'),
+            h('div', { class: 'varna-name' }, daily.done ? 'сыгран' : 'один и тот же у всех')),
+          h('div', { class: 'varna-next' }, daily.done ? '✓' : 'войти →')),
+        h('div', { class: 'varna-hint' },
+          daily.done
+            ? 'Завтра — другой путь. Сегодняшний уже пройден.'
+            : `Комнаты дня заданы seed ${String(dailySeed(daily.dayKey)).slice(0, 6)} — у всех одинаково. Жар не тратится, награда та же, но сравнивать можно.`),
+      ) : null),
 
     h('div', { class: 'stack', style: 'margin-top:16px' },
       CHAKRAS.map((name, i) => {
@@ -1243,7 +1275,18 @@ function showSevaWorkshop() {
  */
 function startFieldRun(floor, stage = 'room', room = 0) {
   const meta = app.meta
-  const built = buildFieldFloor(floor, { room })
+  // ЕЖЕДНЕВНЫЙ ПУТЬ. Розыгрыш комнаты берётся из даты, поэтому комната дня
+  // одинакова у всех — и у всех одинаков набор просящих, оков и раскладки.
+  //
+  // Seed включает номер комнаты, а не только дату: иначе первый забег дня
+  // «съел» бы случайность, и вторая комната зависела бы от того, сколько раз
+  // игрок туда заходил. То есть путь дня обязан совпадать целиком, а не по
+  // первому шагу.
+  const daily = app.daily || null
+  const built = buildFieldFloor(floor, {
+    room,
+    rng: daily ? dailyRng(`${daily.dayKey}|${floor}|${room}`) : Math.random,
+  })
   const foes = stage === 'boss' ? [] : built.foes.slice()
   if (stage === 'boss' && built.boss) foes.push(built.boss)
 
@@ -1614,6 +1657,15 @@ function beginFieldRun() {
 function finishFieldRun(result) {
   const r = app.fieldRun
   app.fieldRun = null
+  // Ежедневный путь закрывается на ВСЯкое завершение — и на смерть, и на
+  // победу, и на «оставил забег». Иначе игрок, умерший на седьмой чакре,
+  // получал бы второй шанс в тот же день, а выигравший — нет: правило
+  // получилось бы наоборот тем, что наказывает за успех.
+  if (app.daily) {
+    markDailyRunPlayed(app.meta, app.daily.dayKey)
+    saveMeta(app.meta)
+  }
+  app.daily = null
   if (!r) return null
   const summary = { ...r, result }
   recordRunEnd(app.meta, result, {
