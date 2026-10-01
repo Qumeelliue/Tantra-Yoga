@@ -23,6 +23,16 @@ export const EMPTY_META = () => ({
   practiceDiary: [],
   stats: { runs: 0, deaths: 0, victories: 0, pacified: 0, kills: 0, awakened: 0 },
   bestRun: null,
+  // РЕКОРДЫ (копия из Dead Cells «best time на уровень» и StS «лучший
+  // результат в статистике»). Ключ — победа; мера — сколько оков освобождено
+  // без единой крови. Подробно: `core/records.js`.
+  //
+  // Раньше забег не оставлял после себя НИЧЕГО, кроме счётчиков в профиле:
+  // «сколько раз прошёл» не отвечает на вопрос «прошёл ли лучше, чем в
+  // прошлый раз». Это и была вторая недостающая причина повторить забег.
+  records: {},
+  // ЖАР (копия механики «Heat» из Hades): выбранная ступень 0..HEAT_MAX.
+  heatLevel: 0,
   seen: { cards: {}, enemies: {}, relics: {}, events: {}, boons: {} },
   encounters: {},
   streak: { current: 0, best: 0, lastDay: null, freeze: 0, total: 0 },
@@ -295,6 +305,12 @@ export function migrateMeta(m) {
   m.stats = { ...EMPTY_META().stats, ...m.stats }
   m.streak = { ...EMPTY_META().streak, ...m.streak }
   m.daily = { ...EMPTY_META().daily, ...m.daily }
+  // Миграция для рекордов и жара. Без неё на стархранениях (а их у игроков
+  // уже есть) `meta.records` был бы `undefined`, и `reasonsToRun` показал бы
+  // «рекорда нет» даже после десяти побед.
+  if (!m.records || typeof m.records !== 'object') m.records = {}
+  if (typeof m.heatLevel !== 'number') m.heatLevel = 0
+  m.heatLevel = Math.max(0, m.heatLevel)
   // Миграция: старые сохранения с одной шкалой «очков варны» (начислялись за
   // освобождения) переносим в кшатрию — смелость освобождать (Human Society 2).
   if (typeof m.varnaPoints === 'number' && m.varnaPoints > 0) {

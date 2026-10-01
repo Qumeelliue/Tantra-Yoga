@@ -9,6 +9,7 @@ import { fieldScreen } from './ui/screens/field.js'
 import { buildFieldFloor, fieldHead } from './core/fieldBuild.js'
 import { WORKSHOP, workshopCost, canBuy, sevaPointsFor, applyUpgrades } from './core/workshop.js'
 import { HEAT_TIERS, HEAT_MAX, applyHeat, heatReward } from './core/heat.js'
+import { recordRun as recordRunSummary, reasonsToRun, bestRecord } from './core/records.js'
 import { FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS } from './core/field.js'
 import { applyVarna } from './core/varnaKits.js'
 import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.js'
@@ -1031,7 +1032,7 @@ function showFieldChakra() {
           h('div', { class: 'varna-label' }, 'Жар'),
           h('div', { class: 'varna-name' }, heat === 0 ? 'чистый путь' : `ступень ${heat} из ${HEAT_MAX}`)),
         h('div', { class: 'varna-next' }, `+${Math.round(heat * 50)} % севы`)),
-      h('div', { class: 'heat-row' },
+        h('div', { class: 'heat-row' },
         Array.from({ length: HEAT_MAX + 1 }, (_, n) => h('button', {
           class: `heat-step${n <= heat ? ' on' : ''}${n === heat ? ' cur' : ''}`,
           onclick: () => { meta.heatLevel = n; saveMeta(meta); sfx.buy?.(); showFieldChakra() },
@@ -1040,7 +1041,14 @@ function showFieldChakra() {
         ? h('div', { class: 'varna-hint' },
           HEAT_TIERS.slice(0, heat).map((t) => t.name).join(' · ') +
           ` — и сева за забег ×${heatReward(heat, 1)}`)
-        : h('div', { class: 'varna-hint' }, 'Поднять жар можно в любой момент — он платит севой, но кренит ум.')),
+        : h('div', { class: 'varna-hint' }, 'Поднять жар можно в любой момент — он платит севой, но кренит ум.'),
+
+      // ── РЕКОРД ──────────────────────────────────────────────────────
+      // Рядом с жаром не случайно: оба отвечают на вопрос «зачем ещё раз».
+      // Жар — «пройти сильнее», рекорд — «пройти чище». Показывается здесь,
+      // то есть там, где игрок решает, входить ли в забег (Dead Cells держит
+      // best time на экране уровня, StS — в статистике).
+      h('div', { class: 'varna-hint record-hint' }, reasonsToRun(meta).line)),
 
     h('div', { class: 'stack', style: 'margin-top:16px' },
       CHAKRAS.map((name, i) => {
@@ -1435,6 +1443,11 @@ function showFieldVictory(meta, floor, summary) {
   // Ударом в Поле Ума не ранится рипу вовсе, ломать можно только пашу — так
   // что «без крови» = «ни одного сломанного паши за весь забег».
   const peaceful = kills === 0 && full
+  // Рекорд приходит из `finishFieldRun`, а не считается здесь заново: иначе
+  // экран и профиль разошлись бы при первом же пересчёте. Проброс — единственное
+  // место, где эти два числа связаны, и оно проверяется тестом.
+  const isRecord = !!summary?.isRecord
+  const prev = summary?.prevRecord || null
 
   meta.fieldFloor = CHAKRAS.length
   saveMeta(meta)
@@ -1483,6 +1496,16 @@ function showFieldVictory(meta, floor, summary) {
       line('монет', String(meta.coins || 0)),
       line('открыто знаний', String(Object.keys(meta.lived || {}).length)),
     ),
+    // РЕКОРД. Показывается сразу: игрок узнаёт результат своего забега и
+    // сравнивает его с прошлым. Молчаливый рекорд не мотивирует ничего.
+    isRecord
+      ? h('div', { class: 'win-record' },
+        prev
+          ? `Рекорд побит: было ${prev.pacified} оков${prev.kills === 0 ? ' без крови' : ''} — стало ${pacified}.`
+          : `Первый рекорд: ${pacified} оков${kills === 0 ? ' без единой крови' : ''}.`)
+      : (prev
+        ? h('div', { class: 'win-record dim' }, `Рекорд: ${prev.pacified} оков${prev.kills === 0 ? ' без крови' : ''}. Этот забег — ${pacified}.`)
+        : null),
     h('div', { class: 'btn-row mt' },
       h('button', {
         class: 'btn primary',
@@ -1599,6 +1622,13 @@ function finishFieldRun(result) {
     kills: r.kills,
     bosses: r.bosses,
   })
+  // РЕКОРД. Считается здесь, а не на экране финала: экран можно закрыть,
+  // а забег всё равно случился. И только победа — мера мастерства, а не
+  // переживания (см. `core/records.js`).
+  const rec = recordRunSummary(app.meta, summary)
+  summary.isRecord = rec.isRecord
+  summary.record = rec.now
+  summary.prevRecord = rec.prev
   saveMeta(app.meta)
   return summary
 }
@@ -1623,6 +1653,10 @@ function settleFieldRoom(meta, st, floor) {
   const run = beginFieldRun()
   run.floor = Math.max(run.floor, floor + 1)
   run.rooms += 1
+  // Время забега. Копится из времени боя, а не из «сейчас минус тогда»:
+  // комнаты считаются с открытия, а игрок между ними сидел в покое, лавке и
+  // экране выбора дара. Время боя честное, и для рекорда оно годится.
+  run.time = (run.time || 0) + (st.time || 0)
   for (const f of st.foes) {
     if (f.pacified) {
       markSeen(meta, 'enemies', f.id)

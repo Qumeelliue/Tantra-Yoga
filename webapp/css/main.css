@@ -2433,3 +2433,38 @@ body {
 .pause-text { font-size:12px; color:var(--muted); line-height:1.6; max-width:32ch;
   margin:0 auto; }
 .field-pause .btn-row { justify-content:center; }
+
+/* ── ЖАР и РЕКОРД (сессия 24, МЕХАНИКИ 42 и 44) ──────────────────────────
+   Оба отвечают на один вопрос — «зачем начинать забег ещё раз» — и стоят
+   рядом на экране входа. Жар: «пройти сильнее». Рекорд: «пройти чище». */
+.heat-card { margin-top: 16px; }
+.heat-row { display: flex; gap: 6px; margin: 10px 0 8px; flex-wrap: wrap; }
+.heat-step {
+  flex: 1 1 auto; min-width: 34px; padding: 9px 0;
+  font: 700 14px/1 var(--font-ui, system-ui);
+  color: var(--muted); background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.12); border-radius: 8px;
+  cursor: pointer; transition: color .12s, border-color .12s, background .12s;
+}
+.heat-step.on { color: var(--gold-soft, #ffe6a8); border-color: rgba(255,207,74,.45); }
+.heat-step.cur {
+  color: #1a0d12; background: var(--gold, #ffcf4a);
+  border-color: var(--gold, #ffcf4a);
+}
+.heat-step:active { transform: translateY(1px); }
+.record-hint { margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid rgba(255,255,255,.08); }
+
+/* Рекорд на экране финала: громче обычного, потому что это новость забега.
+   Тусклый вариант — «рекорд не побит», и он тоже должен читаться, а не
+   выглядеть как обломок вёрстки. */
+.win-record {
+  margin: 14px 0 4px; padding: 10px 12px;
+  font: 600 13px/1.5 var(--font-ui, system-ui);
+  color: var(--gold-soft, #ffe6a8);
+  background: rgba(255,207,74,.10);
+  border-left: 3px solid var(--gold, #ffcf4a);
+  border-radius: 4px;
+}
+.win-record.dim { color: var(--muted); background: rgba(255,255,255,.03);
+  border-left-color: rgba(255,255,255,.18); }
