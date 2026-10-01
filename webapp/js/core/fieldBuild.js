@@ -81,9 +81,23 @@ export function calmMulFor(floor) {
   return 1.5 + Math.min(0.75, Math.floor(floor / 2) * 0.25)
 }
 
+/**
+ * Есть ли у этапа владыка.
+ *
+ * Отдельная функция, потому что «есть ли владыка у ЭТАПА» и «есть ли владыка в
+ * СОБРАННОЙ КОМНАТЕ» — разные вопросы. В испытании силы владыки в комнате нет,
+ * и код, бравший ответ из собранной комнаты, при выборе двери «испытание» на
+ * последней комнате этапа **пропускал владыку целиком**. Забег становился
+ * короче на одного босса, и игрок этого не видел.
+ */
+export function stageHasBoss(floor) {
+  const world = worldForFloor(floor)
+  return !!(world && world.lordId && ENEMIES[world.lordId])
+}
+
 export function buildFieldFloor(
   floor,
-  { field = { w: 412, h: 600 }, includeBoss = true, room = 0, opts = {}, rng = Math.random } = {},
+  { field = { w: 412, h: 600 }, includeBoss = true, room = 0, opts = {}, rng = Math.random, elite = false } = {},
 ) {
   const world = worldForFloor(floor)
   // Раскладка комнаты — тоже розыгрыш (Hades: комната не повторяет вид от
@@ -100,6 +114,8 @@ export function buildFieldFloor(
 
   // оков в комнате: их больше с каждой комнатой этапа и с глубиной чакры
   const count = 2 + Math.min(3, room) + Math.min(2, Math.floor(floor / 2))
+
+  let boss = null
 
   // Состав комнаты — розыгрыш из пула чакры, без повторов внутри комнаты.
   //
@@ -144,7 +160,7 @@ export function buildFieldFloor(
 
   // Владыка чакры — в центре. Приёмы, намерения и порог 50% берутся
   // из `content/enemies.json` дословно: ничего не выдумывается.
-  let boss = null
+  boss = null
   if (includeBoss && world && world.lordId && ENEMIES[world.lordId]) {
     const d = ENEMIES[world.lordId]
     boss = {
@@ -172,6 +188,50 @@ export function buildFieldFloor(
   // Случай идёт ЧЕРЕЗ переданный rng, а не через Math.random напрямую:
   // иначе комнату нельзя воспроизвести — симулятор и тесты получают разное
   // при одном и том же забеге, и проверять тут нечего.
+
+  // ── ИСПЫТАНИЕ СИЛЫ (StS: elite; Hades: Challenge) ──────────────────
+  // Обычная комната ПЛЮС чемпион: та же ока из пула чакры, но вдвое живучей и
+  // вдвое злее. Копия элитного боя — игрок САМ выбирает его дверью, и плата за
+  // него — нефрит на забег (см. `doors.js` и `main.js`).
+  //
+  // Обычные оковы при этом остаются. Первая версия делала наоборот (испытание
+  // ВМЕСТО комнаты, один чемпион вместо двоих-четырёх), и замер показал, что
+  // так ЛЕГЧЕ: 95 % побед против 80 % у обычных комнат при одинаковой
+  // рассеянности. То есть чемпион был не сложнее комнаты. Слово «элита» без
+  // измерения — это подпись, а не механика.
+  //
+  // Точка отсчёта — та же ока из пула, поэтому испытание остаётся узнаваемым:
+  // игрок видит, КТО его бьёт, и узнаёт этого врага.
+  if (elite) {
+    const poolE = (usePasha ? pashaPool : ripuPool).slice()
+    for (let k = poolE.length - 1; k > 0; k--) {
+      const j = Math.floor(rng() * (k + 1)) % (k + 1)
+      const tmp = poolE[k]; poolE[k] = poolE[j]; poolE[j] = tmp
+    }
+    const pickE = poolE[0]
+    const defE = ENEMIES[pickE]
+    if (defE) {
+      const behE = usePasha ? PASHA_BEHAVIOR[pickE] : RIPU_BEHAVIOR[pickE]
+      foes.push({
+        id: defE.id,
+        name: defE.name,
+        epithet: defE.epithet || '',
+        kind: usePasha ? 'pasha' : 'ripu',
+        x: field.w * 0.5,
+        y: field.h * 0.22,
+        hp: Math.round(defE.maxHp * 1.6),
+        calmMax: Math.round((defE.calmMax || 3) * (opts.calmMul ?? calmMulFor(floor)) * 2),
+        light: AURA_TABLE[pickE] || 'dark',
+        fakeLight: FAKE_AURA[pickE] || null,
+        speedMul: (behE?.speedMul || 1) * 1.15,
+        reach: behE?.reach || 42,
+        note: 'испытание силы',
+        quoteId: defE.quoteId,
+        isElite: true,
+      })
+    }
+  }
+
   const allWares = [
     { id: `w${floor}-a`, x: field.w * 0.14, y: field.h * 0.22, name: 'у колодца',
       call: 'Колодец пуст… помоги', need: 'вода', debt: false },

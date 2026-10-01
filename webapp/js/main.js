@@ -6,7 +6,7 @@ import { quoteBox, cardEl } from './ui/widgets.js'
 import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
 import { fieldScreen } from './ui/screens/field.js'
-import { buildFieldFloor, fieldHead } from './core/fieldBuild.js'
+import { buildFieldFloor, fieldHead, stageHasBoss } from './core/fieldBuild.js'
 import { WORKSHOP, workshopCost, canBuy, sevaPointsFor, applyUpgrades, ownedRank, maxRank, rankKey } from './core/workshop.js'
 import { HEAT_TIERS, HEAT_MAX, applyHeat, heatReward } from './core/heat.js'
 import { recordRun as recordRunSummary, reasonsToRun, bestRecord } from './core/records.js'
@@ -54,7 +54,13 @@ function boot() {
     // Режим ежедневного забега: ключ дня, если игрок выбрал ежедневный
     // путь. null = обычный забег. Живёт в app, а не в meta, потому что
     // это не прогресс, а выбор на один забег.
-    daily: null }
+    daily: null,
+    // Возврат из смерти входит с половиной жизни. Флаг живёт один вход.
+    runReviveHalf: false,
+    // Флаг испытания силы: текущая комната — элитная. Сбрасывается при любом
+    // выходе из забега, иначе смерть в испытании начинала бы следующий забег
+    // с элитной комнаты.
+    fieldElite: false }
   app.onCombatEnd = onCombatEnd
   setHaptics(app.meta.settings?.haptics !== false)
   const { event } = markVisit(app.meta)
@@ -1315,10 +1321,15 @@ function startFieldRun(floor, stage = 'room', room = 0) {
   const daily = app.daily || null
   const built = buildFieldFloor(floor, {
     room,
+    elite: !!app.fieldElite,
     rng: daily ? dailyRng(`${daily.dayKey}|${floor}|${room}`) : Math.random,
   })
   const foes = stage === 'boss' ? [] : built.foes.slice()
   if (stage === 'boss' && built.boss) foes.push(built.boss)
+  // Испытание силы: владыки в нём нет по построению (buildFieldFloor не
+  // создаёт его), и добавлять здесь нечего. Проверка ниже — на случай, если
+  // кто-то позже вернёт владыку в обычную сборку: тогда испытание перестало бы
+  // быть испытанием, а стало бы обычной комнатой с подарком.
 
   // Мантра выдаётся по чакре сама — выбирать нечего (см. FLOOR_MANTRA).
   const vId = meta.focusVarna || 'shudra'
@@ -1353,7 +1364,13 @@ function startFieldRun(floor, stage = 'room', room = 0) {
   // весь забег становился бесконечным «сбросом»: напряжения не было вовсе,
   // а фонтан амбросии и комната покоя теряли смысл.
   const fullHp = opts2.playerHp || 60
-  const entryHp = app.runHp == null ? fullHp : Math.max(1, Math.min(fullHp, app.runHp))
+  // Возврат из смерти входит с половиной НОВОГО запаса жизни (см. `onRevive`).
+  // Он важнее `runHp`: тот записан до отдачи нефрита и мог бы дать больше
+  // половины.
+  const entryHp = app.runReviveHalf
+    ? Math.max(1, Math.ceil(fullHp / 2))
+    : (app.runHp == null ? fullHp : Math.max(1, Math.min(fullHp, app.runHp)))
+  app.runReviveHalf = false
 
   const st = createField({
     player: { x: built.field.w * 0.5, y: built.field.h * 0.72, hp: entryHp, maxHp: fullHp },
@@ -1427,10 +1444,14 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       // это другой забег, и прятать это было бы враньём в отчёте.
       const run0 = beginFieldRun()
       run0.revivals = (run0.revivals || 0) + 1
-      // Половина жизни. Ровно половина: вернуться полным иным было бы второй
-      // попыткой без цены.
-      const maxHp = st2?.player?.maxHp || 60
-      app.runHp = Math.max(1, Math.ceil(maxHp / 2))
+      // Половина жизни — ровно половина ТОГО, с чем игрок вернётся. Считать её
+      // здесь было нельзя: нефрит только что отдан, а он влиял на запас жизни,
+      // и игрок возвращался с 43 при запасе 40. То есть больше половины —
+      // плата оказывалась меньше, чем обещала.
+      //
+      // Значит половину считает `startFieldRun`, у которого уже есть новые
+      // опции боя: он и знает, каким будет запас жизни.
+      app.runReviveHalf = true
       // Комната НЕ засчитывается: возврат перезапускает её с оками на месте
       // (Nine Sols), и если бы мы засчитали монеты сейчас, игрок получил бы
       // комнату дважды — за одну.
@@ -1457,6 +1478,8 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       app.runKeepsake = null
       app.runChaos = false      // проклятие хаос-пути не переживает смерть
       app.runRevived = true     // возврат уже был: второй раз нельзя
+      app.runReviveHalf = false
+      app.fieldElite = false    // умер в испытании — следующий забег не начинается с него
       settleFieldRoom(meta, st2, floor)
       // Исход забега пишется здесь, а не в `settleFieldRoom`: смерть
       // обрывает побег, «ещё раз» начинает новый.
@@ -1473,11 +1496,20 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       // Этап — это несколько комнат подряд, потом комната владыки (Hades).
       // Маршрут считает отдельная чистая функция: она покрыта тестами, и
       // ошибиться в ней нельзя молча.
-      const step = nextStage(stage, room, !!built.boss)
+      // ИСПЫТАНИЕ СИЛЫ. Комната опознаётся по СОСТОЯНИЮ боя (там стоит ока с
+      // `isElite`), а не по флагу в `app`: иначе флаг забыли бы сбросить где-то
+      // на пути, и «испытание» тихо стало бы обычной комнатой.
+      const wasElite = !!st2?.foes?.some((f) => f.isElite)
+      app.fieldElite = false
+      if (wasElite) {
+        showEliteReward(floor, stage, room, stageHasBoss(floor))
+        return
+      }
+      const step = nextStage(stage, room, stageHasBoss(floor))
       // ДВЕРИ (Hades). После комнаты игрок выбирает, куда идти. Раньше здесь
       // был прямой переход в следующую комнату: три одинаковых подряд, без
       // выбора, и забег читался как повтор.
-      if (step.kind === 'room') { showFieldDoors(floor, stage, step.room, !!built.boss); return }
+      if (step.kind === 'room') { showFieldDoors(floor, stage, step.room, stageHasBoss(floor)); return }
       if (step.kind === 'boss') { startFieldRun(floor, 'boss', step.room); return }
       if (stage === 'boss') {
         settleFloor(meta, floor)
@@ -1515,6 +1547,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       app.boons = []
       app.runChaos = false      // «оставил забег» — забег кончился, проклятие тоже
       app.runRevived = true     // забег закрыт: возврат в него больше невозможен
+      app.fieldElite = false
       // Пауза прямо называет кнопку «оставить забег», и игра уже обнуляла
       // здоровье, дары и нефрит — то есть забег тут и кончался. Просто
       // никто не записывал исход. Умер игрок или ушёл сам — пишем честно:
@@ -1523,6 +1556,58 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       showFieldChakra()
     },
   }))
+}
+
+/**
+ * Награда за испытание силы: нефрит на забег (StS: элитный бой даёт лучшую
+ * награду; здесь она названа прямо на двери, а не всплывает постфактум).
+ *
+ * Если нефрит уже в руках — даются монеты. Не второй нефрит: «один нефрит на
+ * забег» обещано на фонтане, и выдача второго была бы враньём, которое
+ * выяснилось бы в бою.
+ */
+function showEliteReward(floor, stage, room, hasBoss) {
+  const meta = app.meta
+  const nextRoom = Math.min(ROOMS_PER_STAGE, room + 1)
+  const toNextDoors = () => showFieldDoors(floor, stage, nextRoom, hasBoss)
+
+  if (app.runKeepsake) {
+    // Нефрит уже есть: честная замена, названная вслух.
+    meta.coins = (meta.coins || 0) + 40
+    saveMeta(meta)
+    show(h('div', { class: 'screen active node-screen' },
+      h('div', { class: 'node-icon' }, '✵'),
+      h('div', { class: 'node-title display' }, 'Испытание пройдено'),
+      h('p', { class: 'node-text' }, 'Нефрит уже в руках — за вторым не придёшь. Плата монетой: 40.'),
+      h('div', { class: 'btn-row' },
+        h('button', { class: 'btn primary', onclick: toNextDoors }, 'дальше')),
+    ))
+    return
+  }
+
+  const picks = rollKeepsakes(Math.random, 3)
+  show(h('div', { class: 'screen active node-screen wsel-screen' },
+    h('div', { class: 'node-icon' }, '✵'),
+    h('div', { class: 'node-title display' }, 'Плата за испытание'),
+    h('p', { class: 'node-text' },
+      'Одна ока вдвое злее — и нефрит в руках. Он же покупает возврат из смерти: решай, что тебе нужнее в этом забеге.'),
+    h('div', { class: 'wsel-row' }, picks.map((k) => h('button', {
+      class: 'boon-card r-rare jade-card',
+      onclick: () => {
+        app.runKeepsake = k.id
+        markLived(meta, k.quoteId)
+        saveMeta(meta)
+        sfx.unlock?.()
+        toast(`Нефрит «${k.name}» взят — и смерть теперь можно откупить`, 'hl')
+        toNextDoors()
+      },
+    },
+      h('span', { class: 'boon-rar' }, 'нефрит'),
+      h('b', { class: 'boon-name' }, k.name),
+      h('i', { class: 'boon-sub' }, k.sub),
+      h('span', { class: 'boon-desc' }, k.desc),
+    ))),
+  ))
 }
 
 /**
@@ -1560,6 +1645,15 @@ function showFieldDoors(floor, stage, room, hasBoss) {
     if (kind === 'boon') { showBoonDraft(floor, 'Дверь дара — боя нет', toNextRoom); return }
     if (kind === 'shop') { showFieldShop(app.field, floor + 1, { after: toNextRoom }); return }
     if (kind === 'rest') { showRestRoom(app.meta, floor, app.field, toNextRoom); return }
+    if (kind === 'elite') {
+      // ИСПЫТАНИЕ СИЛЫ (StS elite / Hades Challenge). Плата названа на двери
+      // заранее: нефрит на забег. Он покупает и возврат из смерти — то есть
+      // игрок решает, чего ему нужнее в этом забеге: лишняя страховка или
+      // правило боя.
+      app.fieldElite = true
+      startFieldRun(floor, 'room', nextRoom)
+      return
+    }
     if (kind === 'chaos') {
       // Тот же хаос-путь, что и раньше: дар даром, но в проклятие. Проклятие
       // держится до конца забега, как и раньше — «платишь не сейчас, платишь

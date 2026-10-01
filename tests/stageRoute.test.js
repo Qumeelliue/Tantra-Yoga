@@ -37,7 +37,7 @@ describe('Маршрут этапа', () => {
 
   it('главный файл берёт номер комнаты из параметра, а не из пустоты', () => {
     // ровно эта ошибка стоила целого забега: `opts.room` — несуществующее имя
-    expect(main).toContain('const step = nextStage(stage, room, !!built.boss)')
+    expect(main).toContain('const step = nextStage(stage, room, stageHasBoss(floor))')
     expect(main).not.toContain('opts.room')
     // и `room` — параметр самой функции
     expect(main).toContain("function startFieldRun(floor, stage = 'room', room = 0)")

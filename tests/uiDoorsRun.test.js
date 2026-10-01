@@ -89,7 +89,7 @@ describe('забег через двери: каждый вид двери од�
         expect(cards.length, 'на экране дверей нет ни одной двери').toBeGreaterThan(1)
         const kinds = cards.map((c) => (c.className.match(/d-(\w+)/) || [])[1]).filter(Boolean)
         // по очереди: сначала каждая невыбранная дверь, потом бой
-        const next = ['shop', 'rest', 'boon', 'chaos', 'boss', 'room']
+        const next = ['shop', 'rest', 'boon', 'chaos', 'elite', 'boss', 'room']
           .find((k) => kinds.includes(k) && !seenDoors.has(k))
         const pick = next || 'room'
         seenDoors.add(pick)
@@ -135,7 +135,7 @@ describe('забег через двери: каждый вид двери од�
 
     expect(problems, 'экраны не должны падать и заедать').toEqual([])
     expect(dom.errors.map((e) => e.message), 'ни один кадр не должен бросать').toEqual([])
-    for (const k of ['shop', 'rest', 'boon', 'chaos', 'room']) {
+    for (const k of ['shop', 'rest', 'boon', 'chaos', 'elite', 'room']) {
       expect(seenDoors.has(k), `дверь ${k} не пройдена`).toBe(true)
     }
     expect(rooms, 'комнат пройдено').toBeGreaterThan(20)

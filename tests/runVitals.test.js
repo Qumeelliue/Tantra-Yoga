@@ -49,8 +49,12 @@ describe('Здоровье живёт весь побег', () => {
   it('здоровье переносится из комнаты в комнату', () => {
     // В коде: app.runHp запоминается при выходе и читается при входе
     expect(main).toContain('if (st2?.player) app.runHp = st2.player.hp')
-    expect(main).toContain('const entryHp = app.runHp == null ? fullHp')
+    // Строка поменяла форму из-за возврата из смерти (МЕХАНИКА 49): вход
+    // может идти с половиной жизни, и проверка искала бы старую форму кода,
+    // а не смысл. Смысл проверяется по обеим веткам.
     expect(main).toContain('hp: entryHp, maxHp: fullHp')
+    expect(main, 'жизнь из комнаты в комнату не переносится')
+      .toMatch(/app\.runHp == null \? fullHp : Math\.max\(1, Math\.min\(fullHp, app\.runHp\)\)/)
   })
 
   it('при смерти жизни сбрасываются — как в Hades, новая попытка с полной', () => {

@@ -13,7 +13,7 @@ import { pathToFileURL } from 'node:url'
 import {
   createField, stepField, parry, castMantra, parryHint, checkOutcome, serveWare, FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS,
 } from '../webapp/js/core/field.js'
-import { buildFieldFloor } from '../webapp/js/core/fieldBuild.js'
+import { buildFieldFloor, stageHasBoss } from '../webapp/js/core/fieldBuild.js'
 import { applyVarna } from '../webapp/js/core/varnaKits.js'
 import { applyKeepsake, rollKeepsakes } from '../webapp/js/core/keepsakes.js'
 import { applyBoons, rollBoons } from '../webapp/js/core/boons.js'
@@ -54,6 +54,9 @@ const WS_KEYS = wsArg && wsArg.split('=')[1] === 'all'
 // Сколько дверей выпадало: сколько было двух, сколько трёх. Печатается, потому
 // что «двери всегда одинаковые» — это тоже поломка, и без счётчика её не
 // видно.
+// Флаги только через `--` (правило проекта):
+//   node … fieldBalance.mjs 20 -- --elite
+const ELITE = process.argv.slice(3).includes('--elite')
 const DOORLOG = {}
 const ROOMLOG = []
 const PARRIES = [0]
@@ -245,6 +248,10 @@ function playRun(rng) {
     while (guard++ < 30) {
       const built = buildFieldFloor(floor, {
         field: { w: 412, h: 600 }, room,
+        // `--elite`: каждая обычная комната собрана как испытание силы. Так
+        // меряется не «проходим ли забег», а «проходимо ли ИСПЫТАНИЕ» — а это
+        // разные числа, и спутать их нельзя.
+        elite: ELITE,
         // `calmMul` НЕ передаётся — и это важно. Раньше здесь стояло
         // `opts: { calmMul: DEFAULT_FIELD_OPTIONS.foeCalmMul }`, то есть
         // замер подставлял свою константу 1.5 и ПЕРЕКРЫВАЛ ею рост спокойствия
@@ -291,7 +298,7 @@ function playRun(rng) {
       if (st.foes.some((f) => f.isBoss && !f.pacified && !f.dead)) {
         return { win: false, stuck: true, why: `владыка чакры ${floor + 1} не успокоен`, floor, time }
       }
-      const step = nextStage(stage, room, !!built.boss)
+      const step = nextStage(stage, room, stageHasBoss(floor))
       // ДВЕРИ. Замер обязан идти тем же путём, что игра (правило проекта):
       // если пропустить выбор двери, симулятор мерил бы лестницу, которой в
       // игре больше нет, и все числа после этого были бы выдуманными.
@@ -301,7 +308,7 @@ function playRun(rng) {
       // сознательно: ими можно заменить бой, и тогда замер перестал бы
       // мерить проходимость, а мерил бы «сколько оков можно не встретить».
       if (step.kind === 'room') {
-        const doors = rollDoors({ room: step.room, hasBoss: !!built.boss, rng })
+        const doors = rollDoors({ room: step.room, hasBoss: stageHasBoss(floor), rng })
         const door = doors.find((d) => d.kind === 'room') || doors.find((d) => d.kind === 'boss')
         DOORLOG[doors.length] = (DOORLOG[doors.length] || 0) + 1
         if (!door || !hasCombatDoor(doors)) {
@@ -395,6 +402,7 @@ function simulate(quiet = false) {
   console.log('тайминге он не мера сложности — только доказательство, что забег')
   console.log('проходим. Сложность судится руками: сколько врагов бьёт разом,')
   console.log('с какой частотой и сколько снимает за удар.')
+  if (ELITE) console.log('режим: каждая обычная комната собрана как ИСПЫТАНИЕ СИЛЫ')
   console.log(`двери: ${Object.entries(DOORLOG).sort().map(([n, c]) => `${n} шт. × ${c}`).join(' · ') || 'ни разу'}`)
   console.log(`забегов: ${RUNS} | побед: ${wins.length} (${Math.round((wins.length / RUNS) * 100)}%)` +
     (HEAT > 0 ? ` | ЖАР ${HEAT} из ${HEAT_MAX} · сева за забег ×${heatReward(HEAT, 1)}` : '') +

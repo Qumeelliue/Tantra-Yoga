@@ -15,7 +15,7 @@ import {
   createField, stepField, parry, castMantra, parryHint,
   checkOutcome, serveWare, mantraById, DEFAULT_FIELD_OPTIONS,
 } from '@webapp/js/core/field.js'
-import { buildFieldFloor } from '@webapp/js/core/fieldBuild.js'
+import { buildFieldFloor, stageHasBoss } from '@webapp/js/core/fieldBuild.js'
 import { applyVarna } from '@webapp/js/core/varnaKits.js'
 import { applyKeepsake } from '@webapp/js/core/keepsakes.js'
 import { applyBoons, rollBoons } from '@webapp/js/core/boons.js'
@@ -144,7 +144,7 @@ function playRun(seed, sloppy = 0, opts = {}) {
       }
       if (st.foes.some((f) => f.isBoss)) bossKills++
       runHp = st.player.hp
-      const step = nextStage(stage, room, !!built.boss)
+      const step = nextStage(stage, room, stageHasBoss(floor))
       if (step.kind === 'done') {
         if (stage === 'boss') {
           if (isLastFloor(floor)) return { finished: true, floor, time, trace, pacified, bossKills, runHp }

@@ -56,7 +56,16 @@ describe('Возврат из смерти: правило одно и плат�
 
   it('жизни — половина, а не полная', () => {
     // Вернуться полным было бы второй попыткой без цены.
-    expect(main).toContain('app.runHp = Math.max(1, Math.ceil(maxHp / 2))')
+    // Половину считает `startFieldRun`, а не обработчик: нефрит только что
+    // отдан и меняет запас жизни, и по старому запасу игрок возвращался с 43
+    // при запасе 40 — то есть больше половины.
+    expect(main).toContain('app.runReviveHalf = true')
+    expect(main).toContain('app.runReviveHalf')
+    expect(main).toMatch(/app\.runReviveHalf\s*\?\s*Math\.max\(1, Math\.ceil\(fullHp \/ 2\)\)/)
+    const fn = main.slice(main.indexOf('onRevive: (app.runKeepsake'))
+    const end = fn.indexOf('onRetry:')
+    expect(end > 0 ? fn.slice(0, end) : fn, 'возврат сам считает половину от старого запаса')
+      .not.toContain('runHp = Math.max')
   })
 
   it('комната при возврате не засчитывается', () => {

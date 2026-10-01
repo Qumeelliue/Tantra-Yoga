@@ -17,7 +17,7 @@ const main = readFileSync(join(here, '..', 'webapp/js/main.js'), 'utf8')
 describe('Структура забега', () => {
   it('этап состоит из нескольких комнат, потом комната владыки (Hades)', () => {
     expect(main).toContain("function startFieldRun(floor, stage = 'room', room = 0)")
-    expect(main).toContain('const step = nextStage(stage, room, !!built.boss)')
+    expect(main).toContain('const step = nextStage(stage, room, stageHasBoss(floor))')
   })
 
   it('в обычной комнате владыки нет — он в своей', () => {
