@@ -7,6 +7,7 @@ import { combatScreen } from './ui/screens/combat.js'
 import { meditationScreen } from './ui/screens/meditation.js'
 import { fieldScreen } from './ui/screens/field.js'
 import { buildFieldFloor, fieldHead, stageHasBoss } from './core/fieldBuild.js'
+import { rollLords, lordFor, lordName, stageHasLord, LORD_CHOICES } from './core/lords.js'
 import { WORKSHOP, workshopCost, canBuy, sevaPointsFor, applyUpgrades, ownedRank, maxRank, rankKey, needsOwned, ownedCount } from './core/workshop.js'
 import { HEAT_TIERS, HEAT_MAX, applyHeat, heatReward } from './core/heat.js'
 import { recordRun as recordRunSummary, reasonsToRun, bestRecord } from './core/records.js'
@@ -14,12 +15,16 @@ import { dailyOffer, dailyRng, markDailyRunPlayed, dailySeed } from './core/dail
 import { FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS } from './core/field.js'
 import { applyVarna } from './core/varnaKits.js'
 import { ASPECTS, aspectsFor, applyAspect } from './core/aspects.js'
-import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake } from './core/keepsakes.js'
+import { rollKeepsakes, KEEPSAKE_BY_ID, applyKeepsake,
+  keepsakeLevelCost, KEEPSAKE_MAX_LEVEL } from './core/keepsakes.js'
 import { nextStage, ROOMS_PER_STAGE, isLastFloor } from './core/stageRoute.js'
 import { rollDoors, DOOR_KINDS } from './core/doors.js'
+import { rollFieldEvent, effectText, previewEffects } from './core/fieldEvents.js'
 import { prophecyState, unclaimedPoints, claimAll } from './core/prophecies.js'
 import { OATHS, checkOath } from './core/oath.js'
-import { chakraQuote, nextTeacherQuote, teacherChain, placeQuotes } from './core/teaching.js'
+import { applyFieldRelics, rollFieldRelics, fieldRelicView } from './core/fieldRelics.js'
+import { chakraQuote, nextTeacherQuote, teacherChain, nextLordQuote, lordChain, placeQuotes } from './core/teaching.js'
+import { markHint } from './core/hints.js'
 import { BOONS as FIELD_BOONS, rollBoons, applyBoons, BOON_RARITY } from './core/boons.js'
 import { createField } from './core/field.js'
 import { CARDS, ENEMIES, RELICS, EVENTS, QUOTES, MENTALITIES, MENTALITY_ORDER, CHALLENGES, TRIALS, BOONS, quoteLiveHint, isQuoteLived, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS, WORLDS, WORLD_PATH, worldForFloor } from './core/data.js'
@@ -38,6 +43,7 @@ import {
   unlockCard, trialsProgress, markLived, gardenState, recordSound, soundState,
   cityBlessingBonus, setVarnaBranch, flushCloud, dayKey} from './core/save.js'
 import { processAnchorReminders, reminderStatusLine } from './core/anchorPush.js'
+import { floorVarnaFood } from './core/mentalityFood.js'
 
 const appEl = document.getElementById('app')
 
@@ -221,7 +227,11 @@ function showTitle() {
   // накопительный счётчик оку (их за забег десятки), а `awakened` рос
   // дважды за событие. Вместе это давало 4-й уровень города уже в первом
   // забеге: четыре ступени означали путь, который проходился за минуту.
-  const bossesFreed = (meta.pacifiedBosses || []).length
+  // Считаются ОСВЕЩЁННЫЕ ПЛОЩАДЬ = ЧАКРЫ, у которых есть свой успокоенный
+  // владыка, а не число имён в списке. Иначе после МЕХАНИКИ 58 счётчик
+  // показывал «свет в площадях · 8/7»: успокоив двух владык одной чакры, игрок
+  // получал две «площади», которых всего семь.
+  const bossesFreed = teachersLit(meta).size
   const cityStage = Math.min(4, bossesFreed)
   const CITY_TEXT = [
     'Город спит под пеленой Тамаса. Начните восхождение.',
@@ -231,9 +241,15 @@ function showTitle() {
     'Город светится. Цикл неведения разомкнут.',
   ]
   const cityText = CITY_TEXT[cityStage]
+  // Список имён — по-прежнему полезен (кто именно снят), но заголовок теперь
+  // про УЧИТЕЛЕЙ, а не про владык: площадь зажигает чакра, и при 21 владыке
+  // список имён мог быть длиннее семи строк без всякой связи с площадями.
   const teachers = meta.pacifiedBosses && meta.pacifiedBosses.length > 0
     ? h('div', { class: 'hint center mt', style: 'color:var(--gold-soft)' },
-        `Учителя города: ${meta.pacifiedBosses.join(' · ')}`)
+        `Учителя города: ${[...teachersLit(meta)]
+          .map((id) => (CITY_TEACHERS[id] || {}).name)
+          .filter(Boolean).join(' · ')}`,
+    )
     : null
 
   // Подписи обязаны совпадать со смыслом числа (2026-09-30).
@@ -269,12 +285,11 @@ function showTitle() {
     h('div', { class: 'varna-head' },
       h('div', {},
         h('div', { class: 'varna-label' }, 'Город'),
-        h('div', { class: 'varna-name' }, `свет в площадях · ${(meta.pacifiedBosses || []).length}/${Object.keys(CITY_TEACHERS).length}`)),
+        h('div', { class: 'varna-name' }, `свет в площадях · ${teachersLit(meta).size}/${Object.keys(CITY_TEACHERS).length}`)),
       h('div', { class: 'varna-next' }, 'войти →')),
     h('div', { class: 'city-dots' },
       Object.values(CITY_TEACHERS).map((t) => {
-        const bossName = ENEMIES[t.bossId] && ENEMIES[t.bossId].name
-        const on = bossName && (meta.pacifiedBosses || []).includes(bossName)
+        const on = teacherLit(meta, t)
         return h('div', { class: `city-mini ${on ? 'on' : ''}` }, on ? '✦' : '·')
       })),
     h('div', { class: 'varna-hint' },
@@ -306,7 +321,10 @@ function showTitle() {
 
   // Прогресс-бары (§дофамин): тонкие полоски «ещё чуть-чуть» на титуле —
   // сколько владык успокоено до Пробуждения, сколько цитат до новой, сад.
-  const bosses = (meta.pacifiedBosses || []).length
+  // «владык успокоено N/7» — теперь это освещённые чакры, то есть ровно то,
+  // что обещает подпись. Имена владык (их теперь 21) хранятся отдельно и
+  // показываются в городе и в отчёте — но «7» в знаменателе не изменилось.
+  const bosses = teachersLit(meta).size
   const quotesHave = Object.keys(meta.quotesUnlocked || {}).length
   const progressBlock = h('div', { class: 'panel progress-panel' },
     h('div', { class: 'progress-row' },
@@ -814,14 +832,44 @@ function teacherByBossName(name) {
   return Object.values(CITY_TEACHERS).find((t) => ENEMIES[t.bossId] && ENEMIES[t.bossId].name === name)
 }
 
+// Учитель — это ЧАКРА, а не конкретное имя (МЕХАНИКА 58). Раньше владык было
+// семь, по одному на чакру, и «успокоил владыку → зажёг площадь» работало
+// само собой. Теперь владык двадцать один, по три на чакру, и привязка по
+// имени дала «8/7 освещённых площадей»: игрок успокаивал Нидру на Муладхаре
+// и получал за это Моха-Ачарью, чьего учения он не касался.
+//
+// Правило: зажёг площадь = успокоен ЛЮБОЙ владыка этой чакры. Кто именно —
+// видно в истории (успокоенные владыки) и в отчёте за забег, а площадь
+// зажигается одна на чакру.
+function teacherForName(name) {
+  const lord = Object.values(ENEMIES).find((e) => e && e.isBoss && e.name === name)
+  if (!lord) return null
+  return Object.values(CITY_TEACHERS).find((t) => t.chakra === lord.chakra)
+    || teacherByBossName(name)   // запасной путь для старых сохранений
+}
+
+/** Сколько площадей Города освещено: по ЧАКРЕ, а не по числу имён. */
+function teachersLit(meta) {
+  const set = new Set()
+  for (const n of (meta.pacifiedBosses || [])) {
+    const t = teacherForName(n)
+    if (t) set.add(t.id)
+  }
+  return set
+}
+
+/** Освещена ли площадь учителя: успокоен любой владыка этой чакры. */
+function teacherLit(meta, t) {
+  return teachersLit(meta).has(t.id)
+}
+
 function showCity() {
   const { meta } = app
   const spoken = new Set(meta.citySpoken || [])
   const pacified = new Set(meta.pacifiedBosses || [])
 
   const areas = Object.values(CITY_TEACHERS).map((t) => {
-    const bossName = ENEMIES[t.bossId] && ENEMIES[t.bossId].name
-    const lit = bossName && pacified.has(bossName)
+    const lit = teacherLit(meta, t)
     const talked = spoken.has(t.id)
     const quoteLived = isQuoteLived(meta, t.quoteId)
 
@@ -859,7 +907,7 @@ function showCity() {
     h('div', { class: 'panel mt' },
       h('div', { class: 'row between' },
         h('span', { class: 'hint' }, 'площадей освещено'),
-        h('span', { style: 'color:var(--sat);font-weight:800' }, `${(meta.pacifiedBosses || []).length}/${Object.keys(CITY_TEACHERS).length}`)),
+        h('span', { style: 'color:var(--sat);font-weight:800' }, `${teachersLit(meta).size}/${Object.keys(CITY_TEACHERS).length}`)),
       h('div', { class: 'row between' },
         h('span', { class: 'hint' }, 'благословение на следующий забег'),
         h('span', { style: 'color:var(--gold-soft);font-weight:800' }, `+${blessing} саттвы`)),
@@ -875,11 +923,17 @@ function talkToTeacher(t) {
   const meta = app.meta
   const spoken = meta.citySpoken || (meta.citySpoken = [])
 
-  // Что он даст в этот раз: собственная цитата о нём, если ещё не дана,
-  // иначе — следующая в его цепочке. Закончил цепочку — больше нечего.
-  const chain = teacherChain(t.id)
+  // Кто заговорит: цепочку даёт владыка, которого игрок УСПОКОИЛ на этой
+  // чакре (МЕХАНИКА 58). Успокоив Нидру, игрок получает голос Нидры, а не
+  // Моха-Ачарью: площадь зажигает чакра, а учит — тот, кого снял. Нет
+  // записи (старое сохранение) — отдаёт прежнее поведение учителя.
+  const metLord = Object.values(ENEMIES).find((e) => e && e.isBoss && e.chakra === t.chakra
+    && (meta.pacifiedBosses || []).includes(e.name))
+  const chain = metLord ? lordChain(metLord.id, t.id) : teacherChain(t.id)
   const own = !isQuoteLived(meta, t.quoteId) ? t.quoteId : null
-  const next = own || nextTeacherQuote(t.id, meta.lived || {})
+  const next = own || (metLord
+    ? nextLordQuote(metLord.id, t.id, meta.lived || {})
+    : nextTeacherQuote(t.id, meta.lived || {}))
   if (!next) {
     show(h('div', { class: 'screen active comp-screen' },
       h('button', { class: 'btn ghost small', onclick: showCity }, '← Город'),
@@ -899,7 +953,10 @@ function talkToTeacher(t) {
   if (isFirst) spoken.push(t.id)
   saveMeta(meta)
 
-  const left = teacherChain(t.id).filter((id) => !isQuoteLived(meta, id)).length
+  // «Осталось у него N» считается по ЕГО цепочке, а не по учительской: при
+  // двух владыках одной чакры числа расходились бы с тем, что он на самом деле
+  // может отдать.
+  const left = chain.filter((id) => !isQuoteLived(meta, id)).length
   show(h('div', { class: 'screen active comp-screen' },
     h('button', { class: 'btn ghost small', onclick: showCity }, '← Город'),
     h('div', { class: 'display chakra-title' }, t.name),
@@ -958,6 +1015,7 @@ function showStats() {
               r.bosses ? `владык ${r.bosses}/7` : (r.floor != null ? `этаж ${r.floor + 1}` : '—'),
               r.pacified > 0 ? ` · освобождено ${r.pacified}` : '',
               r.kills > 0 ? ` · сломано силой ${r.kills}` : '',
+              r.sevaPoints > 0 ? ` · севы ${r.sevaPoints}` : '',
               r.revivals > 0 ? ` · возвратов ${r.revivals}` : '')),
           h('div', { class: 'run-row-date' }, date))
       })
@@ -1113,37 +1171,67 @@ function showAspectSelect(varnaId) {
  * уже существующие величины боя.
  */
 function showFountain() {
+  const meta = app.meta
   const picks = rollKeepsakes(Math.random, 3)
-  const stone = (k) => h('button', {
-    class: 'boon-card r-rare jade-card',
-    onclick: () => {
-      app.runKeepsake = k.id
-      app.runHp = null
-      app.boons = []          // новый забег — старые дары остались в прошлом
-      sfx.unlock?.()
-      markLived(app.meta, k.quoteId)
-      saveMeta(app.meta)
-      showFieldChakra()
+  // РАНГ НЕФРИТА (Hades: Purifying Quartz). Купленный ранг НЕ надевается
+  // сам — игрок решает на этом экране, иначе покупка была бы тихой: человек
+  // отдавал бы монеты и не понимал, что стало сильнее.
+  const lvOf = (id) => Math.max(1, meta.keepsakeLv?.[id] || 1)
+  const stone = (k) => {
+    const lv = lvOf(k.id)
+    const cost = keepsakeLevelCost(lv)
+    const rich = cost != null && (meta.coins || 0) >= cost
+    const upgrade = cost == null
+      ? h('span', { class: 'jade-rank max' }, 'высший ранг')
+      : h('button', {
+        class: `jade-up ${rich ? 'can' : 'poor'}`,
+        disabled: !rich,
+        onclick: (ev) => {
+          ev.stopPropagation()
+          const c = keepsakeLevelCost(lvOf(k.id))
+          if (c == null || (meta.coins || 0) < c) return
+          meta.coins -= c
+          meta.keepsakeLv = { ...(meta.keepsakeLv || {}), [k.id]: lvOf(k.id) + 1 }
+          saveMeta(meta)
+          sfx.buy?.()
+          showFountain()
+        },
+      }, `ранг ${lv} → ${lv + 1} · ${cost} монет`)
+    return h('button', {
+      class: 'boon-card r-rare jade-card',
+      onclick: () => {
+        app.runKeepsake = k.id
+        app.runKeepsakeLv = lvOf(k.id)
+        app.runHp = null
+        app.boons = []          // новый забег — старые дары остались в прошлом
+        sfx.unlock?.()
+        markLived(app.meta, k.quoteId)
+        saveMeta(app.meta)
+        showFieldChakra()
+      },
     },
-  },
-    h('span', { class: 'boon-rar' }, 'нефрит'),
-    h('b', { class: 'boon-name' }, k.name),
-    h('i', { class: 'boon-sub' }, k.sub),
-    h('span', { class: 'boon-desc' }, k.desc),
-  )
+      h('span', { class: 'boon-rar' }, lv > 1 ? `нефрит · ранг ${lv}` : 'нефрит'),
+      h('b', { class: 'boon-name' }, k.name),
+      h('i', { class: 'boon-sub' }, k.sub),
+      h('span', { class: 'boon-desc' }, k.desc),
+      upgrade,
+    )
+  }
 
   show(h('div', { class: 'screen active node-screen wsel-screen' },
     h('button', { class: 'btn ghost small', onclick: showWeaponSelect }, '← Назад'),
     h('div', { class: 'node-icon' }, '◈'),
     h('div', { class: 'node-title display' }, 'Фонтан юности'),
-    h('p', { class: 'node-text' },
-      'Один нефрит на весь побег. Он не лечит и не бьёт — он меняет правила боя, и менять придётся до конца. Дары боги дадут потом, а это — твоё.'),
+    // Коротко, но обещание остаётся: правило нефрита — на самой карточке
+    // («что меняет»), а не в абзаце над ней. Текст перед выбором не читают.
+    h('p', { class: 'node-text' }, 'один нефрит на забег · он меняет правило боя'),
     // Возврат (Nine Sols: Revival) обещан ЗДЕСЬ, а не на экране смерти.
     // Иначе игрок узнал бы о правиле в момент, когда выбирает, — и это был бы
     // не выбор, а сюрприз. То же, что «убить их нельзя»: обещание, которое
-    // нельзя исполнить, и обещание вслепую одинаково плохи.
+    // нельзя исполнить, и обещание вслепую одинаково плохи. Сокращено со
+    // 138 знаков до одной строки — обещание не тронуто.
     h('div', { class: 'varna-hint record-hint' },
-      'Пока нефрит в руках, у смерти есть третий выход: отдать его и вернуться в этот же забег с половиной жизни. Один раз за побег.'),
+      'Пока нефрит в руках, у смерти есть третий выход: отдать его и вернуться с половиной жизни. Один раз за побег.'),
     h('div', { class: 'wsel-row' }, picks.map(stone)),
   ))
 }
@@ -1161,8 +1249,16 @@ function showFieldChakra() {
   show(h('div', { class: 'screen active node-screen' },
     h('div', { class: 'node-icon' }, '◉'),
     h('div', { class: 'node-title display' }, 'Поле Ума'),
-    h('p', { class: 'node-text' },
-      'Иди по миру и возвращай оковы. Ока замахнулась — кольцо сомкнулось — жми дефлект. Рипу сдерживают: удар её не ранит. Пашу удар ломает — но оставляет самскару, и вернётся она в следующей жизни. Терпение или сила — выбор твой.'),
+    // БЕЗ ИНСТРУКЦИИ (решение автора 2026-10-02). Здесь стояло 224 знака.
+    //
+    // Но обещание убрать нельзя: «рипу не убить, пашу — можно» это правило
+    // МЕХАНИКИ 41, и оно должно быть сказано ДО выбора. Убрали только
+    // объяснение механики (что такое дефлект, чем кончается удар) — оно
+    // приходит в бою, на HUD, когда игрок ударил (`strike_ripu`) и когда
+    // ока в окне (core/hints.js).
+    //
+    // Осталось 27 знаков вместо 224: обещание с ценой — и ничего лишнего.
+    h('p', { class: 'node-text' }, 'рипу сдерживают · пашу ломают силой — и она оставляет самшкару'),
 
     // ── ЖАР (копия из Hades) ──────────────────────────────────────────
     // Добровольная сложность, которая платит. Без неё у игры нет причины
@@ -1291,13 +1387,63 @@ function showFieldShop(st, nextFloor, opts = {}) {
         if (app.fieldShopBought[key]) return
         if (price > purse) return
         app.fieldShopBought[key] = true
-        meta.coins = purse - price; buy(); saveMeta(meta); sfx.buy?.(); showFieldShop(st, nextFloor, opts)
+        meta.coins = purse - price
+        // Мудрость — за осознанную трату, а не за накопление (Human Society
+        // Part 2: vaeshya — деньги как мера всего). Ровно как в карточном пути,
+        // где очко даёт потраченная Прана. Бесплатный дар не считается:
+        // вложить было нечего.
+        if (price > 0) gainMentality('vaeshya', 1, { silent: true })
+        buy(); saveMeta(meta); sfx.buy?.(); showFieldShop(st, nextFloor, opts)
       },
     },
       h('i', { class: 'shop-mark' }, mark),
       h('div', { class: 'shop-tx' }, h('b', {}, name), h('span', {}, taken ? 'куплено' : desc)),
       h('i', { class: 'shop-cost' }, taken ? '—' : cost === 0 ? 'дар' : `${price} монет`),
     )
+  }
+
+  // РЕЛИКВИИ НА ПОЛКЕ (Slay the Spire: лавка продаёт реликвии).
+  //
+  // Зачем. Монеты копились из горшков и с оков, но тратить их во время забега
+  // было почти некуда: лавка продавала три позиции, из которых одна была
+  // бесплатной. Теперь амбросия покупает силу прямо в забеге.
+  //
+  // Цены — по редкости, и числа взяты из ЭКОНОМИКИ ИГРЫ: за забег честно
+  // набирается около 65 монет (2.6 за комнату), так что 20/35/60 — это
+  // «треть забега / половина / почти всё». Первая версия ставила 40/70/120 —
+  // числа из Slay the Spire, где за забег падает 250–400 золота. Здесь таких
+  // нет, и лавка пришла бы в тупик: замерено 0.6 покупки на забег.
+  //
+  // И честно о том, что это НЕ бесплатно. Замерено на 80 забегах:
+  //
+  //   | вариант                    | побед |
+  //   |----------------------------|-------|
+  //   | без реликвий вовсе         | 75 %  |
+  //   | реликвии только из лавки   | 65 %  |
+  //   | реликвии владык + лавка    | 75 %  |
+  //
+  // Покупка в лавке СНИЖАЕТ проходимость бота — и это не поломка, а прямой
+  // результат того, что монеты ещё и валюта мастерской: потратив их на силу
+  // забега, игрок не поднимает ранг нефрита. Это выбор «сила сейчас против роста
+  // потом», и он должен быть выбором, а не бесплатным улучшением. Поэтому в
+  // карточке товара написано «только на этот забег».
+  const RELIC_PRICE = { common: 20, uncommon: 35, rare: 60 }
+  const ownedRelics = beginFieldRun().relics || []
+  const shopRelics = rollFieldRelics({ rng: Math.random, owned: ownedRelics, n: 2 })
+
+  const relicItem = (view) => {
+    const cost = RELIC_PRICE[view.rarity] ?? 60
+    // «Только на этот забег» — не украшение, а недостающая половина правды.
+    // Монеты — ещё и валюта мастерской (ранги нефритов у фонтана), и кто
+    // потратит их здесь, тот не поднимет нефрит. Без этой оговорки покупка
+    // выглядит бесплатной, а потом игрок удивляется, почему фонтан не идёт.
+    return item('◈', `relic_${view.id}`, `${view.name}${view.sanskrit ? ' · ' + view.sanskrit : ''}`,
+      `${view.desc} Только на этот забег.`, cost, () => {
+        const run = beginFieldRun()
+        run.relics = [...(run.relics || []), view.id]
+        if (view.quoteId) markLived(meta, view.quoteId)
+        markSeen(meta, 'relics', view.id)
+      })
   }
 
   show(h('div', { class: 'screen active node-screen' },
@@ -1310,6 +1456,7 @@ function showFieldShop(st, nextFloor, opts = {}) {
         const opts2 = rollBoons(runBoons(), Math.random, 1)
         if (opts2[0]) { runBoons().push(opts2[0].id); markLived(meta, opts2[0].quoteId) }
       }),
+      ...shopRelics.map(relicItem),
       item('♥', 'full', 'Ахимса', 'Восстановить всю жизнь.', 25, () => { st.player.hp = st.player.maxHp }),
       item('✦', 'shakti', 'Духовная сила', 'Наполнить духовную силу до конца.', 20, () => { st.player.shakti = st.player.shaktiMax }),
     ),
@@ -1444,11 +1591,74 @@ function showSevaWorkshop() {
     h('button', { class: 'btn ghost small', onclick: showTitle }, '← Назад'),
     h('div', { class: 'node-icon' }, '◈'),
     h('div', { class: 'node-title display' }, 'Мастерская севы'),
-    h('p', { class: 'node-text' },
-      'Очки севы набегают за помощь и за оковы, снятые без удара. Тратятся не на силу, а на практику: каждый принцип меняет одно правило боя и открывает цитату. У каждого — до трёх рангов: купил первый, открылся второй, и он дороже. Второй ранг открывается, когда в мастерской есть два купленных усиления, третий — когда четыре: сначала решай, что купить раньше.'),
+    // БЕЗ ИНСТРУКЦИИ (2026-10-02). Здесь стояло 355 знаков: что такое сева, на что
+    // она тратится, почему рангов три и когда открывается второй. Всё это видно
+    // на самой карточке покупки: сколько стоит, сколько меняет, что открывает.
+    // Текст перед покупкой не читают — читают цену.
     h('div', { class: 'ws-points' },
       h('b', {}, String(pts)), h('span', {}, 'очков севы накоплено')),
     h('div', { class: 'stack', style: 'margin-top:12px' }, rows),
+  ))
+}
+
+/**
+ * ТРОН ЧАКРЫ: выбор владыки из трёх (Slay the Spire, МЕХАНИКА 58).
+ *
+ * Показывается ОДИН раз на этап — при первом входе в комнаты чакры. В StS
+ * три кандидата-босса стоят в начале акта, и игрок строит маршрут, зная, кто
+ * ждёт: у нас маршрута-карты нет, но знание нужно ровно для того же — стоит
+ * ли взять лавку перед страшным троном.
+ *
+ * Игрок выбирает одного; выбранный владыка идёт в комнату, а его имя пишется
+ * на двери (`rollDoors({ lordName })`). Отмена выбора — только смерть: как и
+ * в StS, трон не переставляется посреди акта.
+ *
+ * `app.runLordFloor` помнит, для какой чакры выбор уже сделан. Без него троны
+ * спрашивались бы на КАЖДОЙ комнате этапа, а после смерти того же этапа — ещё
+ * раз, то есть игрок «выбирал» владыку четыре раза на одну чакру.
+ */
+function showLordChoice(floor) {
+  const meta = app.meta
+  const daily = app.daily || null
+  // Тот же rng, что у комнат, и с тем же seed: в ежедневном пути троны дня
+  // обязаны совпадать у всех — иначе «один и тот же путь у всех» врал бы
+  // ровно на выборе владыки.
+  const rng = daily ? dailyRng(`${daily.dayKey}|lord|${floor}`) : Math.random
+  const ids = rollLords(floor, rng)
+  const world = worldForFloor(floor)
+
+  const cards = ids.map((id) => {
+    const d = ENEMIES[id]
+    if (!d) return null
+    const moves = (d.moves || []).map((m) => m.name).join(' · ')
+    return h('button', {
+      class: 'boon-card r-rare lord-card',
+      onclick: () => {
+        app.runLord = id
+        app.runLordFloor = floor
+        sfx.unlock?.()
+        startFieldRun(floor, 'room', 0)
+      },
+    },
+      h('span', { class: 'boon-rar' }, 'трон'),
+      h('b', { class: 'boon-name' }, d.name),
+      h('i', { class: 'boon-sans' }, d.sanskrit),
+      h('span', { class: 'boon-epithet' }, d.epithet || ''),
+      // Чем он держит мир — одна строка из источника. Именно по ней игрок и
+      // выбирает: три одинаковых «страшных владык» — это не выбор.
+      h('span', { class: 'boon-desc' }, d.hold || ''),
+      h('em', { class: 'boon-field' }, `приёмы: ${moves}`),
+    )
+  }).filter(Boolean)
+
+  show(h('div', { class: 'screen active node-screen boon-screen lord-screen' },
+    h('div', { class: 'node-icon' }, '✹'),
+    h('div', { class: 'node-title display' }, `Трон: ${world ? world.chakra : 'чакра'}`),
+    h('p', { class: 'node-text' },
+      `На троне ${world ? world.name : ''} сидит один из трёх. Выбери, кого встретишь в конце чакры: выбор не отменяется до смерти. В комнате он будет один, и его имя стоит на двери.`),
+    h('div', { class: 'boon-row' }, cards),
+    h('p', { class: 'hint center' },
+      `Все ${LORD_CHOICES} трона — подлинные оковы из Шастр, те же, что встречаются в комнатах. Успокой вместо того, чтобы сломать, — и владыка станет учителем в Городе.`),
   ))
 }
 
@@ -1460,6 +1670,22 @@ function showSevaWorkshop() {
  */
 function startFieldRun(floor, stage = 'room', room = 0) {
   const meta = app.meta
+  // Счётчик небоевых дверей обнуляется на новом забеге. Иначе он пережил бы
+  // смерть: забег, где игрок взял лавку на первой чакре и умер, оставил бы
+  // `calmDoors = 1`, и следующий забег начался бы с уже потраченным лимитом —
+  // игрок получил бы на первой чакре меньше выбора, ничего об этом не зная.
+  if (floor === 0 && room === 0) app.calmDoors = 0
+  // ТРОН ЧАКРЫ. Спрашиваем один раз на чакру, и только при входе в её первую
+  // комнату: `stage === 'room' && room === 0` — это ровно «начало этапа».
+  // Вход в комнаты владыки и в середину этапа сюда не попадает.
+  //
+  // Отдельно от `calmDoors`: выбор владыки НЕ должен переживать смерть
+  // (новый побег — новые троны, как новый забег в StS). Обнуляется там же,
+  // где почерк и дары.
+  if (stage === 'room' && room === 0 && app.runLordFloor !== floor && stageHasLord(floor)) {
+    showLordChoice(floor)
+    return
+  }
   // ЕЖЕДНЕВНЫЙ ПУТЬ. Розыгрыш комнаты берётся из даты, поэтому комната дня
   // одинакова у всех — и у всех одинаков набор просящих, оков и раскладки.
   //
@@ -1471,6 +1697,10 @@ function startFieldRun(floor, stage = 'room', room = 0) {
   const built = buildFieldFloor(floor, {
     room,
     elite: !!app.fieldElite,
+    // ТРОН ЧАКРЫ (МЕХАНИКА 58). Владыка выбран игроком на троне; `lordFor`
+    // всё равно сверяет его с пулом чакры, а при пустом выботе (старый
+    // забег, сохранённый экран) берётся владыка по умолчанию.
+    lordId: app.runLord || null,
     rng: daily ? dailyRng(`${daily.dayKey}|${floor}|${room}`) : Math.random,
   })
   const foes = stage === 'boss' ? [] : built.foes.slice()
@@ -1495,10 +1725,10 @@ function startFieldRun(floor, stage = 'room', room = 0) {
   // затрагивают ту же величину (и это правильно: усиление дороже).
   // порядок: варна → дары → мастерская (позднее перекрывает раньше)
   // порядок: варна → нефрит → дары → мастерская (позднее перекрывает раньше)
-  const opts2 = applyUpgrades(
-    applyBoons(applyKeepsake(applyAspect(applyVarna(base, vId), app.runAspect), app.runKeepsake), runBoons()),
+  const opts2 = applyFieldRelics(applyUpgrades(
+    applyBoons(applyKeepsake(applyAspect(applyVarna(base, vId, vLv), app.runAspect), app.runKeepsake, app.runKeepsakeLv), runBoons()),
     meta.upgrades || [],
-  )
+  ), app.fieldRun?.relics || [])
 
   // ── ЖАР применяется последним ────────────────────────────────────────
   // После даров, нефрита и мастерской — и это не случайно. Жар выбран
@@ -1525,9 +1755,17 @@ function startFieldRun(floor, stage = 'room', room = 0) {
     player: { x: built.field.w * 0.5, y: built.field.h * 0.72, hp: entryHp, maxHp: fullHp },
     foes,
     wares: built.wares,
+    // СОКРОВИЩА (Dead Cells: containers). Ломаются ударом, из них амбросия
+    // и сундук с севой. Бросать было бы нельзя: комната собралась бы без
+    // них, и игрок увидел бы пустой угол там, где у него сокровище.
+    pots: built.pots,
     field: built.field,
     rng: Math.random,
     opts: opts2,
+    // Список реликвий забега — экран рисует чипы из него. Без этого счётчика
+    // в бою нечем показать, что у игрока есть: опции действуют молча, и
+    // половина механики невидима.
+    relics: app.fieldRun?.relics || [],
   })
   // Проклятие хаос-пути держится до конца забега, как и в бою: брал дар
   // даром — платишь весь побег. Ставится на игрока, потому что там же считает
@@ -1550,6 +1788,14 @@ function startFieldRun(floor, stage = 'room', room = 0) {
     // глазами. Обет «без возврата» без этой плашки означал бы «не возвращайся,
     // если не помнишь», а это не условие.
     oathName: (OATHS.find((o) => o.id === app.oath) || {}).name || null,
+    // ПОДСКАЗКИ ВО ВРЕМЯ БОЯ (core/hints.js). Счётчик живёт в профиле, а не
+    // в забеге: подсказка должна перестать появляться не после смерти, а когда
+    // игрок понял. Иначе второй забег начинался бы с того же объяснения.
+    hintsSeen: meta.hints || (meta.hints = {}),
+    onHintShown: (id) => {
+      markHint(meta.hints, id)
+      saveMeta(meta)
+    },
     placeQuotes,
     onKnowledge: (qid, name) => {
       markLived(meta, qid)
@@ -1598,7 +1844,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
     onRevive: (app.runKeepsake && !app.runRevived) ? (st2) => {
       const jadeName = KEEPSAKE_BY_ID[app.runKeepsake]?.name || 'нефрит'
       app.runRevived = true
-      app.runKeepsake = null
+      app.runKeepsake = null; app.runKeepsakeLv = null
       // Считается в забеге и показывается на финале: забег с возвратом —
       // это другой забег, и прятать это было бы враньём в отчёте.
       const run0 = beginFieldRun()
@@ -1634,9 +1880,10 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       // Знание (цитаты, учителя) при этом не теряется — так и обещано.
       app.runHp = null
       app.boons = []
-      app.runKeepsake = null
+      app.runKeepsake = null; app.runKeepsakeLv = null
       app.runChaos = false      // проклятие хаос-пути не переживает смерть
       app.runAspect = null     // почерк — на забег: новый побег выбирает свой
+      app.runLord = null; app.runLordFloor = null  // троны — на забег: смерть переставляет троны
       app.runRevived = true     // возврат уже был: второй раз нельзя
       app.runReviveHalf = false
       app.fieldElite = false    // умер в испытании — следующий забег не начинается с него
@@ -1661,6 +1908,7 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       // на пути, и «испытание» тихо стало бы обычной комнатой.
       const wasElite = !!st2?.foes?.some((f) => f.isElite)
       app.fieldElite = false
+      flushVarnaToast()
       if (wasElite) {
         showEliteReward(floor, stage, room, stageHasBoss(floor))
         return
@@ -1703,10 +1951,11 @@ function startFieldRun(floor, stage = 'room', room = 0) {
       settleFieldRoom(meta, st2, floor)
       app.field = null
       app.runHp = null
-      app.runKeepsake = null
+      app.runKeepsake = null; app.runKeepsakeLv = null
       app.boons = []
       app.runChaos = false      // «оставил забег» — забег кончился, проклятие тоже
       app.runAspect = null     // почерк не переживает забег
+      app.runLord = null; app.runLordFloor = null  // троны не переживают забег
       app.runRevived = true     // забег закрыт: возврат в него больше невозможен
       app.fieldElite = false
       // Пауза прямо называет кнопку «оставить забег», и игра уже обнуляла
@@ -1756,6 +2005,7 @@ function showEliteReward(floor, stage, room, hasBoss) {
       class: 'boon-card r-rare jade-card',
       onclick: () => {
         app.runKeepsake = k.id
+        app.runKeepsakeLv = Math.max(1, meta.keepsakeLv?.[k.id] || 1)
         markLived(meta, k.quoteId)
         saveMeta(meta)
         sfx.unlock?.()
@@ -1784,10 +2034,93 @@ function showEliteReward(floor, stage, room, hasBoss) {
  * дар, хаос-путь, владыка). Новых экранов не вводится: только выбор между
  * уже существующими.
  */
+/**
+ * СОБЫТИЕ — экран без боя, где выбирают с названной платой (Slay the Spire).
+ *
+ * Обещание и поведение — одно и то же место. Подпись под каждым выбором
+ * печатается функцией `effectText(effects)` из тех же данных, которые потом
+ * применяются. Расходятся они не могут: если бы подпись писалась руками, мы
+ * получили бы ровно тот класс поломок, что уже повторялся четыре раза
+ * («экран обещал, а код делал иначе»).
+ *
+ * Все величины здесь — уже существующие в игре: сева забега, монеты, жизнь,
+ * щит в следующих комнатах, дар из трёх и проклятие хаоса. Новых сущностей не
+ * вводится — иначе «событие» оказалось бы новой системой, а не новым видом
+ * уже существующего выбора.
+ *
+ * `rng`: тот же, что у дверей, и с тем же seed в ежедневном пути — иначе
+ * событие дня отличалось бы у разных игроков, а событие обязано повторяться.
+ */
+function showFieldEvent(floor, nextFloor) {
+  const meta = app.meta
+  const run = beginFieldRun()
+  run.eventsSeen = run.eventsSeen || []
+  const ev = rollFieldEvent({
+    rng: app.daily
+      ? dailyRng(`${app.daily.dayKey}|event|${floor}`)
+      : Math.random,
+    seen: run.eventsSeen,
+  })
+  run.eventsSeen = [...run.eventsSeen, ev.id]
+  const q = QUOTES[placeQuotes('event')[0]]
+  if (q) markLived(meta, q.id)
+
+  const apply = (choice) => {
+    const p = previewEffects(choice.effects)
+    if (p.seva) run.sevaPoints = (run.sevaPoints || 0) + p.seva
+    if (p.coins) meta.coins = Math.max(0, (meta.coins || 0) + p.coins)
+    if (p.shield) run.eventShield = (run.eventShield || 0) + p.shield
+    if (p.chaos) app.runChaos = true
+    if (p.heal) {
+      // Живучесть забега: между комнатами она лежит в `runHp`, а если бой ещё
+      // жив — в игроке. Оба пути закрыты: раньше вариант «ни там, ни тут»
+      // тихо съедал лечение, обещанное на карточке.
+      const p2 = app.field?.player
+      if (p2 && p2.alive) p2.hp = Math.max(1, Math.min(p2.maxHp, p2.hp + p.heal))
+      else if (app.runHp != null) app.runHp = Math.max(1, app.runHp + p.heal)
+    }
+    saveMeta(meta)
+    sfx.unlock?.()
+    // Дар — отдельный экран, как и после владыки: выбор из трёх там, где
+    // игрок уже привык выбирать. Эффект обещает именно «дар из трёх», и
+    // показывается ровно этот экран — без «а вдруг придумаем своё».
+    if (p.boon) {
+      showBoonDraft(nextFloor, `${ev.title}: за твоё решение — дар`, () => {
+        if (p.coins || p.seva || p.heal || p.shield || p.chaos) afterEvent()
+      }, p.boonId)
+      return
+    }
+    afterEvent()
+  }
+
+  const afterEvent = () => { startFieldRun(floor, 'room', Math.min(ROOMS_PER_STAGE, nextFloor)) }
+
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, '◇'),
+    h('div', { class: 'node-title display' }, ev.title),
+    h('div', { class: 'node-sub' }, ev.sanskrit),
+    h('p', { class: 'node-text' }, ev.text),
+    h('div', { class: 'choices' }, ev.choices.map((c) => h('button', {
+      class: 'choice event',
+      onclick: () => apply(c),
+    },
+      h('div', { class: 'c-main' }, c.label),
+      h('div', { class: 'c-sub' }, effectText(c.effects))))),
+    q?.quote ? h('div', { class: 'win-quote' }, h('p', {}, q.quote), q.source ? h('cite', {}, q.source) : null) : null,
+  ))
+}
+
 function showFieldDoors(floor, stage, room, hasBoss) {
+  // обнуляется при входе в комнату владыки (этап кончен).
+  const calmTaken = app.calmDoors || 0
   const doors = rollDoors({
     room,
     hasBoss,
+    calmTaken,
+    // Дверь владыки пишет имя, которое игрок назвал на троне (МЕХАНИКА 58):
+    // «значок и слово на двери совпадают с содержимым» — правило, из-за
+    // которого двери и нужны. Без выбора (старый забег) — прежнее «Владыка».
+    lordName: lordName(app.runLord),
     // Тот же генератор, что у комнат забега: если бы двери брались из
     // `Math.random` напрямую, замер дверей мерил бы не тот забег, который
     // играется, — ровно та ошибка, что была с `fieldBalance` и `calmMul`.
@@ -1801,11 +2134,15 @@ function showFieldDoors(floor, stage, room, hasBoss) {
   const toNextRoom = () => startFieldRun(floor, 'room', nextRoom)
   const enter = (kind) => {
     sfx.unlock?.()
+    if (kind === 'shop' || kind === 'rest' || kind === 'boon' || kind === 'chaos' || kind === 'event') {
+      app.calmDoors = calmTaken + 1
+    }
     if (kind === 'room') { toNextRoom(); return }
-    if (kind === 'boss') { startFieldRun(floor, 'boss', nextRoom); return }
+    if (kind === 'boss') { app.calmDoors = 0; startFieldRun(floor, 'boss', nextRoom); return }
     if (kind === 'boon') { showBoonDraft(floor, 'Дверь дара — боя нет', toNextRoom); return }
     if (kind === 'shop') { showFieldShop(app.field, floor + 1, { after: toNextRoom }); return }
     if (kind === 'rest') { showRestRoom(app.meta, floor, app.field, toNextRoom); return }
+    if (kind === 'event') { showFieldEvent(floor, toNextRoom); return }
     if (kind === 'elite') {
       // ИСПЫТАНИЕ СИЛЫ (StS elite / Hades Challenge). Плата названа на двери
       // заранее: нефрит на забег. Он покупает и возврат из смерти — то есть
@@ -1845,6 +2182,14 @@ function showFieldDoors(floor, stage, room, hasBoss) {
     h('div', { class: 'node-icon' }, '⇢'),
     h('div', { class: 'node-title display' }, 'Двери'),
     h('p', { class: 'node-text' }, 'Выбери дверь. На ней написано, что внутри.'),
+    // СЕВА ЗА ЗАБЕГ — видимая. Правило проекта: «обещание с числом обязано жить
+    // там, где его можно взять». Событие обещает «+6 севы», а счётчик в бою
+    // показывает севу ТЕКУЩЕЙ комнаты, — то есть обещанное нигде не появлялось.
+    // Экран дверей — то место, где сева и тратится (лавка, покой), поэтому
+    // число стоит здесь.
+    h('div', { class: 'door-seva' },
+      h('b', {}, String(beginFieldRun().sevaPoints || 0)),
+      h('span', {}, 'севы за забег')),
     h('div', { class: 'door-row' }, doors.map((d) => h('button', {
       class: `door-card d-${d.kind}`,
       onclick: () => enter(d.kind),
@@ -1944,6 +2289,11 @@ function showFieldVictory(meta, floor, summary) {
       revivals ? line('возвратов из смерти', String(revivals)) : null,
       line('освобождено за забег', String(pacified)),
       line('сломано силой', String(kills)),
+      line('севы за забег', String(summary?.sevaPoints || 0)),
+      (summary?.relics || []).length
+        ? line('реликвии за забег', (summary.relics || [])
+          .map((id) => (fieldRelicView(id) || {}).name).filter(Boolean).join(' · '))
+        : null,
       line('монет', String(meta.coins || 0)),
       line('открыто знаний', String(Object.keys(meta.lived || {}).length)),
     ),
@@ -1962,14 +2312,38 @@ function showFieldVictory(meta, floor, summary) {
     h('div', { class: 'btn-row mt' },
       h('button', {
         class: 'btn primary',
-        onclick: () => { app.runHp = null; app.runKeepsake = null; showFountain() },
+        onclick: () => { app.runHp = null; app.runKeepsake = null; app.runKeepsakeLv = null; showFountain() },
       }, 'Ещё раз'),
       h('button', { class: 'btn ghost', onclick: showTitle }, 'В Город')),
   ))
 }
 
+/**
+ * ЧАКРА ЗАКРЫТА: очки ментальностей (§12).
+ *
+ * Почему здесь, а не в каждой комнате. Счёт «по комнате» давал 28 очков
+ * смелости за забег, и третья ступень лестницы (18 очков) падала на ПЕРВЫЙ
+ * же забег: лестница из четырёх ступеней превращалась в одну. В карточном
+ * пути единица та же — выигранный бой, — и очки капают пачками по десятку
+ * за забег. Здесь единица — чакра: семь за забег, как в колоде.
+ *
+ * Сами факты копятся в комнатах (`run`), а очки начисляются один раз за чакру,
+ * чтобы «одна чакра без крови» платила ровно один раз, а не четыре.
+ */
 function settleFloor(meta, floor) {
   if (!isLastFloor(floor) && (meta.fieldFloor || 0) < floor + 1) meta.fieldFloor = floor + 1
+  const run = app.fieldRun
+  if (run) {
+    const before = varnaLevelsSnapshot(meta)
+    for (const [kind, n] of floorVarnaFood(run)) {
+      if (n > 0) gainMentality(kind, n, { silent: true })
+    }
+    noteVarnaLevels(meta, before, run)
+    run.varnaPacifiedRooms = 0
+    run.varnaBloodlessRooms = 0
+    run.varnaServedRooms = 0
+    run.varnaLearned = 0
+  }
   saveMeta(meta)
 }
 
@@ -2006,7 +2380,56 @@ function afterRest(meta, next, st) {
     showFieldShop(st, next)
     return
   }
-  showBoonDraft(next, 'владыка пал — выбери дар')
+  showBoonDraft(next, 'владыка пал — выбери дар', () => showRelicDraft())
+}
+
+/**
+ * ВЫБОР РЕЛИКВИИ — после каждого владыки (Slay the Spire: boss relic).
+ *
+ * Три карточки, выбор один, действует до конца забега. Это не украшение: без
+ * этого слота за 25 комнат у игрока было восемь решений, и два забега
+ * отличались только тем, какие дары выпало.
+ *
+ * Порядок «покой → дар → реликвия» выбран один раз и записан: игрок видит
+ * цепочку одинаковой после каждого владыки, и «после покоя» перестаёт быть
+ * случайным набором экранов.
+ */
+function showRelicDraft(after) {
+  const run = beginFieldRun()
+  const owned = run.relics || []
+  const choice = rollFieldRelics({ rng: Math.random, owned })
+  // Что дальше — решает вызывающий: свой `after` не придумываем. Единственное
+  // исключение — реликвии кончились (их 14, а владык 7, так что это
+  // недостижимо), и тогда забег продолжается обычным порядком.
+  const go = after || (() => startFieldRun(run.floor))
+  if (!choice.length) { go(); return }
+  const take = (view) => {
+    run.relics = [...(run.relics || []), view.id]
+    markSeen(app.meta, 'relics', view.id)
+    if (view.quoteId) markLived(app.meta, view.quoteId)
+    saveMeta(app.meta)
+    const q = QUOTES[view.quoteId]
+    sfx.unlock()
+    show(h('div', { class: 'screen active node-screen' },
+      h('div', { class: 'node-title display' }, `Реликвия: ${view.name}`),
+      h('p', { class: 'node-text' }, view.desc),
+      view.sanskrit ? h('p', { class: 'node-sub' }, view.sanskrit) : null,
+      h('div', { class: 'win-quote' },
+        q?.quote ? h('p', {}, q.quote) : null,
+        q?.source ? h('cite', {}, q.source) : null),
+      h('button', { class: 'btn primary mt', onclick: go }, 'Идти дальше ▶')))
+  }
+  show(h('div', { class: 'screen active node-screen' },
+    h('div', { class: 'node-icon' }, '◈'),
+    h('div', { class: 'node-title display' }, 'Реликвия'),
+    h('p', { class: 'node-text' }, 'Владыка пал. Одна вещь достанется тебе до конца забега.'),
+    h('div', { class: 'choices' },
+      choice.map((view) => h('div', {
+        class: `choice relic ${view.rarity}`,
+        onclick: () => take(view),
+      },
+        h('div', { class: 'c-main' }, `${view.name}${view.sanskrit ? ' · ' + view.sanskrit : ''}`),
+        h('div', { class: 'c-sub' }, view.desc))))))
 }
 
 /** Комната покоя: выбрать — лечиться или стать крепче. */
@@ -2064,7 +2487,15 @@ function beginFieldRun() {
   // (`core/oath.js`). Считаются здесь, а не по флагам: флаг можно
   // забыть сбросить, факт — нельзя.
   app.fieldRun = { kills: 0, pacified: 0, bosses: 0, rooms: 0, floor: 0, revivals: 0,
-    legendary: 0, chaos: 0, elites: 0 }
+    legendary: 0, chaos: 0, elites: 0, sevaPoints: 0,
+    // РЕЛИКВИИ ЗАБЕГА (Slay the Spire: по одной после каждого владыки, до конца
+    // забега). Без них за 25 комнат у игрока было всего восемь решений — один
+    // нефрит и семь даров. Это тонко для десятиминутного рогалика: два забега
+    // отличались только тем, какие 14 даров выпало.
+    relics: [],
+    // Факты чакры для очков ментальности. Пища (чётвертая) начисляется сразу
+    // в лавке — там некуда ждать конца чакры.
+    varnaPacifiedRooms: 0, varnaBloodlessRooms: 0, varnaServedRooms: 0, varnaLearned: 0 }
   return app.fieldRun
 }
 
@@ -2099,6 +2530,7 @@ function finishFieldRun(result) {
     pacified: r.pacified,
     kills: r.kills,
     bosses: r.bosses,
+    sevaPoints: r.sevaPoints || 0,
     revivals: r.revivals || 0,
   })
   // РЕКОРД. Считается здесь, а не на экране финала: экран можно закрыть,
@@ -2130,6 +2562,58 @@ function finishFieldRun(result) {
  * на весь побег. Раньше `recordRunEnd` стоял здесь, и вся статистика профиля
  * считалась по комнатам.
  */
+/**
+ * ПИЩА ДЛЯ МЕНТАЛЬНОСТЕЙ В ПОЛЕ УМА — живёт в `core/mentalityFood.js`.
+ *
+ * Правило было здесь, функцией. Из-за этого проверка не могла взять настоящее
+ * правило и повторила его у себя — причём повторила СТАРУЮ версию (очки за
+ * комнату, без потолка), которой в игре уже нет. Пока «покрытие» зелёное, а
+ * играет не оно. Файл вынесен: игра и проверка читают одно.
+ */
+
+/** Снимок уровней — чтобы сказать «выросла ментальность» один раз. */
+function varnaLevelsSnapshot(meta) {
+  const out = {}
+  for (const k of MENTALITY_ORDER) out[k] = varnaState(meta).levels[k]
+  return out
+}
+
+/**
+ * Подъём уровня показывается ОДИН раз за комнату.
+ *
+ * Раньше это делал только карточный путь (`app.varnaLevel`), и то для одной
+ * ментальности. Четыре ментальности, выросшие в одной комнате, назвали бы
+ * игроку четыре тоста подряд — а в Поле Ума это вообще один всплеск.
+ */
+function noteVarnaLevels(meta, before, run) {
+  const after = varnaState(meta).levels
+  for (const k of MENTALITY_ORDER) {
+    if (after[k] > (before[k] ?? 0)) {
+      const m = MENTALITIES[k]
+      if (run) run.varnaGrew = run.varnaGrew || []
+      app.varnaGrew = app.varnaGrew || []
+      app.varnaGrew.push({ kind: k, to: after[k], name: m.name })
+    }
+  }
+}
+
+/**
+ * Показать подъём ментальности, если он был.
+ *
+ * Один тост на комнату, а не четыре. В Поле Ума четыре ментальности могут
+ * вырасти одновременно (снял оку, узнал её смысл и постоял на севе), и четыре
+ * тоста подряд — это шум, который заглушает само сообщение.
+ */
+function flushVarnaToast() {
+  const grew = app.varnaGrew
+  if (!grew || !grew.length) return null
+  app.varnaGrew = null
+  const names = grew.map((g) => g.name).join(' · ')
+  sfx.unlock()
+  toast(`⬆ Ментальность выросла: ${names}. Навык ума зреет.`, 'hl')
+  return null
+}
+
 function settleFieldRoom(meta, st, floor) {
   if (st.__settled) return
   st.__settled = true
@@ -2142,6 +2626,10 @@ function settleFieldRoom(meta, st, floor) {
   const run = beginFieldRun()
   run.floor = Math.max(run.floor, floor + 1)
   run.rooms += 1
+  // Сева за забег. Копится здесь, потому что здесь начисляется: `pts` уже
+  // посчитан для профиля, а игроку его показывать негде. Без этого «мирный
+  // путь дороже боевого» оставалось фразой: сравнить забеги было нечем.
+  run.sevaPoints = (run.sevaPoints || 0) + pts
   // Время забега. Копится из времени боя, а не из «сейчас минус тогда»:
   // комнаты считаются с открытия, а игрок между ними сидел в покое, лавке и
   // экране выбора дара. Время боя честное, и для рекорда оно годится.
@@ -2164,6 +2652,32 @@ function settleFieldRoom(meta, st, floor) {
   }
   // Монеты собираются даже при смерти — как в Hades: драхма остаётся.
   collectCoins(meta, st)
+  // Очки ментальности. Раньше их начислял ТОЛЬКО карточный путь (победа в
+  // бою колоды, узел практики, припоминание цитаты, трата Праны в лавке), и
+  // Поле Ума — то есть главный круг игры, куда игрок ходит каждый день —
+  // не давало их НИОТКУДА. Механика росла, но не от того, чем играли.
+  //
+  // Здесь только СЧЁТ ФАКТОВ. Очки начисляются раз за чакру в `settleFloor`:
+  // по комнате лестница вырождалась в одну ступень (28 очков смелости за
+  // забег при пороге третьей ступени 18).
+  const foes = st.foes || []
+  const pacified = foes.filter((f) => f.pacified)
+  if (pacified.length) {
+    run.varnaPacifiedRooms = (run.varnaPacifiedRooms || 0) + 1
+    // Кровь в комнате: четыре чистые комнаты подряд — это одна чистая
+    // чакра, а не четыре. Поэтому здесь только помечаем, а решаем в
+    // `settleFloor`, где видно всю чакру целиком.
+    if (!foes.some((f) => f.dead)) run.varnaBloodlessRooms = (run.varnaBloodlessRooms || 0) + 1
+  }
+  // Различение: только НОВЫЕ смыслы. `markLived` возвращает false, если
+  // цитата уже прожита, — повторное знание не платит дважды.
+  for (const f of pacified) {
+    const qid = f.def && f.def.quoteId
+    if (qid && markLived(meta, qid)) run.varnaLearned = (run.varnaLearned || 0) + 1
+  }
+  // Присутствие: была сева — засчитана комната. Сколько бы просящих ни
+  // стояло, это одна минута твоего внимания.
+  if (st.served && st.served.size > 0) run.varnaServedRooms = (run.varnaServedRooms || 0) + 1
   // Следующая чакра — только если все оковы сняты терпением.
   if (st.foes.every((f) => f.pacified) && !isLastFloor(floor)) {
     if ((meta.fieldFloor || 0) < floor + 1) meta.fieldFloor = floor + 1
@@ -2450,7 +2964,14 @@ function showWorldLore() {
   const run = app.run
   if (!run) return showTitle()
   const w = Object.values(WORLDS).find((x) => x.floor === run.floor) || Object.values(WORLDS)[0]
-  const lord = w && w.lordId && ENEMIES[w.lordId] ? ENEMIES[w.lordId] : null
+  // Открывается тайна по ВСТРЕЧЕННОМУ владыке, а не по владыке по умолчанию
+  // (МЕХАНИКА 58). Иначе игрок успокаивал Нидру, а скрижаль раскрывалась
+  // от Мохи — то есть говорила: «освобождённый владыка: Моха», хотя в этом
+  // забеге он и близко не встречался. Если владыка ещё не встречен (экран
+  // доступен до выбора трона) — берётся владыка по умолчанию, как раньше.
+  const met = Object.values(ENEMIES).find((e) => e && e.isBoss && e.chakra === run.floor
+    && (app.meta.pacifiedBosses || []).includes(e.name))
+  const lord = met || (w && w.lordId && ENEMIES[w.lordId] ? ENEMIES[w.lordId] : null)
   const pacified = lord ? (app.meta.pacifiedBosses || []).includes(lord.name) : false
   const biome = Math.min(run.floor, 6)
 

@@ -10,7 +10,7 @@
 // его в тот же забег с половиной жизни и БЕЗ нефрита.
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { installDom, textOf, clickables } from './helpers/dom.js'
+import { installDom, textOf, clickables , chooseLordIfShown } from './helpers/dom.js'
 
 let dom
 beforeAll(() => {
@@ -42,6 +42,7 @@ function enterFirstFight() {
   jade[0].dispatch('click')
   const first = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
   first.dispatch('click')
+  chooseLordIfShown(targets())
   expect(field(), 'бой начался').toBeTruthy()
 }
 

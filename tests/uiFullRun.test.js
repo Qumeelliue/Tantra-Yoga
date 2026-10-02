@@ -14,7 +14,7 @@
 // кода её не звала — мёртвый экран, который не показывался ни разу.
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { installDom, textOf, clickables } from './helpers/dom.js'
+import { installDom, textOf, clickables , chooseLordIfShown } from './helpers/dom.js'
 
 let dom
 beforeAll(() => {
@@ -74,6 +74,7 @@ describe('забег до конца через настоящие экраны'
     const first = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
     expect(first, 'есть открытая чакра').toBeTruthy()
     first.dispatch('click')
+    expect(chooseLordIfShown(targets()), 'на троне есть владыка').toBeTruthy()
     expect(field(), 'бой начался').toBeTruthy()
 
     const seen = new Set()
@@ -101,7 +102,10 @@ describe('забег до конца через настоящие экраны'
       }
 
       // ── финал ───────────────────────────────────────────────────
-      if (/Вершина Света/i.test(t)) break
+      // Финал ловим по ИТОГУ («комнат пройдено»), а не по слову «Вершина
+      // Света»: так называется и седьмая чакра, и её трон (МЕХАНИКА 58), и
+      // раньше тест выходил из забега, не дойдя до финала.
+      if (/комнат пройдено/i.test(t)) break
 
       try { expectClean(`экран #${guard}`) } catch (e) { problems.push(e.message) }
 
@@ -118,7 +122,7 @@ describe('забег до конца через настоящие экраны'
       }
       // карта чакр — войти в следующую
       const world = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
-      if (world) { world.dispatch('click'); continue }
+      if (world) { world.dispatch('click'); chooseLordIfShown(targets()); continue }
       // иначе — первая кнопка, потом «назад»
       const back = targets().find((x) => /← /.test(textOf(x)))
       if (back) { back.dispatch('click'); continue }

@@ -32,7 +32,10 @@ const BOSSES = Object.values(ENEMIES).filter((e) => e.isBoss)
 
 describe('Порог 50 % есть у всех владык и открывает успокоение', () => {
   it('у каждого владыка порог на половине HP', () => {
-    expect(BOSSES.length).toBe(7)
+    // 21 владыка = 7 чакр × 3 трона (МЕХАНИКА 58). Проверка по числу нужна
+    // для того же, для чего была «семь»: если новый трон забыли бы про
+    // порог, его не оказалось бы в BOSSES, и набор молча стал бы слабее.
+    expect(BOSSES.length).toBe(21)
     for (const b of BOSSES) {
       expect(b.onThreshold, `${b.id} без порога`).toBeTruthy()
       expect(b.onThreshold.trigger, `${b.id}`).toBe('hp_lte_50')
@@ -58,9 +61,11 @@ describe('Порог 50 % есть у всех владык и открывае�
       expect(log.length, `${b.id} без лога`).toBeGreaterThan(10)
     }
     const words = BOSSES.map((b) => b.onThreshold.log).join(' ')
-    // У Ахамкара (7-я чакра) самскара достаётся самому «я» — сильнее, чем
-    // победа. Это осознанная финальная точка.
-    expect(BOSSES[6].onThreshold.log).toContain('трон')
+    // У Ахамкара (7-я чакра) самшкара достаётся самому «я» — сильнее, чем
+    // победа. Это осознанная финальная точка. Ищем ПО СПИСКУ, а не по
+    // индексу: владык теперь 21, и «седьмой по счёту» больше не значит
+    // «Ахамкара» — троны перемешались по чакрам.
+    expect(BOSSES.find((b) => b.id === 'ahankara').onThreshold.log).toContain('трон')
   })
 })
 

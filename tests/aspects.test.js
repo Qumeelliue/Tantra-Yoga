@@ -125,7 +125,7 @@ describe('Почерк настоящий и живёт по законам пр
     expect(main).toContain('function showAspectSelect(varnaId)')
     expect(main).toContain('showFountain()')
     // Порядок слоёв в бою: варна → почерк → нефрит → дары → мастерская.
-    expect(main).toContain('applyKeepsake(applyAspect(applyVarna(base, vId), app.runAspect)')
+    expect(main).toContain('applyKeepsake(applyAspect(applyVarna(base, vId, vLv), app.runAspect)')
   })
 
   it('почерк не переживает забег', () => {

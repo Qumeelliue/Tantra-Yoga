@@ -37,6 +37,21 @@
  * `has` — читает ПРОГРЕСС из профиля. Только чтение: никаких записей.
  * `reward` — очки севы (валюта мастерской).
  * `quoteId` — цитата из шастр: без неё цели не существует (правило проекта).
+ *
+ * ЗАМЕР НАГРАД (2026-09-30), из-за которого числа подняты вчетверо. Поле даёт
+ * **122 севы за забег** (40 забегов, `fieldBalance.mjs`), а вся мастерская из
+ * 36 рангов стоит 248. Значит:
+ *
+ *   · весь мастерский прогресс игры = ДВА забега;
+ *   · восемь прорицаний вместе давали 37 севы = 0.3 забега;
+ *   · цель «начни двадцать забегов» давала 5 севы — 4 % одного забега, то есть
+ *     игрок шёл к ней 20 забегов и получал меньше, чем набрал бы за два.
+ *
+ * Это ровно та поломка, что и с жаром: механика существовала, а толку от неё
+ * не было. Теперь награда привязана к ТРУДНОСТИ цели, а не одинакова у всех:
+ * первая цель — 12 севы, самая долгая — 45. Все восемь вместе дают 222 севы,
+ * то есть почти целую мастерскую за полтора месяца игры. Это награда, за
+ * которую есть смысл возвращаться, но и не переплата за «просто поиграть».
  */
 export const PROPHECIES = [
   {
@@ -45,7 +60,7 @@ export const PROPHECIES = [
     text: 'Закончи забег, не сломав ни одной оки.',
     quoteId: 'ahimsa',
     target: 1,
-    reward: 3,
+    reward: 15,
     has: (meta) => Math.min((meta?.stats?.awakened || 0), 1),
   },
   {
@@ -54,7 +69,7 @@ export const PROPHECIES = [
     text: 'Закончи пять забегов без единого удара.',
     quoteId: 'ahimsa',
     target: 5,
-    reward: 6,
+    reward: 30,
     has: (meta) => Math.min(meta?.stats?.awakened || 0, 5),
   },
   {
@@ -63,7 +78,7 @@ export const PROPHECIES = [
     text: 'Начни двадцать забегов. Умереть — не значит отступить.',
     quoteId: 'death_rebirth',
     target: 20,
-    reward: 5,
+    reward: 30,
     has: (meta) => Math.min(meta?.stats?.runs || 0, 20),
   },
   {
@@ -72,7 +87,7 @@ export const PROPHECIES = [
     text: 'Сними терпением триста оков за всё время.',
     quoteId: 'prasad',
     target: 300,
-    reward: 6,
+    reward: 30,
     has: (meta) => Math.min(meta?.stats?.pacified || 0, 300),
   },
   {
@@ -81,7 +96,7 @@ export const PROPHECIES = [
     text: 'Сыграй ежедневный путь: он у всех одинаковый.',
     quoteId: 'satsaunga',
     target: 1,
-    reward: 3,
+    reward: 15,
     has: (meta) => (meta?.daily?.dailyRunDone ? 1 : 0),
   },
   {
@@ -90,7 +105,7 @@ export const PROPHECIES = [
     text: 'Проживи 60 цитат из шастр.',
     quoteId: 'viveka',
     target: 60,
-    reward: 6,
+    reward: 30,
     has: (meta) => Math.min(Object.keys(meta?.quotesUnlocked || {}).length, 60),
   },
   {
@@ -99,7 +114,7 @@ export const PROPHECIES = [
     text: 'Купи три усиления в мастерской севы.',
     quoteId: 'sila',
     target: 3,
-    reward: 4,
+    reward: 20,
     has: (meta) => Math.min((meta?.upgrades || []).length, 3),
   },
   {
@@ -108,7 +123,7 @@ export const PROPHECIES = [
     text: 'Пройди одно испытание Ямы или Ниямы.',
     quoteId: 'santosa',
     target: 1,
-    reward: 4,
+    reward: 20,
     // Ветви мастерства выбираются только после пройденного испытания
     // (`setVarnaBranch`), поэтому их число и есть «сколько испытаний пройдено».
     // Отдельного счётчика испытаний в профиле нет, и выдумывать его ради одного

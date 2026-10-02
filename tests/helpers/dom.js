@@ -147,6 +147,24 @@ class StubText extends StubNode {
 }
 
 /**
+ * Текст узла целиком, вместе с потомками.
+ *
+ * Функция была ВЫЗВАНА в `textContent` (`get textContent() { return
+ * childText(this) }`), но нигде не была определена. Ни один тест этого не
+ * задевал, потому что все ходили через `textOf`, у которого своя обходка:
+ * мёртвый вызов в стенде выглядел как работающий код. Нашёлся при проверке
+ * подсказок в бою — там `textContent` читается прямо с элемента.
+ */
+function childText(node) {
+  let out = ''
+  for (const c of node.childNodes || []) {
+    if (c.nodeType === 3) out += c.data
+    else out += childText(c)
+  }
+  return out
+}
+
+/**
  * style: игра пишет и через cssText, и через setProperty/getPropertyValue.
  * Плоский объект со строкой в cssText — этого не хватало: подсветка узла
  * падала с «style.setProperty is not a function».
@@ -548,6 +566,39 @@ export function clickEverything(node, { skip = [], limit = Infinity } = {}) {
     try { b.dispatch('click') } catch (e) { errors.push({ label, error: e }) }
   }
   return { count: targets.length, errors }
+}
+
+/**
+ * ТРОН ЧАКРЫ (МЕХАНИКА 58): если на экране выбор владыки — выбрать первого.
+ *
+ * Зачем это в стенде, а не в каждом тесте. Вход в чакру теперь упирается в
+ * экран тронов, и тест, который ждёт бой, падал бы с «бой не открылся» —
+ * то есть на забытом экране, а не на сломанной игре. Ровно тот класс поломки,
+ * который ловится здесь: «тест красный, потому что появился шаг, а не
+ * потому что игра сломалась».
+ *
+ * Возвращает выбранного владыку (имя) или null, если тронов на экране нет.
+ */
+export function chooseLordIfShown(nodes, which = 0) {
+  const cards = nodes.filter((x) => /lord-card/.test(String(x.className || '')))
+  if (!cards.length) return null
+  const card = cards[Math.min(which, cards.length - 1)]
+  const name = (textOf(card).match(/трон (.+?)(?:трон|приёмы|Это|Ахе)/) || [])[1] || ''
+  card.dispatch('click')
+  return name.trim() || 'владыка'
+}
+
+/**
+ * Экран дверей или нет — ПО КАРТОЧКАМ, а не по слову «Двери».
+ *
+ * Как это случилось. Экран тронов (МЕХАНИКА 58) заканчивается фразой «его
+ * имя стоит на двери», и тест, который искал экран дверей по `/Двери/i`,
+ * стал считать трон дверями: карточек дверей на экране ноль, а проверка
+ * «на экране дверей нет ни одной двери» падала. Слово «двери» вообще не
+ * признак: дверь есть и на троне, и в лавке, и в покое.
+ */
+export function doorCards(nodes) {
+  return nodes.filter((x) => /door-card/.test(String(x.className || '')))
 }
 
 /** Все строки экрана — чтобы искать «пустой экран» и «NaN на видном месте». */

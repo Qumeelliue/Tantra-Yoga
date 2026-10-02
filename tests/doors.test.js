@@ -220,3 +220,65 @@ describe('Игрок видит, где он в забеге', () => {
     expect(field).toContain('const floorNow = opts.floor ?? 0')
   })
 })
+
+describe('Избегание боя — выбор, а не стратегия', () => {
+  // Замер (40 забегов, рассеянность 0.85): бот, всегда берущий небоевую дверь,
+  // выигрывал 83 % против 45 % у боевого. «Не драться» было строго выгоднее
+  // «драться», а мирный финал получался маршрутом, а не умением.
+  //
+  // Что осталось после правки: небоевая дверь — одна на этап. Три комнаты, из
+  // которых одну можно пройти мимо. Выбор сохранился, лазейка закрыта не
+  // полностью — и это записано здесь, чтобы её не «доделали» позже, посчитав
+  // разницу «честной».
+  it('после одной небоевой двери на этапе следующих не будет', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      for (let room = 0; room < ROOMS_PER_STAGE; room++) {
+        const d = rollDoors({ room, hasBoss: true, rng: mk(seed), calmTaken: 1, calmMax: 1 })
+        const calm = d.filter((x) => ['shop', 'rest', 'boon', 'chaos'].includes(x.kind))
+        expect(calm.length, `seed ${seed}, комната ${room}: небоевых дверей ${calm.length}`).toBe(0)
+      }
+    }
+  })
+
+  it('до первой небоевой двери она ещё предлагается', () => {
+    let offered = 0
+    for (let seed = 1; seed <= 40; seed++) {
+      const d = rollDoors({ room: 0, hasBoss: false, rng: mk(seed), calmTaken: 0, calmMax: 1 })
+      if (d.some((x) => ['shop', 'rest', 'boon', 'chaos'].includes(x.kind))) offered++
+    }
+    expect(offered, 'небоевых дверей не предлагается вообще').toBeGreaterThan(20)
+  })
+
+  it('дверь боя остаётся ВСЕГДА — ограничение не съело правило', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      for (let room = 0; room < ROOMS_PER_STAGE; room++) {
+        const d = rollDoors({ room, hasBoss: true, rng: mk(seed), calmTaken: 5, calmMax: 1 })
+        expect(hasCombatDoor(d), `seed ${seed}, комната ${room}`).toBe(true)
+      }
+    }
+  })
+
+  it('испытание силы не считается «небоевой» дверью — это бой', () => {
+    // Ограничение про лавку/покой/дар/хаос, а испытание силы осталось доступным
+    // всегда: иначе игрок, решивший не рисковать, лишился бы единственной
+    // двери, которая платит нефритом.
+    let elite = 0
+    for (let seed = 1; seed <= 40; seed++) {
+      const d = rollDoors({ room: 0, hasBoss: false, rng: mk(seed), calmTaken: 1, calmMax: 1 })
+      if (d.some((x) => x.kind === 'elite')) elite++
+    }
+    expect(elite, 'после лимита исчезла и дверь испытания').toBeGreaterThan(5)
+  })
+
+  it('замер повторяет то же правило, иначе мерил бы не ту игру', () => {
+    // Тот же класс, что с calmMul и с двумя состояниями побега: измеритель,
+    // который не повторяет правило игры, даёт выдуманные числа.
+    const sim = read('scripts/fieldBalance.mjs')
+    expect(sim, 'замер не знает про лимит небоевых дверей').toContain('calmTaken')
+    expect(sim).toContain('calmMax')
+    expect(main, 'игра не считает взятые небоевые двери').toContain('const calmTaken = app.calmDoors || 0')
+    expect(main, 'счётчик не обнуляется на новом этапе').toContain('app.calmDoors = 0')
+    expect(main, 'счётчик переживает смерть и уменьшает лимит следующего забега')
+      .toContain('if (floor === 0 && room === 0) app.calmDoors = 0')
+  })
+})

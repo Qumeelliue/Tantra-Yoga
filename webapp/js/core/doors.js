@@ -42,6 +42,10 @@ export const DOOR_KINDS = {
   boon: { kind: 'boon', icon: '✦', name: 'Дар', hint: 'Дар без боя. Один из трёх.' },
   shop: { kind: 'shop', icon: '◈', name: 'Лавка', hint: 'Монеты на товар. Бой не будет.' },
   rest: { kind: 'rest', icon: '☾', name: 'Покой', hint: 'Восстановиться или стать крепче.' },
+  // СОБЫТИЕ (Slay the Spire: event). Не отдельный экран, а ВИД НЕБОЕВОЙ ДВЕРИ —
+  // поэтому оно попадает в тот же лимит `calmMax`, а не добавляется сверху.
+  // Подпись обещает ровно то, что внутри: что отдаёшь и что получаешь.
+  event: { kind: 'event', icon: '◇', name: 'Служение', hint: 'Отдаёшь, а получаешь не то. Выбор внутри.' },
   chaos: { kind: 'chaos', icon: '⚡', name: 'Хаос-путь', hint: 'Дар даром — но в проклятие.' },
   elite: { kind: 'elite', icon: '✵', name: 'Испытание силы', hint: 'Одна злея ока вместо комнаты. Плата — нефрит.' },
   boss: { kind: 'boss', icon: '✹', name: 'Владыка', hint: 'Комната владыки чакры.' },
@@ -55,9 +59,12 @@ export const DOOR_KINDS = {
  * @param {boolean} p.hasBoss есть ли у этапа владыка
  * @param {function} p.rng генератор — ОБЯЗАТЕЛЕН, иначе падение ниже
  * @param {number} [p.count] сколько обычных дверей (2–3, как в Hades)
+ * @param {string} [p.lordName] имя владыки, которого игрок назвал на троне
+ *   (МЕХАНИКА 58). Дверь пишет именно его: обещание на двери и содержимое
+ *   комнаты должны совпадать, иначе игрок идёт «к владыке» в темноте.
  * @returns {Array<{kind:string,icon:string,name:string,hint:string}>}
  */
-export function rollDoors({ room, hasBoss, rng, count = 0 } = {}) {
+export function rollDoors({ room, hasBoss, rng, count = 0, calmTaken = 0, calmMax = 1, lordName = '' } = {}) {
   // Генератор ОБЯЗАТЕЛ, и это не формальность. Если бы двери падали из
   // `Math.random`, замер дверей мерил бы не тот забег, который играется, —
   // ровно та ошибка, что была с `fieldBalance` и его собственным `calmMul`.
@@ -70,12 +77,28 @@ export function rollDoors({ room, hasBoss, rng, count = 0 } = {}) {
   // виден: игрок знает, что он идёт к нему, и выбирает дорогу САМ.
   const bossDue = !!hasBoss && n + 1 >= ROOMS_PER_STAGE
   const doors = []
-  if (bossDue) doors.push({ ...DOOR_KINDS.boss })
+  if (bossDue) {
+    // Имя владыки на двери — только если игрок уже выбрал его на троне.
+    // Без выбора дверь остаётся прежней («Владыка»), то есть старым поведением.
+    const boss = lordName
+      ? { ...DOOR_KINDS.boss, name: lordName, hint: 'Он уже назван: комната владыки чакры.' }
+      : { ...DOOR_KINDS.boss }
+    doors.push(boss)
+  }
 
   // Пул обычных дверей. Без повторов: два одинаковых значка рядом читаются
   // как ошибка, а не как выбор.
-  const pool = [DOOR_KINDS.room, DOOR_KINDS.boon, DOOR_KINDS.shop, DOOR_KINDS.rest,
-    DOOR_KINDS.chaos, DOOR_KINDS.elite]
+  // НЕБОЕВЫЕ ДВЕРИ ОГРАНИЧЕНЫ ОДНОЙ НА ЭТАП (`calmMax`). Без ограничения
+  // замер показал, что избегание боя перестаёт быть выбором и становится
+  // стратегией: бот, всегда берущий лавку/покой, выигрывал 83 % забегов против
+  // 45 % у боевого (рассеянность 0.85). То есть «не драться» было строго
+  // выгоднее «драться», а мирный финал получался маршрутом, а не умением.
+  // Одна небоевая дверь на этап оставляет выбор, но не делает его
+  // бесплатным: три комнаты, из них одну можно пройти мимо.
+  const calmKinds = ['boon', 'shop', 'rest', 'chaos']
+  const roomLeft = calmMax - calmTaken > 0
+  const pool = [DOOR_KINDS.room, DOOR_KINDS.elite]
+  if (roomLeft) pool.push(DOOR_KINDS.boon, DOOR_KINDS.shop, DOOR_KINDS.rest, DOOR_KINDS.chaos, DOOR_KINDS.event)
   const want = count > 0 ? count : (rand() < 0.5 ? 2 : 3)
 
   const chosen = [DOOR_KINDS.room]                 // правило: бой есть всегда
@@ -91,7 +114,7 @@ export function rollDoors({ room, hasBoss, rng, count = 0 } = {}) {
   const rest = chosen.filter((c) => c.kind !== 'room')
   const out = [DOOR_KINDS.room, ...rest]
   // Дверь владыки в конце: до него идут, а не мимо него.
-  return bossDue ? [...out, DOOR_KINDS.boss] : out
+  return bossDue ? [...out, doors[0]] : out
 }
 
 /** Есть ли среди дверей дверь боя — правило «бой есть всегда». */

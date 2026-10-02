@@ -21,7 +21,9 @@ import { WORKSHOP } from '../webapp/js/core/workshop.js'
 import { VARNA_KITS } from '../webapp/js/core/varnaKits.js'
 import { FOE_BEHAVIOR } from '../webapp/js/core/foeBehavior.js'
 import { buildFieldFloor } from '../webapp/js/core/fieldBuild.js'
+import { lordPool } from '../webapp/js/core/lords.js'
 import { CHAKRAS } from '../webapp/js/core/run.js'
+import { ROOMS_PER_STAGE } from '../webapp/js/core/stageRoute.js'
 
 const rows = []
 const add = (name, have, total, list) =>
@@ -103,6 +105,14 @@ const diff = (all, have) => all.filter((x) => !have.has(x))
         if (b.boss) inRun.add(b.boss.id)
       }
     }
+    // ТРОНЫ (МЕХАНИКА 58). Владыка теперь выбирается из трёх, и проверка «по
+    // `lordId`» проверяла бы только первого — то есть 14 владык из 21 лежали
+    // бы в контенте и нигде не были бы замечены. Собираем КАЖДЫЙ трон: то,
+    // что не собралось, игрок не увидит никогда.
+    for (const lid of lordPool(f)) {
+      const b = buildFieldFloor(f, { room: ROOMS_PER_STAGE, lordId: lid, rng: rngFor(lid.length * 101 + f) })
+      if (b.boss) inRun.add(b.boss.id)
+    }
   }
   const behaviors = Object.keys(FOE_BEHAVIOR)
   add('профили поведения', new Set(behaviors.filter((b) => inRun.has(b))), behaviors.length,
@@ -114,6 +124,13 @@ const diff = (all, have) => all.filter((x) => !have.has(x))
   const seenBoss = new Set(bosses.filter((b) => inRun.has(b)))
   add('боссы контента (= владыки миров)', seenBoss, bosses.length,
     bosses.filter((b) => !inRun.has(b)))
+
+  // Все троны чакр: 21 владыка, и каждый обязан собираться в комнату.
+  const allThrones = []
+  for (let f = 0; f < CHAKRAS.length; f++) allThrones.push(...lordPool(f))
+  const seenThrones = new Set(allThrones.filter((id) => inRun.has(id)))
+  add('троны чакр (владыка выбирается)', seenThrones, allThrones.length,
+    allThrones.filter((id) => !inRun.has(id)))
 }
 
 // ── поле: сила ────────────────────────────────────────────────────────

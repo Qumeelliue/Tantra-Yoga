@@ -20,7 +20,7 @@ const main = readFileSync(join(root, 'webapp/js/main.js'), 'utf8')
 
 describe('Дары не копятся между забегами', () => {
   it('в бою применяются дары забега, а не все накопленные', () => {
-    expect(main).toContain('applyBoons(applyKeepsake(applyAspect(applyVarna(base, vId), app.runAspect), app.runKeepsake), runBoons())')
+    expect(main).toContain('applyBoons(applyKeepsake(applyAspect(applyVarna(base, vId, vLv), app.runAspect), app.runKeepsake, app.runKeepsakeLv), runBoons())')
     expect(main).not.toMatch(/applyBoons\([^)]*meta\.boons/)
   })
 

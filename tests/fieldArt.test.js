@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest'
 import {
-  drawFoeArt, drawSadhakaArt, drawWareArt, drawFlowerArt, ART, FOE_SHAPES, foeShape } from '@webapp/js/ui/fieldArt.js'
+  drawFoeArt, drawSadhakaArt, drawWareArt, drawFlowerArt, drawPotArt, ART, FOE_SHAPES, foeShape } from '@webapp/js/ui/fieldArt.js'
 import { ENEMIES } from '@webapp/js/core/data.js'
 
 function recorder() {
@@ -25,6 +25,7 @@ function recorder() {
     scale: rec('scale'), rotate: rec('rotate'), clip: rec('clip'),
     beginPath: rec('beginPath'), closePath: rec('closePath'),
     moveTo: rec('moveTo'), lineTo: rec('lineTo'), arc: rec('arc'),
+    quadraticCurveTo: rec('quadraticCurveTo'), bezierCurveTo: rec('bezierCurveTo'),
     ellipse: rec('ellipse'), rect: rec('rect'), fillRect: rec('fillRect'),
     strokeRect: rec('strokeRect'), setLineDash: rec('setLineDash'),
     fill: rec('fill'), stroke: rec('stroke'), fillText: rec('fillText'),
@@ -245,5 +246,54 @@ describe('Силуэты оков', () => {
     const bossShape = foeShape()(44)
     const pashaShape = FOE_SHAPES.pasha(44)
     expect(JSON.stringify(bossShape)).not.toBe(JSON.stringify(pashaShape))
+  })
+})
+
+describe('Сокровище рисуется по тем же правилам, что и всё остальное', () => {
+  const mkPot = (over = {}) => ({ chest: false, hp: 2, maxHp: 2, broken: false, ...over })
+
+  it('горшок — сосуд с контуром, а не эллипс', () => {
+    // Первая версия сокровища была нарисована прямо в экране, мимо
+    // `fieldArt.js`. Она обходила все проверки стиля — а именно из-за
+    // непроверенного рисунка игра в какой-то момент выглядела «как овалы».
+    drawPotArt(ctx, mkPot())
+    expect(ctx.calls.filter((c) => c.name === 'stroke').length).toBeGreaterThanOrEqual(1)
+    // эллипс допустим только для тени
+    expect(ctx.calls.filter((c) => c.name === 'ellipse').length).toBeLessThanOrEqual(1)
+    expect(ctx.calls.filter((c) => c.name === 'quadraticCurveTo').length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('горшок и сундук отличаются ФОРМОЙ, а не только размером', () => {
+    // Иначе в углу стоят два тёмных пятна, и игрок не понимает, что сундук
+    // важнее. Различие обязано читаться силуэтом.
+    drawPotArt(ctx, mkPot())
+    const pot = ctx.calls.map((c) => c.name).join(' ')
+    ctx.calls.length = 0
+    drawPotArt(ctx, mkPot({ chest: true }))
+    const chest = ctx.calls.map((c) => c.name).join(' ')
+    expect(pot.includes('quadraticCurveTo')).toBe(true)
+    expect(chest.includes('rect')).toBe(true)
+    expect(pot).not.toBe(chest)
+  })
+
+  it('трещина показывает, сколько ударов осталось', () => {
+    // Читаемость важнее красоты: игрок должен видеть, что сосуд уже бит, и не
+    // тратить лишний удар, думая, что он цел.
+    drawPotArt(ctx, mkPot({ hp: 2 }))
+    const full = ctx.calls.filter((c) => c.name === 'moveTo' && c.a[1] === -14).length
+    ctx.calls.length = 0
+    drawPotArt(ctx, mkPot({ hp: 1 }))
+    const half = ctx.calls.filter((c) => c.name === 'moveTo' && c.a[1] === -14).length
+    expect(full).toBe(2)
+    expect(half).toBe(1)
+    ctx.calls.length = 0
+    drawPotArt(ctx, mkPot({ hp: 0 }))
+    expect(ctx.calls.filter((c) => c.name === 'moveTo' && c.a[1] === -14).length).toBe(0)
+  })
+
+  it('на сокровище нет радиального градиента', () => {
+    drawPotArt(ctx, mkPot())
+    drawPotArt(ctx, mkPot({ chest: true }))
+    expect(ctx.calls.some((c) => c.name === 'createRadialGradient')).toBe(false)
   })
 })

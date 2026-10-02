@@ -3,6 +3,7 @@
 // подлинные термины и их характеры.
 
 import { ENEMIES, QUOTES, worldForFloor } from './data.js'
+import { lordFor, stageHasLord } from './lords.js'
 
 /**
  * Характер оковы → как она ведёт себя в локации.
@@ -41,6 +42,16 @@ const AURA_TABLE = {
   matsarya: 'dark', nidra: 'dark',
   bhaya_pasha: 'dark', lajja: 'dark', ghrna: 'light', samshaya_pasha: 'light',
   kula: 'light', sila: 'dark', mana_pasha: 'light', jugupsa: 'dark',
+  // Троны чакры (МЕХАНИКА 58): аура владыки — та же, что у его оковы в
+  // комнатах. Читается так же: у части вивека обманывается авидьёй, и
+  // правдивую метку надо подтвердить ударом.
+  lord_nidra: 'dark', lord_kula_kundalini: 'dark',
+  lord_bhaya: 'dark', lord_ghrna: 'light',
+  lord_samshaya: 'light', lord_jugupsa: 'dark',
+  lord_mana: 'light', lord_lajja: 'dark',
+  lord_shila: 'dark', lord_kula: 'light',
+  lord_sankalpa: 'dark', lord_vikalpa: 'dark',
+  lord_karta: 'dark', lord_sanchara: 'dark',
 }
 // У Моха идёт подделка: светится белым, но на деле — авидья. Так учится
 // различение: свет не значит истину.
@@ -89,15 +100,17 @@ export function calmMulFor(floor) {
  * и код, бравший ответ из собранной комнаты, при выборе двери «испытание» на
  * последней комнате этапа **пропускал владыку целиком**. Забег становился
  * короче на одного босса, и игрок этого не видел.
+ *
+ * С 2026-09-30 у этапа не один владыка, а три трона на выбор (МЕХАНИКА 58),
+ * поэтому ответ берётся из пула чакры, а не из одного `lordId`.
  */
 export function stageHasBoss(floor) {
-  const world = worldForFloor(floor)
-  return !!(world && world.lordId && ENEMIES[world.lordId])
+  return stageHasLord(floor)
 }
 
 export function buildFieldFloor(
   floor,
-  { field = { w: 412, h: 600 }, includeBoss = true, room = 0, opts = {}, rng = Math.random, elite = false } = {},
+  { field = { w: 412, h: 600 }, includeBoss = true, room = 0, opts = {}, rng = Math.random, elite = false, lordId = null } = {},
 ) {
   const world = worldForFloor(floor)
   // Раскладка комнаты — тоже розыгрыш (Hades: комната не повторяет вид от
@@ -158,11 +171,14 @@ export function buildFieldFloor(
     })
   }
 
-  // Владыка чакры — в центре. Приёмы, намерения и порог 50% берутся
-  // из `content/enemies.json` дословно: ничего не выдумывается.
+  // Владыка чакры — в центре. Кто именно — выбирает игрок на троне (МЕХАНИКА
+  // 58); `lordFor` сверяет выбор с пулом чакры и не пускает чужого владыку.
+  // Приёмы, намерения и порог 50% берутся из `content/enemies.json` дословно:
+  // ничего не выдумывается.
   boss = null
-  if (includeBoss && world && world.lordId && ENEMIES[world.lordId]) {
-    const d = ENEMIES[world.lordId]
+  const chosenLord = includeBoss ? lordFor(floor, lordId) : null
+  if (includeBoss && chosenLord && ENEMIES[chosenLord]) {
+    const d = ENEMIES[chosenLord]
     boss = {
       id: d.id,
       name: d.name,
@@ -232,6 +248,49 @@ export function buildFieldFloor(
     }
   }
 
+  // ── СОКРОВИЩЕ (Dead Cells: containers; Hades: горшки) ─────────────────
+  // Ломаемый объект в комнате: тапнул — разбился, из него амбросия. Стоит
+  // в углу, чтобы свернуть с боя и рискнуть: за лёгкие деньги растёт самшара.
+  //
+  // Почему не дверь: дверь — это выбор «бой или не бой», а горшок — то, что
+  // лежит по пути и ради чего стоит свернуть. Одно на другое навешивать нельзя
+  // (МЕХАНИКА 47: дверь, которая врёт о содержимом, хуже, чем её нет).
+  //
+  // Один горшок на комнату и СУНДУК в последней — сундук даёт очки севы в
+  // мастерскую, то есть вещь МЕЖДУ забегами. Монеты живут тоже между
+  // забегами, но сундук — единственный источник севы в Поле Ума, поэтому
+  // решение «ломать или не ломать» стоит там, где оно что-то значит.
+  const pots = []
+  {
+    // Добыча 2–4. Первая версия дала 8–14, и замер показал: горшки стали
+    // 80 % всего золота (20.6 против 3.8 за комнату), а полный набор рангов
+    // нефритов падал с 59 забегов до 11. В Dead Cells контейнеры —
+    // ДОПОЛНЕНИЕ к добыче с врагов, а не её замена. 2–4 дают ~7 за комнату
+    // вместо 3.8: вдвое быстрее, но фонтан не превращается в копилку.
+    const potCoins = () => 2 + Math.floor(rng() * 3)
+    const px = field.w * (0.30 + rng() * 0.10)
+    const py = field.h * (0.72 + rng() * 0.12)
+    pots.push({
+      id: `p${floor}-${room}-a`, x: px, y: py, kind: 'pot', hp: 2, maxHp: 2,
+      name: 'горшок', coins: potCoins(), broken: false,
+    })
+    // Второй — не всегда: пустая комната не должна выглядеть обворованной.
+    if (rng() < 0.55) {
+      pots.push({
+        id: `p${floor}-${room}-b`, x: field.w * (0.60 + rng() * 0.10), y: field.h * (0.30 + rng() * 0.10),
+        kind: 'pot', hp: 2, maxHp: 2, name: 'горшок', coins: potCoins(), broken: false,
+      })
+    }
+    // Сундук — в ПОСЛЕДНЕЙ комнате этапа, у двери владыки. Ровно один за
+    // этап: иначе сундук перестаёт быть решением и становится фоном.
+    if (room === 2) {
+      pots.push({
+        id: `chest${floor}`, x: field.w * 0.20, y: field.h * 0.14, kind: 'chest',
+        hp: 3, maxHp: 3, name: 'сундук', chest: true, coins: 0, broken: false,
+      })
+    }
+  }
+
   const allWares = [
     { id: `w${floor}-a`, x: field.w * 0.14, y: field.h * 0.22, name: 'у колодца',
       call: 'Колодец пуст… помоги', need: 'вода', debt: false },
@@ -240,7 +299,7 @@ export function buildFieldFloor(
   ]
   const wares = rng() > 0.35 ? allWares : allWares.slice(0, 1)
 
-  return { world, floor, room, foes, boss, wares, field, look: worldLook(floor) }
+  return { world, floor, room, foes, boss, wares, pots, field, look: worldLook(floor) }
 }
 
 /**

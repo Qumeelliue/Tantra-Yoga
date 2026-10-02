@@ -1,7 +1,7 @@
 // Баланс-прогон: умный ИИ играет N забегов, считаем винрейт и статистику.
 import { createRun, startCombatAtNode, finishCombat, currentNode, floorComplete, advanceFloor, resolveEventChoice, rollBoonChoices, rollShop, buyShopCard, buyShopRemove } from '../webapp/js/core/run.js'
 import { mulberry32, playCard, endTurn, resolveRemoval, effectiveCost } from '../webapp/js/core/engine.js'
-import { CARDS, EVENTS, RELICS, TRIAL_REWARD_CARDS } from '../webapp/js/core/data.js'
+import { CARDS, EVENTS, RELICS, TRIAL_REWARD_CARDS, MENTALITY_LEVELS } from '../webapp/js/core/data.js'
 import { EMPTY_META } from '../webapp/js/core/save.js'
 
 // Симуляция играет как игрок с полностью открытым деревом Ямы/Ниямы: карты практик
@@ -167,6 +167,23 @@ function pickReward(run, choices, pacifist = false) {
 // ошибок сессии: вещи, связанные неявно, ломаются молча.
 const bossStats = { total: 0, calm: 0, hpPct: [], pacified: 0, ahimsaInDeck: 0, failed: [] }
 
+// ── УЗЕЛ ПРАКТИКИ: ЧТО ИМЕННО ДЕЛАЕТ БОТ (2026-09-30) ────────────────────
+// Флаги только через `--` (правило проекта):
+//   node … balance.mjs 50 -- --meditate=heal
+//   node … balance.mjs 50 -- --meditate=trim
+//   node … balance.mjs 50 -- --meditate=all-copies
+// По умолчанию бот идёт по ИГРЕ: одно из двух (дыхание ИЛИ отпустить) и
+// снимает ВСЕ копии карты, как снимает игра. Прежние значения (`both` +
+// одна копия) давали боту несуществующий третий вариант — и все проценты
+// винрейта в SPEC/BASE-GAME были посчитаны по нему.
+//
+// `both` остаётся как флаг: он показывает, сколько именно стоило замерам
+// то, чего игрок получить не может.
+const medArg = (process.argv.find((a) => a.startsWith('--meditate=')) || '').split('=')[1]
+const MEDITATE = medArg === 'heal' || medArg === 'trim' || medArg === 'both' ? medArg : 'heal'
+const MEDITATE_ALL_COPIES = medArg !== 'one-copy'
+const MED_BURNED = { n: 0 }
+
 /** Сброс статистики владык. Нужен перед каждым прогоном: `runOnce` пишет в неё. */
 export function resetBossStats() {
   bossStats.total = 0
@@ -175,7 +192,17 @@ export function resetBossStats() {
   bossStats.pacified = 0
   bossStats.ahimsaInDeck = 0
   bossStats.failed = []
+  VARNA_POINTS.kshatriya = 0
+  VARNA_POINTS.shudra = 0
+  VARNA_POINTS.vipra = 0
+  VARNA_POINTS.vaeshya = 0
 }
+
+// Очки ментальностей за забег карточного пути. Считается по тем же правилам,
+// что и в игре (`afterCardFight`: победа с успокоением кормит кшатрию, медитация
+// со сожжением — шудру, покупка в лавке — вайшью).
+const VARNA_POINTS = { kshatriya: 0, shudra: 0, vipra: 0, vaeshya: 0 }
+export function getVarnaPoints() { return VARNA_POINTS }
 
 export function getBossStats() {
   return bossStats
@@ -213,6 +240,10 @@ export function runOnce(seed, pacifist = false, extraCards = []) {
         if (node.type === 'boss') agg.bossHp[run.floor] = hpPct()
         const combat = simFight(run, pacifist)
         agg.fightPacified += combat.pacified
+        // Очки ментальности — ровно как в игре: победа с успокоением кормит
+        // смелость (владыка — вдвое). Именно этот счёт и показывает, быстро ли
+        // растёт ментальность в карточном пути.
+        if (combat.pacified > 0) VARNA_POINTS.kshatriya += node.type === 'boss' ? 2 : 1
         agg.fightKills += combat.kills
         if (node.type === 'boss') {
           const e = combat.enemies[0]
@@ -269,13 +300,33 @@ export function runOnce(seed, pacifist = false, extraCards = []) {
         run.done[run.floor][i] = true
         if (node.type === 'boss') break
       } else if (node.type === 'meditate') {
-        const curses = run.deck.filter((id) => CARDS[id].type === 'curse' || CARDS[id].type === 'vritti')
-        const burn = [...new Set(curses)].slice(0, 2)
-        for (const id of burn) {
-          const j = run.deck.indexOf(id)
-          if (j >= 0) run.deck.splice(j, 1)
+        // Узел практики — это ВЫБОР «дыхание ИЛИ отпустить» (StS: костёр —
+        // лечиться или улучшить). Раньше здесь стояло сразу и то, и другое:
+        // бот сжигал две карты И лечился на 5. В игре игрок может выбрать
+        // только одно, то есть бот измерял несуществующий третий вариант —
+        // и замер шёл по игре, которой нет. Плюс сжигалась ОДНА копия,
+        // а игра снимает ВСЕ копии карты.
+        //
+        // `--meditate=heal|trim|both` — что именно делает бот. По умолчанию
+        // `both` (как было), и это честно подписано: этот режим в игре
+        // недоступен, он существует только чтобы показать, сколько замер
+        // был обязан игроку.
+        if (MEDITATE !== 'trim') run.hp = Math.min(run.maxHp, run.hp + 5)
+        if (MEDITATE !== 'heal') {
+          const curses = run.deck.filter((id) => CARDS[id].type === 'curse' || CARDS[id].type === 'vritti')
+          const burn = [...new Set(curses)].slice(0, 2)
+          for (const id of burn) {
+            if (MEDITATE_ALL_COPIES) run.deck = run.deck.filter((x) => x !== id)
+            else {
+              const j = run.deck.indexOf(id)
+              if (j >= 0) run.deck.splice(j, 1)
+            }
+          }
+          MED_BURNED.n += burn.length
+          // Медитация со сожжением кормит присутствие — как в игре
+          // (`showMeditation`: `gainMentality('shudra', burned ? 1 : 0)`).
+          if (burn.length) VARNA_POINTS.shudra += 1
         }
-        run.hp = Math.min(run.maxHp, run.hp + 5)
         run.done[run.floor][i] = true
       } else if (node.type === 'event') {
         const ev = EVENTS[Object.keys(EVENTS)[Math.floor(run.rand() * Object.keys(EVENTS).length)]]
@@ -457,6 +508,21 @@ if (isEntry) {
   if (slips.length) {
     console.log(`  бот-пасифист УБИЛ обычную оку: ${slips.length} раз — мирный путь сорван не у владыки`)
     for (const s of slips.slice(0, 5)) console.log(`    чакра ${s.floor} ${s.type} ${s.name}: осталось ${s.hp}% жизни, ахимсы ${s.ahimsa}`)
+  }
+  // Что делал бот на узле практики. Без этой строки режимы `--meditate`
+  // выглядели бы одинаково, и «замер сжигал карты» осталось бы подписью.
+  const medLabel = { both: 'и подышать, и сжечь две карты (в игре так НЕЛЬЗЯ — это выбор)', heal: 'только подышать (как в игре)', trim: 'только сжечь карты (как в игре)' }[MEDITATE]
+  console.log(`  узел практики: ${medLabel} · карт сожжено за все забеги: ${MED_BURNED.n}${MEDITATE_ALL_COPIES ? ' · снимались ВСЕ копии (как в игре)' : ' · снималась ОДНА копия (в игре — все)'}`)
+  // Сколько очков ментальностей набирает карточный путь за забег. Без этой
+  // строки утверждение «в Поле Ума ментальность растёт так же, как в карточном
+  // пути» было бы заявлением, а не числом.
+  {
+    const v = getVarnaPoints()
+    const avg = (k) => (N ? v[k] / N : 0)
+    // Потолок лестницы — из данных. Он пересобирался 2026-09-30 (18 → 80), и
+  // написанный здесь строкой «18» печатал бы несуществующий порог.
+  const TOP_LV = MENTALITY_LEVELS[MENTALITY_LEVELS.length - 1]
+  console.log(`ментальности за забег: смелость ${avg('kshatriya').toFixed(1)} · присутствие ${avg('shudra').toFixed(1)} очков (в среднем; потолок лестницы ${TOP_LV} → ${(TOP_LV / Math.max(1, avg('kshatriya'))).toFixed(1)} забегов)`)
   }
   if (bossStats.failed.length) {
     // Где именно мирный путь ломается. Без этого «59 % мирных финалов» —

@@ -429,6 +429,9 @@ export function recordRunEnd(meta, result, info = {}) {
     floor: info.floor ?? null,
     pacified: info.pacified || 0,
     kills,
+    // Сева за забег. Без неё строка истории не отвечает на вопрос, ради
+    // которого игрок вообще открывает историю: «а какой забег был богаче».
+    sevaPoints: info.sevaPoints || 0,
     bosses,
     // Возвраты из смерти (Nine Sols: Revival, МЕХАНИКА 49). Пишутся в историю,
     // потому что забег с возвратом и забег без него — разные забеги, и

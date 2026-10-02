@@ -152,7 +152,7 @@ describe('Финал забега', () => {
   })
 
   it('новая попытка из финала начинается с чистого забега', () => {
-    expect(main).toContain("app.runHp = null; app.runKeepsake = null; showFountain()")
+    expect(main).toContain("app.runHp = null; app.runKeepsake = null; app.runKeepsakeLv = null; showFountain()")
   })
 })
 
@@ -162,7 +162,7 @@ describe('Фонтан юности (Hades: Fountain of Youth)', () => {
     expect(main).toContain('function showFountain')
     expect(main).toMatch(/onclick: \(\) => \{ meta\.focusVarna = id; saveMeta\(meta\); sfx\.unlock\?\.\(\); showAspectSelect\(id\) \},/)
     // из фонтана — сразу на карту чакр
-    expect(main).toMatch(/app\.runKeepsake = k\.id[\s\S]{0,200}showFieldChakra\(\)/)
+    expect(main).toMatch(/app\.runKeepsake = k\.id[\s\S]{0,400}showFieldChakra\(\)/)
   })
 
   it('фонтан предлагает три нефрита, а не дары', () => {
@@ -172,7 +172,7 @@ describe('Фонтан юности (Hades: Fountain of Youth)', () => {
   })
 
   it('нефрит надевается ДО даров и мастерской', () => {
-    expect(main).toContain('applyKeepsake(applyAspect(applyVarna(base, vId), app.runAspect), app.runKeepsake)')
+    expect(main).toContain('applyKeepsake(applyAspect(applyVarna(base, vId, vLv), app.runAspect), app.runKeepsake, app.runKeepsakeLv)')
   })
 
   it('надетый нефрит виден в бою, а не прячется', () => {

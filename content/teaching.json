@@ -76,6 +76,73 @@
       "cinta",
       "dvesha",
       "microvita"
+    ],
+    "event": [
+      "seva",
+      "tapah",
+      "aparigraha",
+      "upavasa",
+      "asteya",
+      "santosa"
+    ]
+  },
+  "lords": {
+    "lord_nidra": [
+      "nidra",
+      "liberation_from_staticity"
+    ],
+    "lord_kula_kundalini": [
+      "kula_kundalini",
+      "kundalini",
+      "samadhi"
+    ],
+    "lord_bhaya": [
+      "bhaya",
+      "brahmacarya"
+    ],
+    "lord_ghrna": [
+      "ghrna",
+      "ahimsa"
+    ],
+    "lord_samshaya": [
+      "samshaya",
+      "viveka"
+    ],
+    "lord_jugupsa": [
+      "jugupsa",
+      "dharma"
+    ],
+    "lord_mana": [
+      "mana",
+      "shreya_preya"
+    ],
+    "lord_lajja": [
+      "lajja",
+      "first_class_person"
+    ],
+    "lord_shila": [
+      "sila",
+      "samgiita"
+    ],
+    "lord_kula": [
+      "kula",
+      "mudra"
+    ],
+    "lord_sankalpa": [
+      "sankalpa",
+      "sadhana"
+    ],
+    "lord_vikalpa": [
+      "vikalpa",
+      "dhyana"
+    ],
+    "lord_karta": [
+      "doership",
+      "karma"
+    ],
+    "lord_sanchara": [
+      "sanchara",
+      "saincara"
     ]
   }
 }

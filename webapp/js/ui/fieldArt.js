@@ -379,6 +379,74 @@ export function drawWareArt(ctx, w, t) {
   ctx.restore()
 }
 
+/**
+ * СОКРОВИЩЕ (Dead Cells: containers; Hades: горшки). Ломаемый сосуд в углу.
+ *
+ * Читаемость здесь важнее красоты: игрок должен за метр узнать, что это
+ * вещь, которую можно разбить, и по трещине — сколько ещё ударов. Поэтому
+ * горшок тёмный с СВЕТЛЫМ контуром (а не тёмный на тёмном, как тень), а
+ * сундук отличается формой и золотым ободком, а не только размером.
+ *
+ * `hp`/`maxHp` рисуются как трещина: игрок видит, что сосуд уже бит, и не
+ * тратит лишний удар, думая, что он цел.
+ */
+export function drawPotArt(ctx, pot) {
+  ctx.save()
+  if (pot.chest) {
+    // сундук — прямоугольник, ободок золотой, замок светлее
+    ctx.fillStyle = ART.inkSoft
+    ctx.beginPath()
+    ctx.ellipse(0, 1, 14, 3.6, 0, 0, 7)
+    ctx.fill()
+    ctx.fillStyle = '#3a2a1e'
+    ctx.strokeStyle = ART.goldSoft
+    ctx.lineWidth = 1.3
+    ctx.beginPath()
+    ctx.rect(-13, -18, 26, 19)
+    ctx.fill()
+    ctx.stroke()
+    ctx.beginPath()
+    ctx.moveTo(-13, -10)
+    ctx.lineTo(13, -10)
+    ctx.strokeStyle = 'rgba(255,207,74,.55)'
+    ctx.lineWidth = 1
+    ctx.stroke()
+    ctx.fillStyle = ART.gold
+    ctx.beginPath()
+    ctx.rect(-2.6, -14, 5.2, 4.4)
+    ctx.fill()
+  } else {
+    // горшок — тёмный сосуд со светлым контуром и трещиной по числу ударов
+    ctx.fillStyle = ART.inkSoft
+    ctx.beginPath()
+    ctx.ellipse(0, 1, 9, 2.8, 0, 0, 7)
+    ctx.fill()
+    ctx.fillStyle = '#3a2a1e'
+    ctx.strokeStyle = ART.dim
+    ctx.lineWidth = 1.2
+    ctx.beginPath()
+    ctx.moveTo(-8, 2)
+    ctx.quadraticCurveTo(-11, -8, -6, -16)
+    ctx.lineTo(6, -16)
+    ctx.quadraticCurveTo(11, -8, 8, 2)
+    ctx.closePath()
+    ctx.fill()
+    ctx.stroke()
+  }
+  // трещина — по одному штриху на каждый оставшийся удар
+  const left = Math.max(0, pot.hp)
+  ctx.strokeStyle = ART.paper
+  ctx.lineWidth = 1
+  for (let i = 0; i < left; i++) {
+    ctx.beginPath()
+    ctx.moveTo(-4 + i * 3, -14)
+    ctx.lineTo(-1 + i * 3, -7)
+    ctx.lineTo(-4 + i * 3, 0)
+    ctx.stroke()
+  }
+  ctx.restore()
+}
+
 /** Цветок на месте освобождённой оковы — след, а не добыча. */
 export function drawFlowerArt(ctx, t) {
   ctx.save()

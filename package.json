@@ -13,6 +13,8 @@
     "balance": "node --experimental-loader ./scripts/aliases.mjs scripts/balance.mjs",
     "road-width": "node --experimental-loader ./scripts/aliases.mjs scripts/roadWidth.mjs",
     "field-balance": "node --experimental-loader ./scripts/aliases.mjs scripts/fieldBalance.mjs",
+    "varna-rate": "node --experimental-loader ./scripts/aliases.mjs scripts/varnaRate.mjs",
+    "boss-probe": "node --experimental-loader ./scripts/aliases.mjs scripts/bossProbe.mjs",
     "audit:sanskrit": "node scripts/auditSanskrit.mjs",
     "audit:glossary": "node scripts/auditGlossary.mjs",
     "audit:state": "node --experimental-loader ./scripts/aliases.mjs scripts/auditState.mjs",

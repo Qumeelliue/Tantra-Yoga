@@ -945,7 +945,8 @@
         }
       ],
       "log": "Моха сбрасывает маску: в ваш ум прокралась Чинта."
-    }
+    },
+    "hold": "Моха — пелена неведения: она называет временное вечным и прячет простую правду о четырёх целях (лестнице, а не пристани)."
   },
   "kama_raja": {
     "id": "kama_raja",
@@ -1023,7 +1024,8 @@
         }
       ],
       "log": "Кама-Раджа упивается собой: +2 силы, в ум — Чинта."
-    }
+    },
+    "hold": "Кама-раджа — влечение к внешнему. Вода всегда течёт к низшей точке, пока её не направят вверх."
   },
   "krodha_maharaja": {
     "id": "krodha_maharaja",
@@ -1085,7 +1087,8 @@
         }
       ],
       "log": "Маха-Кродха впадает в бешенство: гнев входит в вашу колоду!"
-    }
+    },
+    "hold": "Кродха — гнев, жар, что вырывается наружу. Десять вртти действия кипят, как угли под кожей."
   },
   "mada_natha": {
     "id": "mada_natha",
@@ -1163,7 +1166,8 @@
         }
       ],
       "log": "Мада-Натха дрожит от страха утраты и раздувается в силе."
-    }
+    },
+    "hold": "Мада — надменность: «я» над всеми. Двенадцать вртти сердца, отравленные гордостью, перестают слышать анахату."
   },
   "matsarya_kala": {
     "id": "matsarya_kala",
@@ -1230,7 +1234,8 @@
         }
       ],
       "log": "Матсарья-Кала обесценивает всё, что у вас есть."
-    }
+    },
+    "hold": "Матсарья — зависть: она сужает небо до чужого двора. Завистливый смотрит на чужую колоду и не видит своей."
   },
   "lobha_pati": {
     "id": "lobha_pati",
@@ -1307,7 +1312,8 @@
         }
       ],
       "log": "Лобха-Пати сгребает всё в свой зев: две Чинты в вашем уме."
-    }
+    },
+    "hold": "Лобха — жадность: хватать и держать. Ум копит вместо того, чтобы различать постоянное и временное."
   },
   "ahankara": {
     "id": "ahankara",
@@ -1402,6 +1408,1126 @@
         }
       ],
       "log": "Ахамкара восходит на трон «Я»: ваш ум затемняется."
+    },
+    "hold": "Ахамкара — «я», последняя оковка: деятель, который цепляется за дела и плоды и говорит: «это сделал я»."
+  },
+  "lord_nidra": {
+    "id": "lord_nidra",
+    "name": "Нидра",
+    "epithet": "Владыка Муладхары",
+    "sanskrit": "निद्रा",
+    "glyph": "sleep",
+    "isBoss": true,
+    "chakra": 0,
+    "maxHp": 54,
+    "calmMax": 3,
+    "quoteId": "nidra",
+    "hold": "Сон — самая глубокая пелена: пока ум спит, корень не вскрывается. «В высшей стадии огрубления эта сила дремлет» (Ánanda Sūtram 4-7).",
+    "moves": [
+      {
+        "name": "Дрёма",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          },
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Тяжёлая рука",
+        "intent": "attack",
+        "damage": 7,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 7,
+            "target": "player"
+          },
+          {
+            "kind": "block",
+            "amount": 6,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Спячка",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 10,
+            "target": "self"
+          },
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "block",
+          "amount": 10,
+          "target": "self"
+        },
+        {
+          "kind": "strength",
+          "amount": 1,
+          "target": "self"
+        }
+      ],
+      "log": "Нидра прибавляет веса: ваш ритм сбит, а сила растёт."
+    }
+  },
+  "lord_kula_kundalini": {
+    "id": "lord_kula_kundalini",
+    "name": "Кулакундалини",
+    "epithet": "Владыка Муладхары",
+    "sanskrit": "कुलकुण्डलिनी",
+    "glyph": "viper",
+    "isBoss": true,
+    "chakra": 0,
+    "maxHp": 56,
+    "calmMax": 3,
+    "quoteId": "kula_kundalini",
+    "hold": "Свёрнутая змеёй дремущая сила лежит у самого корня. Её не убивают — её поднимают; но пока она спит, спит и корень (A Few Problems Solved, ч. 1).",
+    "moves": [
+      {
+        "name": "Кольцо",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 12,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Хвост",
+        "intent": "attack",
+        "damage": 9,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 9,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Спираль",
+        "intent": "debuff",
+        "damage": 4,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 4,
+            "target": "player"
+          },
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Разворот",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 2,
+            "target": "self"
+          },
+          {
+            "kind": "block",
+            "amount": 8,
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "status",
+          "status": "weak",
+          "amount": 1,
+          "target": "player"
+        }
+      ],
+      "log": "Кулакундалини разворачивается: подъём начинается снизу."
+    }
+  },
+  "lord_bhaya": {
+    "id": "lord_bhaya",
+    "name": "Бхая",
+    "epithet": "Владыка Свадхистханы",
+    "sanskrit": "भय",
+    "glyph": "ghost",
+    "isBoss": true,
+    "chakra": 1,
+    "maxHp": 57,
+    "calmMax": 3,
+    "quoteId": "bhaya",
+    "hold": "Страх — вторая кожа влечения: держишься за желаемое из страха потерять его, и вода течёт вниз ещё быстрее.",
+    "moves": [
+      {
+        "name": "Оцепенение",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Дрожь",
+        "intent": "attack",
+        "damage": 6,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 6,
+            "target": "player"
+          },
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          }
+        ]
+      },
+      {
+        "name": "Ужас",
+        "intent": "attack",
+        "damage": 10,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 10,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "shuffleHand",
+          "amount": 0
+        }
+      ],
+      "log": "Бхая сжимается от ужаса — и бьёт вернее."
+    }
+  },
+  "lord_ghrna": {
+    "id": "lord_ghrna",
+    "name": "Грна",
+    "epithet": "Владыка Свадхистханы",
+    "sanskrit": "घृणा",
+    "glyph": "viper",
+    "isBoss": true,
+    "chakra": 1,
+    "maxHp": 58,
+    "calmMax": 3,
+    "quoteId": "ghrna",
+    "hold": "Ненависть рождается там, где отняли желаемое. Она держит влечение не как радость, а как войну с тем, что мешает.",
+    "moves": [
+      {
+        "name": "Жёлчь",
+        "intent": "attack",
+        "damage": 7,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 7,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Яд ненависти",
+        "intent": "attack",
+        "damage": 6,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 6,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 2,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Отравленное слово",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          },
+          {
+            "kind": "addCurseToDeck",
+            "cardId": "cinta",
+            "amount": 1
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "guna",
+          "amount": 1,
+          "which": "t",
+          "target": "player"
+        }
+      ],
+      "log": "Грна выкладывает желчь: в уме темнеет."
+    }
+  },
+  "lord_samshaya": {
+    "id": "lord_samshaya",
+    "name": "Шаунка",
+    "epithet": "Владыка Манипуры",
+    "sanskrit": "शङ्का",
+    "glyph": "ques",
+    "isBoss": true,
+    "chakra": 2,
+    "maxHp": 60,
+    "calmMax": 3,
+    "quoteId": "samshaya",
+    "hold": "Сомнение держит десять вртти действия: пока ум взвешивает, ни одно дело не начато, а огонь в плато остывает.",
+    "moves": [
+      {
+        "name": "Тенета сомнений",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          },
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          }
+        ]
+      },
+      {
+        "name": "Шаткость",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 9,
+            "target": "self"
+          },
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          }
+        ]
+      },
+      {
+        "name": "Подрыв веры",
+        "intent": "attack",
+        "damage": 8,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 8,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "status",
+          "status": "weak",
+          "amount": 1,
+          "target": "player"
+        }
+      ],
+      "log": "Шаунка переспрашивает: то ли дело правильно?"
+    }
+  },
+  "lord_jugupsa": {
+    "id": "lord_jugupsa",
+    "name": "Джугупса",
+    "epithet": "Владыка Манипуры",
+    "sanskrit": "जुगुप्सा",
+    "glyph": "whisper",
+    "isBoss": true,
+    "chakra": 2,
+    "maxHp": 62,
+    "calmMax": 3,
+    "quoteId": "jugupsa",
+    "hold": "Злословие и притворство делают действие чужим: огонь, который греет не тебя, а чужую речь.",
+    "moves": [
+      {
+        "name": "Шёпот за спиной",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          }
+        ]
+      },
+      {
+        "name": "Клевета",
+        "intent": "attack",
+        "damage": 7,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 7,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "r",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Проклятие",
+        "intent": "attack",
+        "damage": 11,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 11,
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "shuffleHand",
+          "amount": 0
+        }
+      ],
+      "log": "Джугупса бросает чужое слово в ваш ум."
+    }
+  },
+  "lord_mana": {
+    "id": "lord_mana",
+    "name": "Мана",
+    "epithet": "Владыка Анахаты",
+    "sanskrit": "मान",
+    "glyph": "feather",
+    "isBoss": true,
+    "chakra": 3,
+    "maxHp": 64,
+    "calmMax": 3,
+    "quoteId": "mana",
+    "hold": "Тщеславие — любовь, которой смотрится в зеркало. Двенадцать вртти сердца молчат, пока слушают, что о них думают.",
+    "moves": [
+      {
+        "name": "Самолюбование",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 2,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Напыщенный",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Удар эго",
+        "intent": "attack",
+        "damage": 9,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 9,
+            "target": "player"
+          },
+          {
+            "kind": "block",
+            "amount": 6,
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "block",
+          "amount": 8,
+          "target": "self"
+        }
+      ],
+      "log": "Мана любуется собой и крепнет."
+    }
+  },
+  "lord_lajja": {
+    "id": "lord_lajja",
+    "name": "Ладжа",
+    "epithet": "Владыка Анахаты",
+    "sanskrit": "लज्जा",
+    "glyph": "veil",
+    "isBoss": true,
+    "chakra": 3,
+    "maxHp": 65,
+    "calmMax": 3,
+    "quoteId": "lajja",
+    "hold": "Стыд прячет сердце. Служение без ожидания похвалы идёт трудно, пока ты прячешься от люда.",
+    "moves": [
+      {
+        "name": "Прятаться",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 10,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Опустить взгляд",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          },
+          {
+            "kind": "addCurseToDeck",
+            "cardId": "cinta",
+            "amount": 1
+          }
+        ]
+      },
+      {
+        "name": "Сгореть от стыда",
+        "intent": "attack",
+        "damage": 9,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 9,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "status",
+          "status": "weak",
+          "amount": 1,
+          "target": "player"
+        }
+      ],
+      "log": "Ладжа зарывается — и бьёт из темноты."
+    }
+  },
+  "lord_shila": {
+    "id": "lord_shila",
+    "name": "Шила",
+    "epithet": "Владыка Вишуддхи",
+    "sanskrit": "शील",
+    "glyph": "eye",
+    "isBoss": true,
+    "chakra": 4,
+    "maxHp": 66,
+    "calmMax": 3,
+    "quoteId": "sila",
+    "hold": "Гордость культурой сужает горло до своего двора: шестнадцать вртти речи звучат, только если звук признали твоим.",
+    "moves": [
+      {
+        "name": "Каста вкуса",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Холодный взгляд",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 9,
+            "target": "self"
+          },
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Насмешка",
+        "intent": "attack",
+        "damage": 8,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 8,
+            "target": "player"
+          },
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "guna",
+          "amount": 1,
+          "which": "t",
+          "target": "player"
+        }
+      ],
+      "log": "Шила смотрит свысока и говорит чужое слово."
+    }
+  },
+  "lord_kula": {
+    "id": "lord_kula",
+    "name": "Кула",
+    "epithet": "Владыка Вишуддхи",
+    "sanskrit": "कुल",
+    "glyph": "crown",
+    "isBoss": true,
+    "chakra": 4,
+    "maxHp": 67,
+    "calmMax": 3,
+    "quoteId": "kula",
+    "hold": "Знатность рода велит горлу звучать родовым голосом: «мы всегда так говорили» — и имя Имени не проходит.",
+    "moves": [
+      {
+        "name": "Наследство",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 2,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Превосходство",
+        "intent": "attack",
+        "damage": 9,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 9,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Удар родовитости",
+        "intent": "attack",
+        "damage": 10,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 10,
+            "target": "player"
+          },
+          {
+            "kind": "block",
+            "amount": 8,
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "block",
+          "amount": 10,
+          "target": "self"
+        }
+      ],
+      "log": "Кула опирается на род: голос звучит громче."
+    }
+  },
+  "lord_sankalpa": {
+    "id": "lord_sankalpa",
+    "name": "Самкальпа",
+    "epithet": "Владыка Аджны",
+    "sanskrit": "संकल्प",
+    "glyph": "eye",
+    "isBoss": true,
+    "chakra": 5,
+    "maxHp": 70,
+    "calmMax": 3,
+    "quoteId": "sankalpa",
+    "hold": "Самкальпа — воление, ведущее к пара-видье. На троне он сидит там, где желание знать великое превратилось в требование.",
+    "moves": [
+      {
+        "name": "Воление",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 2,
+            "target": "self"
+          },
+          {
+            "kind": "block",
+            "amount": 6,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Приказ уму",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          },
+          {
+            "kind": "addCurseToDeck",
+            "cardId": "cinta",
+            "amount": 1
+          }
+        ]
+      },
+      {
+        "name": "Повеление светом",
+        "intent": "attack",
+        "damage": 10,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 10,
+            "target": "player"
+          },
+          {
+            "kind": "block",
+            "amount": 8,
+            "target": "self"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "status",
+          "status": "weak",
+          "amount": 1,
+          "target": "player"
+        }
+      ],
+      "log": "Самкальпа требует — и различение замолкает."
+    }
+  },
+  "lord_vikalpa": {
+    "id": "lord_vikalpa",
+    "name": "Викальпа",
+    "epithet": "Владыка Аджны",
+    "sanskrit": "विकल्प",
+    "glyph": "ques",
+    "isBoss": true,
+    "chakra": 5,
+    "maxHp": 71,
+    "calmMax": 3,
+    "quoteId": "vikalpa",
+    "hold": "Викальпа строит мирское знание, как сон наяву: складно, убедительно и всегда чужое.",
+    "moves": [
+      {
+        "name": "Мим",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "shuffleHand",
+            "amount": 0
+          }
+        ]
+      },
+      {
+        "name": "Привычное",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 11,
+            "target": "self"
+          },
+          {
+            "kind": "strength",
+            "amount": 1,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Убедительный",
+        "intent": "attack",
+        "damage": 9,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 9,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "shuffleHand",
+          "amount": 0
+        }
+      ],
+      "log": "Викальпа шепчет правдоподобное — и это неправда."
+    }
+  },
+  "lord_karta": {
+    "id": "lord_karta",
+    "name": "Картта",
+    "epithet": "Владыка Сахасрары",
+    "sanskrit": "कर्ता",
+    "glyph": "mask",
+    "isBoss": true,
+    "chakra": 6,
+    "maxHp": 80,
+    "calmMax": 3,
+    "quoteId": "doership",
+    "hold": "«Ахам есть картта» (Ánanda Sútram 2-17) — деятель, который берёт и дело, и плод. На вершине он последний, кто ещё говорит: «это сделал я».",
+    "moves": [
+      {
+        "name": "Я-есть",
+        "intent": "buff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "strength",
+            "amount": 2,
+            "target": "self"
+          },
+          {
+            "kind": "block",
+            "amount": 6,
+            "target": "self"
+          }
+        ]
+      },
+      {
+        "name": "Присвоить плод",
+        "intent": "attack",
+        "damage": 10,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 10,
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Гроза самости",
+        "intent": "attack",
+        "damage": 13,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 13,
+            "target": "player"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "addCurseToDeck",
+          "cardId": "cinta",
+          "amount": 1
+        }
+      ],
+      "log": "Картта забирает плод себе — и крепнет."
+    }
+  },
+  "lord_sanchara": {
+    "id": "lord_sanchara",
+    "name": "Санчара",
+    "epithet": "Владыка Сахасрары",
+    "sanskrit": "सैञ्चर",
+    "glyph": "veil",
+    "isBoss": true,
+    "chakra": 6,
+    "maxHp": 82,
+    "calmMax": 3,
+    "quoteId": "sanchara",
+    "hold": "Санчара — движение от Истока всё дальше, под нарастающей властью гун (Ánanda Sūtram 1-5). На вершине это то, что утянуло ум вниз и зовёт обратно.",
+    "moves": [
+      {
+        "name": "Нисхождение",
+        "intent": "debuff",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "status",
+            "status": "weak",
+            "amount": 1,
+            "target": "player"
+          },
+          {
+            "kind": "addCurseToDeck",
+            "cardId": "cinta",
+            "amount": 1
+          }
+        ]
+      },
+      {
+        "name": "Тяга вниз",
+        "intent": "defend",
+        "damage": 0,
+        "effects": [
+          {
+            "kind": "block",
+            "amount": 10,
+            "target": "self"
+          },
+          {
+            "kind": "guna",
+            "amount": 1,
+            "which": "t",
+            "target": "player"
+          }
+        ]
+      },
+      {
+        "name": "Всё дальше",
+        "intent": "attack",
+        "damage": 14,
+        "effects": [
+          {
+            "kind": "damage",
+            "amount": 14,
+            "target": "player"
+          }
+        ]
+      }
+    ],
+    "onThreshold": {
+      "trigger": "hp_lte_50",
+      "once": true,
+      "effects": [
+        {
+          "kind": "strength",
+          "amount": 2,
+          "target": "self"
+        },
+        {
+          "kind": "status",
+          "status": "weak",
+          "amount": 1,
+          "target": "player"
+        }
+      ],
+      "log": "Санчара тянет вниз: ваш ум уходит от корня."
     }
   }
 }

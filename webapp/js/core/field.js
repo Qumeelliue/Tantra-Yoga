@@ -88,6 +88,35 @@ export const DEFAULT_FIELD_OPTIONS = {
   bossStrengthMax: 3,    // потолок «силы» владыки (Spire держит без потолка, но у него другой бой)
   bossBlockCalm: 0.45,   // во сколько стойкость гасит спокойствие (0 = не гасит)
   weakCalmPenalty: 0.2,  // «слабость» игрока: −20% спокойствия за стак
+  // Ниже — слоты, которых не было, пока не появились реликвии. Все четыре
+  // величины раньше были зашиты в коде и не настраивались, из-за чего под
+  // реликвию некуда было подставить: реликвия должна менять ЧТО-ТО в бою, и
+  // если число зашито — ей нечем.
+  //
+  // Слабость от перекоса тамаса: `weakPenaltyMul` множит штраф. «Туласи»
+  // ослабляет перекос вдвое (0.5), «Камбала» снимает вовсе (0). Два разных
+  // предмета на одну величину — как в Slay the Spire, где урон от слабости и
+  // её длительность — разные ручки.
+  weakPenaltyMul: 1,
+  // Самадхи-подобная «сила от каждой снятой оковы». Раньше `guna.s += 2`
+  // стояло в коде; теперь это величина, и её может поднять «Шанкха»
+  // (снятая ока даёт саттву дополнительно).
+  sattvaPerPacify: 2,
+  // Перекос гун на старте забега: «Шива-лингам» +1 саттвы, «Каупиина» +2.
+  gunaStartS: 0,
+  // Вход в комнату: сколько жизни вернуть («Прана-дроп») и сколько щита дать
+  // («Шоча-майнджуса»). Обе величины — на ВСЕ комнаты забега, а не на первый
+  // бой, потому что в Поле Ума «бой» — это комната.
+  roomStartHeal: 0,
+  roomStartShield: 0,
+  // Виден ли замах с самого начала комнаты, а не только вблизи
+  // («Дхрувасмрити» — постоянная память). Это единственная реликвия, которая
+  // даёт не силу, а знание: её ценность в том, что игрок заранее знает.
+  telegraphPeek: 0,
+  // Насколько оки входят в комнату спокойнее («Калачакра» — колесо времени).
+  // Минус, потому что значение означает «меньше нужно дефлектов». Значение по
+  // умолчанию 0 — то есть без реликвии комната собирается ровно как прежде.
+  foeCalmBonus: 0,
   weakTurn: 4,           // стак «слабости» спадает раз в 4 секунды (ход Spire)
   weakMax: 3,            // больше трёх стаков не накопить (Spire: дебафф длится 3 хода)
   curseAvidya: 9,        // одна Чинта в уме = +9 авидьи
@@ -259,7 +288,20 @@ function makePasha(def) {
   }
 }
 
-export function createField({ player, foes = [], wares = [], field = null, rng = Math.random, opts = {} } = {}) {
+/**
+ * Гуны на входе в комнату.
+ *
+ * Баланс задаётся извне (`gunaStart` — это делает жар), плюс сдвиг от реликвии
+ * («Шива-лингам» +1 саттвы, «Каупиина» +2). Раньше сдвига не было вовсе: число
+ * лежало бы в данных реликвии, и ей было бы некуда его деть.
+ */
+function startGuna(o) {
+  const g = { ...(o.gunaStart || DEFAULT_GUNA_START) }
+  g.s += o.gunaStartS || 0
+  return g
+}
+
+export function createField({ player, foes = [], wares = [], pots = [], field = null, rng = Math.random, opts = {} } = {}) {
   const o = { ...DEFAULT_FIELD_OPTIONS, ...opts }
   const rand = typeof rng === 'function' ? rng : Math.random
 
@@ -277,13 +319,22 @@ export function createField({ player, foes = [], wares = [], field = null, rng =
       // из hp, из-за чего полоса всегда была полной, а лечение (амбросия,
       // комната покоя) не давало ничего: выше полной жизни не подняться.
       maxHp: player?.maxHp ?? player?.hp ?? o.playerHp,
+      // «Прана-дроп»: капля жизни на входе в КАЖДУЮ комнату. Не поднимает
+      // потолок — поднимает текущую жизнь, потому что «+3 к максимуму» из
+      // карточного описания здесь означало бы вечную полосу, и тогда реликвия
+      // была бы просто «жизнь +3» в первом бою.
+      hp: Math.min((player?.maxHp ?? player?.hp ?? o.playerHp),
+        (player?.hp ?? o.playerHp) + (o.roomStartHeal || 0)),
       // Три вида силы
       shakti: o.shaktiStart,          // духовная (главный ресурс)
       shaktiMax: o.shaktiMax,
       psychic: o.psychicStart ?? 6,   // Ци — психическая сила
       psychicMax: o.psychicMax ?? 12,  // потолок может поднять мастерская
-      shield: o.shieldStart ?? 0,      // блок (Slay the Spire); «Дар Каруны»
-                                      // может прикрыть сразу на входе
+      // Щит на входе: «Дар Каруны» (разово) + «Шоча-майнджуса» (каждая
+      // комната). В Поле Ума «бой» — это комната, и путать эти два слова здесь
+      // нельзя: `shieldStart` дают один раз за забег, `roomStartShield` — на
+      // входе в каждую комнату.
+      shield: (o.shieldStart ?? 0) + (o.roomStartShield || 0),
       // Гуны — состояние, а не ресурс.
       //
       // Раньше стояло `guna: { s: 4, r: 2, t: 3 }` — захардкожено, значит
@@ -292,7 +343,7 @@ export function createField({ player, foes = [], wares = [], field = null, rng =
       // меняла бы опцию, которую бой не читает, — ровно то, что ловит
       // `npm run audit:impact`. Значение по умолчанию то же, поэтому при
       // «жар 0» игра не меняется ни на единицу.
-      guna: { ...(o.gunaStart || DEFAULT_GUNA_START) },
+      guna: startGuna(o),
       prama: false,
       // Состояния
       dash: 0, dashCd: 0, invuln: 0,
@@ -317,9 +368,23 @@ export function createField({ player, foes = [], wares = [], field = null, rng =
       inSamadhi: false,
       alive: true,
     },
-    foes: foes.map((f) => (f.kind === 'pasha' ? makePasha(f) : makeRipu(f))),
+    // «Калачакра» (колесо времени): оки входят в комнату спокойнее, то есть им
+    // нужно меньше дефлектов. Применяется ЗДЕСЬ, а не в `fieldBuild`: сборщик
+    // комнаты не знает опций боя (у него свои `opts`, для layout), и попытка
+    // прочитать боевую величину в сборщике — это две правды об одной комнате.
+    foes: foes.map((f) => {
+      const foe = f.kind === 'pasha' ? makePasha(f) : makeRipu(f)
+      if (o.foeCalmBonus) {
+        foe.calmMax = Math.max(1, Math.round(foe.calmMax + o.foeCalmBonus))
+      }
+      return foe
+    }),
     wares,                            // просящие (сева)
     served: new Set(),
+    // СОКРОВИЩА (Dead Cells: containers). Ломаются ударом, из них падает
+    // амбросия. Не оковы: их нельзя успокоить, и они не мстят за себя.
+    pots: pots.map((p) => ({ ...p })),
+    chests: 0,
     field: field || { w: 1200, h: 900 },
     // ДВЕРЬ — как в Hades. Комната зачищена → дверь открыта → игрок
     // входит сам и попадает в следующую. Победа не выдаётся, а
@@ -575,7 +640,10 @@ export function stepField(st, dt, input = {}) {
   // Самадхи
   if (p.inSamadhi) {
     p.samadhi -= dt
-    if (p.samadhi <= 0) { p.inSamadhi = false; p.samadhi = 0 }
+    // Конец ясности — СОБЫТИЕ. Раньше здесь просто гасили флаг, и бой
+    // внезапно становился втрое тяжелее без единого слова. Окно в девять
+    // секунд, меняющее бой, обязано говорить, когда закрылось.
+    if (p.samadhi <= 0) { p.inSamadhi = false; p.samadhi = 0; ev.push({ type: 'samadhi_end' }) }
   }
 
   // Оковы
@@ -593,7 +661,7 @@ export function stepField(st, dt, input = {}) {
   refreshAuras(st)
   recomputeGuna(st)
   recomputeTint(st)
-  checkSamadhi(st)
+  checkSamadhi(st, ev)
   checkKrpa(st, ev)
   checkOutcome(st, ev)
   return ev
@@ -667,7 +735,7 @@ export function parry(st, ev = []) {
   if (p.prama) mod *= 1.2
   if (p.inSamadhi) mod *= 1.5
   if (p.guna.t > 5) mod *= 0.85
-  if (p.weak > 0) mod *= Math.max(0.2, 1 - st.o.weakCalmPenalty * p.weak)
+  if (p.weak > 0) mod *= Math.max(0.2, 1 - st.o.weakCalmPenalty * st.o.weakPenaltyMul * p.weak)
   const comboMul = 1 + (p.combo - 1) * 0.1
   let gain = st.o.deflectCalm * mod * comboMul
   let soaked = 0
@@ -801,30 +869,30 @@ export const MANTRAS = [
     desc: 'Дыхание: +2 энергии и +2 блока.',
     apply(st) {
       st.player.psychic = Math.min(st.player.psychicMax, st.player.psychic + 2)
-      addShield(st, 2)
-      return 'Ци +2, щит +2'
+      const sh = addShield(st, 2)
+      return `Ци +2, ${shieldText(sh)}`
     },
   },
   {
     id: 'madhuvidya', name: 'Мадхувидья', sanskrit: 'मधुविद्या', cost: 2, quoteId: 'pranayama',
     desc: 'Знание-мёд: 4 блока и +2 саттвы.',
     apply(st) {
-      addShield(st, 4)
+      const sh = addShield(st, 4)
       st.player.guna.s += 2
-      return 'щит +4, саттва +2'
+      return `${shieldText(sh)}, саттва +2`
     },
   },
   {
     id: 'samyama', name: 'Самьяма', sanskrit: 'संयम', cost: 2, quoteId: 'dhyana',
     desc: 'Правильное использование: 8 урона владыке.',
     apply(st, ev = []) {
-      addShield(st, 2)
+      const sh = addShield(st, 2)
       // «Самьяма — правильное использование»: бьёт не окову, а её стойкость.
       // Рипу урона не делает, владыку — да (см. strike()).
       const boss = st.foes.find((f) => f.isBoss && !f.dead && !f.pacified)
       if (boss) { boss.block = Math.max(0, boss.block - 8); st.avidya = Math.min(st.o.avidyaMax, st.avidya + 4) }
       else st.avidya = Math.min(st.o.avidyaMax, st.avidya + 4)
-      return boss ? 'стойкость владыки −8' : 'щит +2, авидья +4'
+      return boss ? 'стойкость владыки −8' : `${shieldText(sh)}, авидья +4`
     },
   },
   {
@@ -835,24 +903,24 @@ export const MANTRAS = [
     // возврата удара, то есть мимо всего смысла «Поля Ума».
     desc: 'Пост: «быть вблизи Ишвары». Дожигает окову, снятую наполовину.',
     apply(st, ev = []) {
-      addShield(st, 3)
+      const sh = addShield(st, 3)
       const near = nearestFoe(st, 220)
       if (near && near.foe.calm >= near.foe.calmMax * 0.5) {
         pacifyFoe(st, near.index, ev)
-        return 'щит +3, оковa сожжена'
+        return `${shieldText(sh)}, оковa сожжена`
       }
-      return near ? 'щит +3 — оковa ещё держится' : 'щит +3'
+      return near ? `${shieldText(sh)} — оковa ещё держится` : shieldText(sh)
     },
   },
   {
     id: 'tandava', name: 'Тандава', sanskrit: 'ताण्डव', cost: 2, quoteId: 'tapah',
     desc: 'Танец-борьба: сжигает мучительную авидью, +2 блока.',
     apply(st) {
-      addShield(st, 2)
+      const sh = addShield(st, 2)
       st.avidya = Math.max(0, st.avidya - 26)
       st.player.combo = Math.max(st.player.combo, 1)
       st.player.comboT = st.o.comboWindow
-      return 'авидья −26, щит +2'
+      return `авидья −26, ${shieldText(sh)}`
     },
   },
 ]
@@ -881,10 +949,30 @@ export function castMantra(st, ev = []) {
   return ev
 }
 
+/**
+ * Щит. Slay the Spire / Dead Cells: блок — это ЧИСЛО, а не полоска.
+ *
+ * Возвращает, сколько реально прибавилось. Раньше возвращалось новое значение
+ * щита, и вызывающий не мог отличить «прибавилось 5» от «щит был полон, ничего
+ * не прибавилось». Из-за этого дар «Мудра севы» мог сработать вхолостую, и
+ * игрок не получал об этом ни слова.
+ */
 function addShield(st, amount) {
   const p = st.player
+  const before = p.shield
   p.shield = Math.max(0, Math.min(st.o.shieldMax, p.shield + amount))
-  return p.shield
+  return p.shield - before
+}
+
+/**
+ * Как сказать о щите, не соврав.
+ *
+ * Слово «щит +4» на экране — это обещание. Если щит уже полон, обещание не
+ * сбылось, и написать надо «щит полон», а не «щит +4». Молчание здесь хуже
+ * правды: игрок нажал, ничего не получил и решил, что дар сломан.
+ */
+function shieldText(gained) {
+  return gained > 0 ? `щит +${gained}` : 'щит полон'
 }
 
 // ── Оковы ────────────────────────────────────────────────────────────────
@@ -1295,7 +1383,7 @@ function pacifyFoe(st, i, ev) {
   const f = st.foes[i]
   f.pacified = true
   st.pacified += 1
-  st.player.guna.s += 2
+  st.player.guna.s += st.o.sattvaPerPacify
   // Из снятой оковы падает монета. Подбирается подходом — как в Hades.
   const n = Math.round((f.isBoss ? 6 : 2) * (st.o.coinMul || 1))
   for (let c = 0; c < n; c++) {
@@ -1325,6 +1413,61 @@ function pacifyFoe(st, i, ev) {
  * Это учит главному: сила — не решение, а затычка, которую приходится
  * оплачивать вниманием к авидье.
  */
+/**
+ * Ломать горшок (Dead Cells: containers; Hades: разбиваемое).
+ *
+ * Отдельная функция, а не второй путь в `strike`: горшок — не ока. По нему
+ * не бьют «силой», его раскалывают, и самшкару за это растёт иначе: не от
+ * удара по живому, а от похода по углу за лёгкой наживой.
+ *
+ * @returns {boolean} сломан ли (и выпало ли что-то)
+ */
+export function smashPot(st, potIndex, ev = []) {
+  const p = st.pots[potIndex]
+  if (!p || p.broken) return false
+  p.hp -= 1
+  if (p.hp > 0) {
+    ev.push({ type: 'pot_chipped', pot: potIndex, name: p.name })
+    return false
+  }
+  p.broken = true
+  if (p.chest) {
+    st.chests += 1
+    ev.push({ type: 'chest', pot: potIndex, name: p.name, message: 'сундук открыт — сева' })
+  } else {
+    // Монеты ПАДАЮТ и подбираются подходом — ровно как из снятой оковы.
+    // Первая версия писала `st.coinsTaken += p.coins`, и это была поломка
+    // МЕХАНИКИ 41: игра рисует золотые монеты на полу и учит подбирать их
+    // шагом, а горшок выдавал деньги прямо в карман. Итог — две разные
+    // экономики в одном бою и множитель вайшьи, который на горшки не
+    // действовал вовсе. Теперь число и правило общие.
+    const n = Math.round(p.coins * (st.o.coinMul || 1))
+    for (let c = 0; c < n; c++) {
+      st.coins.push({
+        x: p.x + (c - n / 2) * 7,
+        y: p.y + 4 + (c % 2) * 4,
+        taken: false,
+      })
+    }
+    ev.push({ type: 'pot', pot: potIndex, name: p.name, coins: p.coins, message: `амбросия: ${p.coins}` })
+  }
+  // Цена. Оковы за силу берут самшкару, и горшок не должен быть исключением:
+  // иначе поживиться силой бесплатно, а мир за это не темнеет.
+  st.samskaraPressure += p.chest ? 6 : 10
+  st.avidya = Math.min(st.o.avidyaMax, st.avidya + (p.chest ? 8 : 14))
+  return true
+}
+
+/** Ближайший целый горшок к точке — для тапа. */
+export function potAt(st, x, y, radius = 34) {
+  for (let i = 0; i < st.pots.length; i++) {
+    const p = st.pots[i]
+    if (p.broken) continue
+    if (Math.hypot(p.x - x, p.y - y) < radius) return i
+  }
+  return -1
+}
+
 export function strike(st, targetIndex = -1, ev = []) {
   const p = st.player
   if (p.strikeCd > 0) return ev
@@ -1346,6 +1489,10 @@ export function strike(st, targetIndex = -1, ev = []) {
 
   st.avidya = Math.min(st.o.avidyaMax, st.avidya + st.o.avidyaGainStrike)
   st.samskaraPressure += 5
+
+  // Отметка «по этой оке били» — для подсказки «рипу удар не берёт». Условие
+  // подсказки должно быть фактом боя, а не «первым забегом» (см. core/hints.js).
+  f.sawStrike = true
 
   if (f.kind === 'pasha') {
     f.hp -= 6 + p.guna.r * 0.5 + (st.o.strikeBonus ?? 0)
@@ -1443,10 +1590,18 @@ export function serveWare(st, wareIndex, kind = 'shudrocita', ev = []) {
   p.psychic = Math.min(p.psychicMax, p.psychic + gain.psychic)
   addShakti(st, gain.shakti)
   st.avidya = Math.max(0, st.avidya - st.o.avidyaCalmSeva)
-  if (st.o.sevaShield) addShield(st, st.o.sevaShield)
+  // Щит от севы. Показываем ВСЕГДА, что произошло — и что прибавилось, и что
+  // щит был уже полон. Молчаливый дар хуже его отсутствия: игрок не знает,
+  // работает ли «Мудра севы». Это ровно класс МЕХАНИКИ 41.
+  let shield = 0
+  let shieldFull = false
+  if (st.o.sevaShield) {
+    shield = addShield(st, st.o.sevaShield)
+    shieldFull = shield === 0 && p.shield >= st.o.shieldMax
+  }
   st.score += gain.permanent ? 200 : 60
   st.log.push({ t: st.time, text: `сева: ${gain.label}` })
-  ev.push({ type: 'served', index: wareIndex, kind, ...gain })
+  ev.push({ type: 'served', index: wareIndex, kind, shield, shieldFull, ...gain })
   return ev
 }
 
@@ -1488,12 +1643,27 @@ function applySamskara(st, ev) {
  * которое провозглашает источник: психическая сила быстрая и низкая,
  * духовная — медленная и высшая.
  */
-export function checkSamadhi(st) {
+/**
+ * Самадхи — ясность. Полная полоса духовной силы тратится на девять секунд, за
+ * которые бой меняется втрое: твой урон ×1.5, твой входящий урон ×0.3, аура не
+ * закрывает тебя.
+ *
+ * **Событие обязательно.** Раньше `checkSamadhi(st)` вызывался БЕЗ массива
+ * событий, и вход в ясность проходил молча: полоса силы обнулялась, у оков
+ * появлялся белый свет — и всё. Игрок не знал, что это состояние, сколько оно
+ * длится и почему бой внезапно стал лёгким. Хуже: когда оно кончалось, бой так
+ * же внезапно тяжелел. Окно в девять секунд, меняющее всё, обязано себя
+ * называть — иначе оно не ресурс, а погода.
+ *
+ * @returns {boolean} началась ли ясность
+ */
+export function checkSamadhi(st, ev = []) {
   const p = st.player
   if (!p.inSamadhi && p.shakti >= st.o.samadhiShakti) {
     p.inSamadhi = true
     p.samadhi = st.o.samadhiTime
     p.shakti = 0
+    ev.push({ type: 'samadhi_start', time: st.o.samadhiTime, spent: st.o.samadhiShakti })
     return true
   }
   return false

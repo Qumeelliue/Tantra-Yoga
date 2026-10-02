@@ -16,14 +16,26 @@
 
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { OATHS, oathById, checkOath } from '@webapp/js/core/oath.js'
+import { OATHS, oathById, checkOath, fullPathRun } from '@webapp/js/core/oath.js'
+import { CHAKRAS } from '@webapp/js/core/run.js'
 import { EMPTY_META } from '@webapp/js/core/save.js'
 
 const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8')
 const main = read('webapp/js/main.js')
 const base = read('design/BASE-GAME.md')
 
-const clean = () => ({ kills: 0, revivals: 0, chaos: 0, elites: 0, legendary: 0 })
+/**
+ * «Чистый забег» — это забег, который ДОШЁЛ до конца и ничего не сломал.
+ *
+ * Раньше здесь стояло `{kills: 0, revivals: 0, ...}` — без исхода и без числа
+ * владык. Такая сводка описывает не «чистый забег», а «забег, который начался».
+ * Пока «Без крови» проверял только `kills`, разница была не видна: оба варианта
+ * давали «соблюдён». Теперь видна сразу — и в этом, собственно, смысл правки.
+ */
+const clean = (over = {}) => ({
+  result: 'victory', bosses: CHAKRAS.length,
+  kills: 0, revivals: 0, chaos: 0, elites: 0, legendary: 0, ...over,
+})
 
 describe('Обет — ставка на дисциплину, а не декларация', () => {
   it('список не пуст, и у каждого обета есть условие и награда', () => {
@@ -39,6 +51,71 @@ describe('Обет — ставка на дисциплину, а не декл�
     for (const o of OATHS) {
       const chk = checkOath(o.id, clean())
       expect(chk.kept, `${o.id}: чистый забег нарушил обет — ${chk.why}`).toBe(true)
+    }
+  })
+
+  it('«пройти весь забег» — это требование, а не украшение', () => {
+    // ПОЛНОМКА СЕССИИ 27. Обет «Без крови» читается «Пройди весь забег, не
+    // сломав ни одной оки» и платит больше всех (8 севы). Код проверял ТОЛЬКО
+    // `kills`, поэтому награда за самый строгий обет выдавалась за смерть в
+    // первой комнате. Забег двадцати секунд приносил столько же, сколько
+    // выигранный — и это был самый дешёвый способ добраться до мастерской.
+    const deadEarly = clean({ result: 'death', bosses: 0 })
+    const chk = checkOath('no_blood', deadEarly)
+    expect(chk.kept, 'обет «пройти весь забег» соблюдён после смерти в первой комнате').toBe(false)
+    expect(chk.why, 'не сказано, что забег не пройден').toBeTruthy()
+  })
+
+  it('награда платится только за соблюдённый обет', () => {
+    // `checkOath` возвращает `reward` и для нарушенного — это СКОЛЬКО обет
+    // стоит, а не сколько игрок получит. Платит `finishFieldRun`, и только
+    // когда `kept`. Первая версия этой проверки требовала `reward === 0` и
+    // падала — то есть проверяла несуществующее свойство.
+    expect(checkOath('no_blood', clean({ result: 'death' })).reward,
+      'стоимость обет должна быть названа — иначе игрок не знает, на что ставит').toBe(8)
+    const settle = main.slice(main.indexOf('function finishFieldRun'))
+    const tail = settle.slice(0, settle.indexOf('\n}\n'))
+    expect(tail, 'награда за обет платится без проверки «соблюдён»').toMatch(/if \(chk\.kept\)/)
+    expect(tail, 'нарушенный обет всё равно что-то платит')
+      .not.toMatch(/sevaPoints[\s\S]{0,120}if \(!chk\.kept\)|if \(!chk\.kept\)[\s\S]{0,120}sevaPoints/)
+  })
+
+  it('шесть владык из семи — ещё не «весь забег»', () => {
+    // Именно эта ошибка была и в мирном финале (`awakened`), и здесь: счётчик
+    // «сколько владык» не равен «прошёл весь путь».
+    const almost = checkOath('no_blood', clean({ bosses: CHAKRAS.length - 1 }))
+    expect(almost.kept).toBe(false)
+  })
+
+  it('остальные обеты не требуют закончить забег — их обещание другое', () => {
+    // Обратная сторона той же правки. Четыре обетa обещают «не брать X», а не
+    // «пройти весь забег», поэтому смерть их не нарушает: ты и правда ничего не
+    // взял. Навязывать им требование, которого в тексте нет, — значит выдумать
+    // правило (проект так не делает).
+    for (const o of OATHS.filter((x) => x.id !== 'no_blood')) {
+      const chk = checkOath(o.id, clean({ result: 'death', bosses: 0 }))
+      expect(chk.kept, `${o.id}: обещание «${o.text}» не нарушено, но обет не засчитан`).toBe(true)
+    }
+  })
+
+  it('определение «весь забег» одно на игру', () => {
+    // Не вторая семёрка в коде, а длина лестницы. Две семёрки разъезжаются, и
+    // одна из них потом врёт — ровно как врёт обет, который требовал «весь
+    // забег», но требовал его словами.
+    expect(fullPathRun(clean())).toBe(true)
+    expect(fullPathRun(clean({ result: 'death' }))).toBe(false)
+    expect(fullPathRun(clean({ result: 'retreat' }))).toBe(false)
+    expect(fullPathRun(clean({ bosses: 0 }))).toBe(false)
+  })
+
+  it('текст обещания и проверка согласованы: «весь забег» есть в тексте ровно у тех, кто его требует', () => {
+    // Проверка на согласованность, а не на список: если новый обет напишут с
+    // словом «забег», он обязан требовать его и в коде.
+    for (const o of OATHS) {
+      const claimsFullPath = /весь забег|целиком/i.test(o.text)
+      const chk = checkOath(o.id, clean({ result: 'death', bosses: 0 }))
+      expect(chk.kept,
+        `«${o.text}» обещает пройти забег, но смерть обет не нарушает`).toBe(!claimsFullPath)
     }
   })
 
@@ -77,8 +154,13 @@ describe('Обет — ставка на дисциплину, а не декл�
   })
 
   it('пустая сводка не ломает проверку', () => {
-    // Забег, который кончился до первого выбора, всё равно проходит проверку.
-    for (const o of OATHS) expect(checkOath(o.id, {}).kept).toBe(true)
+    // Забег, который кончился до первого выбора, не роняет проверку. Но
+    // «Без крови» при этом НЕ соблюдён: пустая сводка — это не пройденный
+    // забег, и требование «весь забег» на пустом не выполняется.
+    for (const o of OATHS.filter((x) => x.id !== 'no_blood')) {
+      expect(checkOath(o.id, {}).kept, o.id).toBe(true)
+    }
+    expect(checkOath('no_blood', {}).kept, 'пустая сводка сочтена пройденным забегом').toBe(false)
     expect(checkOath('no_legend', undefined).kept).toBe(true)
   })
 

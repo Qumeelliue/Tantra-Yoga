@@ -22,6 +22,16 @@ export const WORLD_QUOTES = teaching.worlds || {}
 /** Учитель → цепочка цитат. Даётся по одной за визит. */
 export const TEACHER_QUOTES = teaching.teachers || {}
 
+/**
+ * Владыка → цепочка цитат (МЕХАНИКА 58, троны чакры).
+ *
+ * Отдельно от учителей: владык 21, а площадей в Городе семь, и учитель —
+ * это чакра, а не имя. Цитаты владыки вручает тот учитель той чакры, чей
+ * владыка игрок успокоил. Поэтому цепочка привязана к id владыки, а не к
+ * чакре: иначе все трое трона Анахаты давали бы одну и ту же первую цитату.
+ */
+export const LORD_QUOTES = teaching.lords || {}
+
 /** Места: амбросия, покой, лавка, хаос-путь, смерть, финал, первая комната. */
 export const PLACE_QUOTES = teaching.places || {}
 
@@ -40,6 +50,27 @@ export function nextTeacherQuote(teacherId, lived = {}) {
 /** Все цитаты учителя — нужно экрану «учитель дал всё, что мог». */
 export function teacherChain(teacherId) {
   return TEACHER_QUOTES[teacherId] || []
+}
+
+/**
+ * Цепочка цитат ВЛАДЫКИ. Учитель в городе отдаёт сначала цепочку того
+ * владыки, которого игрок успокоил на этой чакре, — своими словами он стал
+ * этим человеком. Если владыка не записан (старое сохранение), берётся
+ * цепочка учителя: пустой экран хуже, чем прежнее поведение.
+ */
+export function lordChain(lordId, teacherId) {
+  // Владыка по умолчанию И ЕСТЬ учитель своей чакры — у него уже есть своя
+  // цепочка в `TEACHER_QUOTES`. Остальные владыки получили цепочки в
+  // `LORD_QUOTES`, потому что у них не было учителя. Третий случай — старая
+  // запись без указания, кто встречен: берётся цепочка учителя чакры.
+  return LORD_QUOTES[lordId] || TEACHER_QUOTES[lordId] || TEACHER_QUOTES[teacherId] || []
+}
+
+/** Цитата владыки в ЭТОТ раз — то же, что `nextTeacherQuote`, но по владыке. */
+export function nextLordQuote(lordId, teacherId, lived = {}) {
+  const chain = lordChain(lordId, teacherId)
+  for (const id of chain) if (!lived[id]) return id
+  return null
 }
 
 /** Цитата места. Список (как у финала) — отдаётся целиком. */
@@ -65,6 +96,7 @@ export function reachableQuoteIds() {
   const add = (v) => { if (v) out.add(v) }
   for (const id of Object.values(WORLD_QUOTES)) add(id)
   for (const chain of Object.values(TEACHER_QUOTES)) for (const id of [].concat(chain)) add(id)
+  for (const chain of Object.values(LORD_QUOTES)) for (const id of [].concat(chain)) add(id)
   for (const chain of Object.values(PLACE_QUOTES)) for (const id of [].concat(chain)) add(id)
   for (const k of KEEPSAKES) add(k.quoteId)
   for (const b of FIELD_BOONS) add(b.quoteId)

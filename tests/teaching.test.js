@@ -14,9 +14,13 @@ import {
 import { QUOTES, CITY_TEACHERS, WORLDS, ENEMIES, CARDS, RELICS } from '@webapp/js/core/data.js'
 
 describe('Каждая цитата проживаема', () => {
-  it('все сто цитат корпуса доступны', () => {
+  it('все цитаты корпуса доступны', () => {
     const all = Object.keys(QUOTES).filter((k) => !k.startsWith('_'))
-    expect(all).toHaveLength(100)
+    // 100 было «сто цитат корпуса» до тронов чакры (МЕХАНИКА 58), которые
+    // добавили 4: кула-кундалини, самкальпа, викальпа, санчара. Число
+    // проверяется не само по себе, а тем, что НИ ОДНА цитата не потеряла
+    // путь проживания: следующая строка и есть эта проверка.
+    expect(all).toHaveLength(104)
     // полный набор — с учётом оков, карт, реликвий, даров и преподвания
     const reach = new Set(reachableQuoteIds())
     for (const e of Object.values(ENEMIES)) if (e && e.quoteId) reach.add(e.quoteId)

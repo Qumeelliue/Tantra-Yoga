@@ -14,7 +14,7 @@
 // «ХП <span class="gold">70</span>» — HTML попадал в текстовый узел.
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { installDom, textOf, clickables, clickEverything } from './helpers/dom.js'
+import { installDom, textOf, clickables, clickEverything , chooseLordIfShown } from './helpers/dom.js'
 
 let dom
 beforeAll(() => {
@@ -108,6 +108,7 @@ describe('проход по игре глазами игрока', () => {
     const world = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
     expect(world, 'нужна хотя бы одна открытая чакра').toBeTruthy()
     world.dispatch('click')
+    chooseLordIfShown(targets())
     expectClean('бой в поле')
   })
 
@@ -173,6 +174,7 @@ describe('бой в поле идёт и не падает', () => {
     jade[0].dispatch('click')
     const world = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
     world.dispatch('click')
+    chooseLordIfShown(targets())
 
     const state = globalThis.window.__field
     expect(state, 'состояние поля должно быть доступно').toBeTruthy()
@@ -290,6 +292,7 @@ function enterField() {
   }
   const world = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
   world.dispatch('click')
+  chooseLordIfShown(targets())
   return here()
 }
 

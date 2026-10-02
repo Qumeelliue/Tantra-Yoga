@@ -9,7 +9,7 @@
 // терпением и ни разу не ударив, — то есть он соблюдён по-настоящему.
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { installDom, textOf, clickables } from './helpers/dom.js'
+import { installDom, textOf, clickables , chooseLordIfShown, doorCards } from './helpers/dom.js'
 
 let dom
 beforeAll(() => {
@@ -65,6 +65,7 @@ describe('обет проходит весь путь: выбор → бой →
     // ── вход в забег: плашка в бою ─────────────────────────────────────
     const first = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
     first.dispatch('click')
+    chooseLordIfShown(targets())
     expect(field(), 'бой начался').toBeTruthy()
     const hud = textOf(dom.root)
     expect(/обет:.*крови/i.test(hud), 'в бою нет плашки обета').toBe(true)
@@ -82,8 +83,12 @@ describe('обет проходит весь путь: выбор → бой →
         if (after === before && !before.roomCleared) { problems.push('комната не открылась'); break }
         continue
       }
-      if (/Вершина Света/i.test(t)) break
-      if (/Двери/i.test(t)) {
+      // Финал — по строке итога, а не по «Вершина Света»: так называется
+      // и седьмая чакра, и трон на ней.
+      if (/комнат пройдено/i.test(t)) break
+      // По карточкам, а не по слову «Двери»: трон (МЕХАНИКА 58) говорит
+        // «его имя стоит на двери» и раньше проходил под этот тест.
+        if (doorCards(targets()).length > 1) {
         const room = targets().find((x) => /d-room\b/.test(x.className || ''))
         if (!room) { problems.push('на экране дверей нет двери боя'); break }
         room.dispatch('click')
@@ -103,7 +108,7 @@ describe('обет проходит весь путь: выбор → бой →
         if (pick) { pick.dispatch('click'); continue }
       }
       const world = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
-      if (world) { world.dispatch('click'); continue }
+      if (world) { world.dispatch('click'); chooseLordIfShown(targets()); continue }
       const back = targets().find((x) => /← /.test(textOf(x)))
       if (back) { back.dispatch('click'); continue }
       const any = targets()[0]

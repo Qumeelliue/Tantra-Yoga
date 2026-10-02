@@ -3,6 +3,7 @@ import { createRun, startCombatAtNode, finishCombat, currentNode, currentEnemyId
 import enemies from '@content/enemies.json'
 import { mulberry32, checkOutcome } from '@webapp/js/core/engine.js'
 import { EMPTY_META } from '@webapp/js/core/save.js'
+import { MENTALITY_LEVELS } from '@webapp/js/core/data.js'
 
 // «God-mode»: мгновенно завершаем бой победой (для тестирования потока забега).
 function forceWin(run) {
@@ -378,14 +379,21 @@ describe('ментальности в забеге (§12.1): слабая мен
     return meta
   }
 
+  // Пороги уровней — из данных, а не строкой. Лестница пересобиралась
+  // 2026-09-30 (0 / 15 / 40 / 80), и числа, написанные здесь руками, устарели
+  // молча: восемь проверок упали как «игра сломалась», хотя сломались не они.
+  const LV = MENTALITY_LEVELS
+  const MATURE = LV[2]        // порог зрелости (садвипра)
+  const TOP = LV[LV.length - 1]
+
   it('уровни ментальностей попадают в забег из меты', () => {
-    const run = createRun({ meta: metaWith({ vipra: 10 }), rng: mulberry32(1) })
+    const run = createRun({ meta: metaWith({ vipra: MATURE }), rng: mulberry32(1) })
     expect(run.mentalities.vipra).toBe(2)
     expect(run.mentalities.shudra).toBe(0)
   })
 
   it('шудра ур.2 даёт +8 макс ХП (выносливость — не только фокус)', () => {
-    const run = createRun({ meta: metaWith({ shudra: 10 }), rng: mulberry32(1) })
+    const run = createRun({ meta: metaWith({ shudra: MATURE }), rng: mulberry32(1) })
     expect(run.mentalities.shudra).toBe(2)
     expect(run.maxHp).toBe(68) // 60 + 8
   })
@@ -396,12 +404,12 @@ describe('ментальности в забеге (§12.1): слабая мен
   })
 
   it('садвипра: все четыре ментальности зрелы — навыки на максимуме', () => {
-    const run = createRun({ meta: metaWith({ shudra: 10, kshatriya: 10, vipra: 10, vaeshya: 10 }), rng: mulberry32(1) })
+    const run = createRun({ meta: metaWith({ shudra: TOP, kshatriya: TOP, vipra: TOP, vaeshya: TOP }), rng: mulberry32(1) })
     expect(run.mentalities).toEqual({ shudra: 3, kshatriya: 3, vipra: 3, vaeshya: 3 })
   })
 
   it('садвипра-бонус ХП шудры применяется после усиления уровня', () => {
-    const run = createRun({ meta: metaWith({ shudra: 10, kshatriya: 10, vipra: 10, vaeshya: 10 }), rng: mulberry32(1) })
+    const run = createRun({ meta: metaWith({ shudra: TOP, kshatriya: TOP, vipra: TOP, vaeshya: TOP }), rng: mulberry32(1) })
     expect(run.maxHp).toBe(72) // 60 + 3*4
   })
 
@@ -415,7 +423,7 @@ describe('ментальности в забеге (§12.1): слабая мен
   })
 
   it('вайшья ур.2: скидка −2 ⚡ в лавке', () => {
-    const run = createRun({ meta: metaWith({ vaeshya: 10 }), rng: mulberry32(5) })
+    const run = createRun({ meta: metaWith({ vaeshya: MATURE }), rng: mulberry32(5) })
     run.prana = 20
     const shop = rollShop(run)
     const res = buyShopCard(run, shop.cards[0])
@@ -424,7 +432,7 @@ describe('ментальности в забеге (§12.1): слабая мен
   })
 
   it('вайшья ур.2: скидка действует и на удаление оковки', () => {
-    const run = createRun({ meta: metaWith({ vaeshya: 10 }), rng: mulberry32(5) })
+    const run = createRun({ meta: metaWith({ vaeshya: MATURE }), rng: mulberry32(5) })
     run.prana = 20
     const shop = rollShop(run)
     const removable = shop.removable[0]
@@ -435,7 +443,7 @@ describe('ментальности в забеге (§12.1): слабая мен
   })
 
   it('уровни ментальностей передаются в бой (движок видит их)', () => {
-    const run = createRun({ meta: metaWith({ vipra: 10 }), rng: mulberry32(1) })
+    const run = createRun({ meta: metaWith({ vipra: MATURE }), rng: mulberry32(1) })
     const combat = startCombatAtNode(run)
     expect(combat.mentalities.vipra).toBe(2)
   })
@@ -482,7 +490,7 @@ describe('вызов учителя (§дофамин: событие-услов
 describe('варны-деревья (§12.1): ветви мастерства в забеге', () => {
   it('шудра «Выносливость»: +8 макс ХП сверх шудры', () => {
     const meta = EMPTY_META()
-    meta.varnas = { shudra: 18 }
+    meta.varnas = { shudra: MENTALITY_LEVELS[MENTALITY_LEVELS.length - 1] }
     meta.varnaBranches = { shudra: 'endurance' }
     const run = createRun({ meta, rng: mulberry32(3) })
     // 60 + шудра ур.3 (+12) + выносливость (+8) = 80
@@ -499,7 +507,7 @@ describe('варны-деревья (§12.1): ветви мастерства в
 
   it('вайшья «Купец»: скидка лавки −4 (ур.3 + ветвь)', () => {
     const meta = EMPTY_META()
-    meta.varnas = { vaeshya: 18 }
+    meta.varnas = { vaeshya: MENTALITY_LEVELS[MENTALITY_LEVELS.length - 1] }
     meta.varnaBranches = { vaeshya: 'merchant' }
     const run = createRun({ meta, rng: mulberry32(3) })
     expect(shopDiscount(run)).toBe(4)

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { EMPTY_META, saveToCloud, loadFromCloud, cloudSync, saveMeta, loadMeta, migrateMeta, varnaState, addVarnaPoints, isSadvipra, markLived, isLived, gardenState, GARDEN_STAGES, recordDeath, recordSound, soundState, cityBlessingBonus, setVarnaBranch, varnaBranch, recordRunEnd } from '@webapp/js/core/save.js'
-import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS } from '@webapp/js/core/data.js'
+import { MENTALITY_ORDER, MENTALITIES, QUOTES, CARDS, ENEMIES, RELICS, quoteLiveHint, isQuoteLived, MENTALITY_LEVELS, mentalityLevel, AUDIO_LIBRARY, soundForCard, CITY_TEACHERS, WORLDS } from '@webapp/js/core/data.js'
 
 // Фейковый Telegram CloudStorage (callback-API) с проверкой чанков.
 function installFakeCloud() {
@@ -106,7 +106,9 @@ describe('Четыре ментальности ума (§12.1, Human Society Pa
 
   it('addVarnaPoints начисляет очки конкретной ментальности и поднимает её уровень', () => {
     const meta = EMPTY_META()
-    const lv = addVarnaPoints(meta, 'kshatriya', 4) // порог уровня 1 (4 очка)
+    // Порог берётся из данных, а не написан строкой: после пересборки
+    // лестницы такие числа устаревают молча и роняют проверку в другом месте.
+    const lv = addVarnaPoints(meta, 'kshatriya', MENTALITY_LEVELS[1])
     expect(lv.leveled).toBe(true)
     expect(lv.to).toBe(1)
     expect(varnaState(meta).levels.kshatriya).toBe(1)
@@ -116,18 +118,20 @@ describe('Четыре ментальности ума (§12.1, Human Society Pa
 
   it('развитая одна ментальность не даёт садвипру — нужны все четыре', () => {
     const meta = EMPTY_META()
-    addVarnaPoints(meta, 'kshatriya', 18) // макс одной
-    addVarnaPoints(meta, 'shudra', 18)
-    addVarnaPoints(meta, 'vipra', 18)
+    const TOP = MENTALITY_LEVELS[MENTALITY_LEVELS.length - 1]
+    addVarnaPoints(meta, 'kshatriya', TOP) // макс одной
+    addVarnaPoints(meta, 'shudra', TOP)
+    addVarnaPoints(meta, 'vipra', TOP)
     expect(isSadvipra(meta)).toBe(false) // вайшья отстаёт — слабая ментальность
   })
 
   it('садвипра = все четыре ментальности достигли зрелости', () => {
     const meta = EMPTY_META()
-    addVarnaPoints(meta, 'shudra', 10)
-    addVarnaPoints(meta, 'kshatriya', 10)
-    addVarnaPoints(meta, 'vipra', 10)
-    addVarnaPoints(meta, 'vaeshya', 10)
+    const SADVIPRA = MENTALITY_LEVELS[2]   // порог зрелости
+    addVarnaPoints(meta, 'shudra', SADVIPRA)
+    addVarnaPoints(meta, 'kshatriya', SADVIPRA)
+    addVarnaPoints(meta, 'vipra', SADVIPRA)
+    addVarnaPoints(meta, 'vaeshya', SADVIPRA)
     expect(isSadvipra(meta)).toBe(true)
   })
 
@@ -155,9 +159,22 @@ describe('Четыре ментальности ума (§12.1, Human Society Pa
   it('mentalityLevel соответствует порогам MENTALITY_LEVELS', () => {
     expect(mentalityLevel(0)).toBe(0)
     expect(mentalityLevel(3)).toBe(0)
-    expect(mentalityLevel(4)).toBe(1)
-    expect(mentalityLevel(18)).toBe(3)
-    expect(MENTALITY_LEVELS).toEqual([0, 4, 10, 18])
+    // Пороги пересобраны по замеру 2026-09-30: прежние 0 / 4 / 10 / 18
+    // брались за полтора забега поля. Проверка ниже спрашивает не «какие
+    // числа», а «лестница не вырождена» — иначе правка порогов молча уехала
+    // бы вместе с числом.
+    expect(MENTALITY_LEVELS).toEqual([0, 15, 40, 80])
+    expect(mentalityLevel(14)).toBe(0)
+    expect(mentalityLevel(15)).toBe(1)
+    expect(mentalityLevel(39)).toBe(1)
+    expect(mentalityLevel(40)).toBe(2)
+    expect(mentalityLevel(80)).toBe(3)
+    // Каждая следующая ступень должна стоить заметно дороже предыдущей:
+    // равные шаги — это «ступеньки», которых не видно.
+    for (let i = 2; i < MENTALITY_LEVELS.length; i++) {
+      expect(MENTALITY_LEVELS[i] - MENTALITY_LEVELS[i - 1],
+        `ступени ${i - 1} и ${i} стоят одинаково`).toBeGreaterThan(MENTALITY_LEVELS[i - 1] - MENTALITY_LEVELS[i - 2])
+    }
   })
 })
 
@@ -338,10 +355,30 @@ describe('«Свет в Городе» (§14.1): учителя успокоен
     }
   })
 
-  it('все семь учителей соответствуют семи владыкам чакр', () => {
-    const bosses = Object.values(ENEMIES).filter((e) => e.isBoss)
-    const teacherBossIds = Object.values(CITY_TEACHERS).map((t) => t.bossId)
-    expect(teacherBossIds.sort()).toEqual(bosses.map((b) => b.id).sort())
+  it('у каждой чакры три трона, и один из них — владыка её учителя', () => {
+    // Было: владык семь, по одному на чакру, и проверка «учитель ↔ владыка»
+    // была про равенство двух списков. Теперь владык 21 (МЕХАНИКА 58), а
+    // площадей по-прежнему семь, потому что площадь зажигает ЧАКРА.
+    // Проверка, которая значит: у каждого мира ровно три трона, первый из них
+    // — владыка по умолчанию (`lordId`), и `lordId` совпадает с владыкой
+    // учителя этой чакры. Иначе можно было бы оставить в мире трон, которого
+    // никто не встретит, или учителя, чьего владыку нельзя встретить.
+    for (const [id, world] of Object.entries(WORLDS)) {
+      if (!world || id.startsWith('_')) continue
+      const pool = world.lordPool || []
+      expect(pool.length, `чакра ${id}: тронов`).toBe(3)
+      expect(pool[0], `чакра ${id}: первый трон`).toBe(world.lordId)
+      const teacher = Object.values(CITY_TEACHERS).find((t) => t.chakra === world.floor)
+      expect(teacher, `чакра ${id}: нет учителя`).toBeTruthy()
+      expect(teacher.bossId, `чакра ${id}: владыка учителя`).toBe(world.lordId)
+      for (const lid of pool) {
+        const e = ENEMIES[lid]
+        expect(e, `${id}: владыка ${lid}`).toBeTruthy()
+        expect(e.isBoss, `${id}: ${lid} должен быть владыкой`).toBe(true)
+        expect(e.chakra, `${id}: ${lid} с чужой чакрой`).toBe(world.floor)
+        expect(QUOTES[e.quoteId], `${id}/${lid}: цитата ${e.quoteId}`).toBeTruthy()
+      }
+    }
   })
 
   it('cityBlessingBonus: +1 саттва за каждого поговорившего учителя (кап 7)', () => {

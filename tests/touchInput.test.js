@@ -14,7 +14,7 @@
 // непроверенным.
 
 import { describe, it, expect, beforeAll } from 'vitest'
-import { installDom, clickables, textOf } from './helpers/dom.js'
+import { installDom, clickables, textOf , chooseLordIfShown } from './helpers/dom.js'
 
 let dom
 beforeAll(() => {
@@ -81,6 +81,8 @@ function enterField() {
   const world = targets().find((x) => /varna-card/.test(x.className || '') && !/locked/.test(x.className || ''))
   if (!world) throw new Error(`нет открытой чакры. экран: ${here().slice(0, 200)}`)
   world.dispatch('click')
+  // Вход в чакру упирается в трон: выбери владыку (МЕХАНИКА 58).
+  chooseLordIfShown(targets())
   const st = globalThis.window.__field
   if (!st) throw new Error('бой не открылся')
   return st
@@ -94,14 +96,85 @@ const finger = (wx, wy) => dom.worldPoint(cv(), wx, wy)
 
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
 
-/** Свободное место: подальше от оков, просящих и садхаки. */
+/*
+ * РАДИУСЫ ИЗ ИГРЫ, а не выдуманные здесь.
+ *
+ * `onDown` в `ui/screens/field.js` проверяет предметы в порядке горшок →
+ * просящий → ока, и у каждого своя зона касания: горшок 36, просящий 40,
+ * ока 32. Тест, который тапает «в ока», обязан знать про эти три зоны: если
+ * просящий случайно встал в 40 от ока, тап откроет СЕВУ, а не ударит, и
+ * проверка «палец бьёт» станет проверкой случайной расстановки комнаты.
+ *
+ * Именно это и происходило: тест падал примерно в одном прогоне из пяти, и
+ * каждый раз падал РАЗНЫЙ — потому что ломалась не игра, а предпосылка теста.
+ */
+const R_POT = 36
+const R_WARE = 40
+const R_FOE = 32
+
+/** Свободное место: подальше от оков, просящих, горшков и садхаки. */
 function freeSpot(st, wantX, wantY) {
   const spots = [[wantX, wantY], [24, 24], [396, 24], [24, 616], [396, 616], [210, 40], [210, 600], [40, 320], [380, 320]]
-  for (const [x, y] of spots) {
-    const far = (o) => Math.hypot(o.x - x, o.y - y) > 70
-    if (st.foes.every(far) && st.wares.every(far) && far(st.player)) return { x, y }
+  const ok = (x, y) => {
+    const fromFoes = st.foes.every((o) => Math.hypot(o.x - x, o.y - y) > R_FOE + 12)
+    const fromWares = st.wares.every((o) => Math.hypot(o.x - x, o.y - y) > R_WARE + 12)
+    const fromPots = st.pots.every((o) => Math.hypot(o.x - x, o.y - y) > R_POT + 12)
+    const fromPlayer = Math.hypot(st.player.x - x, st.player.y - y) > 70
+    return fromFoes && fromWares && fromPots && fromPlayer
   }
-  return { x: 210, y: 320 }
+  for (const [x, y] of spots) if (ok(x, y)) return { x, y }
+  // Запасные места — сеткой, а не девятью точками: девять точек хватало не
+  // всегда, и тест молчал на центре (210, 320), где может стоять что угодно.
+  for (let x = 40; x < 380; x += 40) {
+    for (let y = 40; y < 580; y += 40) if (ok(x, y)) return { x, y }
+  }
+  throw new Error(
+    `в комнате не осталось места, куда можно ткнуть пальцем, не задев ни ока, `
+    + `ни просящего, ни горшок. оков: ${st.foes.length}, просящих: ${st.wares.length}`,
+  )
+}
+
+/**
+ * Ока, тап по которому действительно ударит.
+ *
+ * Возвращает индекс. Если ни одного такого ока в комнате нет (она бывает
+ * тесной: два ока, два просящих и два горшка в одной комнате), мешающие
+ * предметы УБИРАЮТСЯ из проверки явно: просящему ставится «уже помогли»,
+ * горшку — «уже разбит».
+ *
+ * Почему так, а не «ищем другой ока». Правило игры «ближний предмет первый»
+ * проверяется отдельно (см. тест про порядок), и оно здесь не проверяется. Здесь
+ * проверяется ровно одно: **тап по окове без ничего рядом бьёт ока**. Чтобы
+ * это утверждение было истинным, рядом должно быть пусто — значит, пустота
+ * обязана быть обеспечена, а не найдена. Фикстура, которая не доводит
+ * проверяемый случай до конца, проверяет случайность.
+ *
+ * Что мешало — попадает в текст ошибки. Если мешающих станет слишком много,
+ * это уже будет не тест о пальце, а вопрос о тесноте комнат.
+ */
+function foeToTap(s) {
+  const clean = []
+  const blocked = []
+  for (let i = 0; i < s.foes.length; i++) {
+    const f = s.foes[i]
+    if (f.dead || f.pacified) continue
+    const ware = s.wares.find((w) => !w.done && Math.hypot(w.x - f.x, w.y - f.y) < R_WARE + R_FOE)
+    const pot = s.pots.find((p) => !p.broken && Math.hypot(p.x - f.x, p.y - f.y) < R_POT + R_FOE)
+    if (!ware && !pot) clean.push(i)
+    else blocked.push({ i, why: ware ? 'просящий' : 'горшок' })
+  }
+  if (clean.length) return clean[0]
+  for (const { i } of blocked) {
+    const f = s.foes[i]
+    for (const w of s.wares) if (!w.done && Math.hypot(w.x - f.x, w.y - f.y) < R_WARE + R_FOE) w.done = true
+    for (const p of s.pots) if (!p.broken && Math.hypot(p.x - f.x, p.y - f.y) < R_POT + R_FOE) p.broken = true
+  }
+  const after = blocked.find(({ i }) => !s.foes[i].dead && !s.foes[i].pacified)
+  if (after) return after.i
+  throw new Error(
+    `в комнате нет живых оков вообще: оков ${s.foes.length}, просящих ${s.wares.length}, `
+    + `горшков ${s.pots.length}. Проверять удар не по чему`,
+  )
 }
 
 describe('телефон: подсказка и кнопки', () => {
@@ -185,8 +258,7 @@ describe('телефон: палец ведёт', () => {
 describe('телефон: палец бьёт и рвётся', () => {
   it('тап по окове — удар', () => {
     const s = enterField()
-    const i = s.foes.findIndex((f) => !f.dead && !f.pacified)
-    expect(i, 'в комнате есть ока').toBeGreaterThanOrEqual(0)
+    const i = foeToTap(s)
     const f = s.foes[i]
     const before = { calm: f.calm, hp: f.hp, avidya: s.avidya }
     const p = finger(f.x, f.y)
@@ -195,6 +267,31 @@ describe('телефон: палец бьёт и рвётся', () => {
     const struck = after.calm < before.calm || after.hp < before.hp || st().avidya > before.avidya
     expect(struck, 'палец по окове должен ударить').toBe(true)
     expect(st().player.strikeCd, 'удар был — пауза на него встала').toBeGreaterThan(0)
+  })
+
+  it('просящий рядом с оком перехватывает тап — ближний предмет первый', () => {
+    // Обратная сторона фикстуры выше. Там мешающий предмет УБИРАЕТСЯ, чтобы
+    // проверить «тап по окове бьёт». Здесь он наоборот СТАВИТСЯ вплотную, и
+    // тап обязан открыть севу, а не ударить.
+    //
+    // Почему это правило вообще нужно проверять. В комнате бывает два ока, два
+    // просящих и два горшка, и зоны касания перекрываются. Если игрок ткнёт в
+    // ока, а рядом стоит просящий, он получит севу — и это правильно, потому
+    // что просящий ближе. Без этой проверки убрать бы «мешающий предмет» из
+    // фикстуры было бы нельзя: непонятно, ломаем мы тест или правило.
+    const s = enterField()
+    const f = s.foes.find((o) => !o.dead && !o.pacified)
+    expect(f, 'в комнате есть ока').toBeTruthy()
+    const w = s.wares.find((o) => !o.done)
+    if (!w) return                       // комната без просящих — случай не выпал
+    // Ставим просящего вплотную к оку: палец попадёт в оба, и ближний решит.
+    w.x = f.x + 12; w.y = f.y
+    const calm = f.calm
+    const p = finger(f.x, f.y)
+    dom.fingerTap(cv(), p.x, p.y, { id: 1 })
+    expect(st().foes[st().foes.indexOf(f)].calm, 'просящий ближе — ока бить нельзя')
+      .toBe(calm)
+    expect(st().player.strikeCd || 0, 'и удара тоже не было').toBe(0)
   })
 
   it('двойной тап — рывок (без клавиатуры это единственный рывок)', () => {
@@ -308,9 +405,15 @@ describe('телефон: пауза и обрыв связи', () => {
     expect(dom.errors.map((e) => e.message)).toEqual([])
     expect(Number.isFinite(st().time)).toBe(true)
     // И палец после этого всё ещё попадает в цель: координаты не «уехали».
+    //
+    // `foeToTap`, а не «первый живой ока»: если рядом с ним окажется
+    // просящий, тап откроет севу, и проверка «палец всё ещё бьёт» окажется
+    // проверкой случайной расстановки. И `if (i >= 0)` убран: раньше эта
+    // проверка молчала, когда оков не оставалось, — то есть могла не заметить
+    // поломку, из-за которой бой кончился.
     const s = st()
-    const i = s.foes.findIndex((f) => !f.dead && !f.pacified)
-    if (i >= 0) {
+    const i = foeToTap(s)
+    {
       const f = s.foes[i]
       const p = finger(f.x, f.y)
       const calm = f.calm, hp = f.hp, avidya = s.avidya

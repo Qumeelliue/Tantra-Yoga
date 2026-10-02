@@ -124,6 +124,44 @@ describe('Легендарный сильнее обычного и не вво�
     }
   })
 
+  it('легендарный даёт БОЛЬШЕ, чем даёт обычный, а не столько же', () => {
+    // ГЛАВНАЯ проверка модуля, добавлена после замера 2026-09-30.
+    //
+    // Прежняя проверка спрашивала «изменилось ли хоть что-нибудь» — и проходила
+    // для всех четырёх легендарных, включая те, что давали ровно тот же
+    // прирост, что и обычный дар. Она отвечала на вопрос «жив ли слот», а нужен
+    // был вопрос «сильнее ли он». Три из четырёх были обычным даром в золотой
+    // рамке: игрок выращивал предпосылки два этапа и получал ровно то же.
+    //
+    // Теперь сравниваются ПРИРОСТКИ, а не итоговые значения: берём чистые
+    // опции, добавляем обычный дар — получаем его прирост; добавляем
+    // легендарный — получаем его прирост. Второй обязан быть заметно больше.
+    for (const b of legends) {
+      const plain = BOONS.find((x) => x.id === b.quoteId && x.rarity !== 'legendary')
+      const zero = applyBoons({ ...DEFAULT_FIELD_OPTIONS }, [])
+      const withPlain = applyBoons({ ...DEFAULT_FIELD_OPTIONS }, [plain.id])
+      const withLegend = applyBoons({ ...DEFAULT_FIELD_OPTIONS }, [b.id])
+      const slots = Object.keys(withLegend).filter((k) => withLegend[k] !== zero[k])
+      expect(slots.length, `${b.id}: не изменил ничего`).toBeGreaterThan(0)
+      // Слот должен совпадать с обычным даром того же принципа: легендарный
+      // вырастает ИЗ него, а не изобретает свой.
+      const plainSlots = Object.keys(withPlain).filter((k) => withPlain[k] !== zero[k])
+      for (const k of slots) {
+        expect(plainSlots, `${b.id}: двигает слот «${k}», а обычный ${plain.id} — нет`)
+          .toContain(k)
+        const gainLegend = withLegend[k] - zero[k]
+        const gainPlain = withPlain[k] - zero[k]
+        expect(
+          Math.abs(gainLegend), `${b.id}: слот «${k}» — прирост 0, пустой дар`,
+        ).toBeGreaterThan(0)
+        // В полтора раза больше — не «чуть-чуть больше», что было бы шумом.
+        expect(
+          Math.abs(gainLegend), `${b.id}: слот «${k}» даёт ${Math.abs(gainLegend)}, обычный ${plain.id} — ${Math.abs(gainPlain)}. Легендарный обязан быть заметно сильнее`,
+        ).toBeGreaterThan(Math.abs(gainPlain) * 1.5)
+      }
+    }
+  })
+
   it('в колоде он тоже сильнее — а не только на поле', () => {
     // Два пути правят разными слотами, поэтому эффекты разные. Но «сильнее»
     // обязано быть в обоих: иначе игрок карточного пути получил бы слабый

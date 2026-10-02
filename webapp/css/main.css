@@ -2036,6 +2036,11 @@ body {
 .field-hp i { display: block; height: 5px; flex: 1; border-radius: 3px;
   background: linear-gradient(90deg, #a8514a, #e08a7a); }
 .field-hp b { font-size: 11px; font-weight: 800; color: #f0b4a8; min-width: 18px; text-align: right; }
+/* Число щита. Полный щит — золотой: видно, что севе сюда больше нечего вложить. */
+.field-hp .fhp-n { min-width: 16px; color: #4fe8ff; text-align: left;
+  text-shadow: 0 0 6px rgba(79,232,255,.5); }
+.field-hp .fhp-n.full { color: var(--gold); text-shadow: 0 0 6px rgba(242,196,109,.6); }
+.field-hp .fhp-n:empty { display: none; }
 
 /* ── Лог событий ── */
 .field-log { position: absolute; left: 12px; top: 74px; width: 210px;
@@ -2055,6 +2060,19 @@ body {
 .field-prompt .fp-sep { color: var(--muted); }
 .field-prompt .fp-light { color: var(--sat); }
 .field-prompt .fp-dark { color: var(--tam-ink); }
+
+/* ПОДСКАЗКА ВО ВРЕМЯ БОЯ (core/hints.js). Стоит под плашкой «ЖМИ ДЕФЛЕКТ»
+   и никогда не перекрывает её: пока ока в окне — видна плашка, а не это.
+   Гаснет сама через несколько секунд (opacity + transform), потому что
+   подсказка, которую не убрали, через три забега перестают читать. */
+.field-coach {
+  position: absolute; left: 0; right: 0; top: 34.5%; text-align: center;
+  font-size: 12px; color: var(--muted); pointer-events: none;
+  opacity: 0; transform: translateY(-4px); transition: opacity .35s, transform .35s;
+  text-shadow: 0 2px 10px rgba(0,0,0,.85);
+}
+.field-coach.on { opacity: 1; transform: translateY(0); }
+.field-coach .fc-line { color: var(--ink-dim); }
 
 /* ── Кольцо дыхания ── */
 .field-breath { position: absolute; right: 18px; bottom: 150px; width: 76px; height: 76px;
@@ -2320,6 +2338,22 @@ body {
 .boon-card.r-uncommon{ border-left-color:var(--cyan); }
 .boon-card.r-rare    { border-left-color:var(--gold); }
 .boon-card.r-rare .boon-name { color:var(--gold-soft); }
+/* ТРОН ЧАКРЫ (МЕХАНИКА 58). Карточка владыки — тёмная слева, золотая
+   справа: трон это не дар, и он должен читаться как угроза, а не как награда.
+   Раньше `.boon-epithet` не был описан вообще, и подпись владыки молча падала
+   в мелкий шрифт за подписью. */
+.lord-card {
+  border-left:1px solid var(--line);
+  border-right:3px solid var(--gold);
+  background:linear-gradient(100deg, rgba(12,10,18,.9) 55%, rgba(242,196,109,.06) 100%);
+}
+.lord-card .boon-rar { color:var(--gold); }
+.lord-card .boon-epithet {
+  font-style:normal; font-size:10px; letter-spacing:.06em;
+  color:var(--gold-soft); opacity:.85; margin-top:1px;
+}
+.lord-card .boon-desc { color:var(--ink-dim); min-height:3.2em; }
+.lord-screen .node-icon { color:var(--gold-soft); }
 .boon-owned { margin-top:12px; font-size:10.5px; color:var(--muted); text-align:center; line-height:1.5; }
 
 /* Счётчик монет (драхм) — как в Hades, слева */
@@ -2328,6 +2362,30 @@ body {
 .field-purse .fp-coin { width:9px; height:9px; border-radius:50%; display:block;
   background:#ffcf4a; box-shadow:0 0 8px rgba(255,207,74,.75); }
 .field-purse b { font-family:var(--font-display); font-size:13px; color:var(--gold); }
+/* Сева — значок в форме лотоса, не монеты: это другая валюта, и путать их
+   нельзя. Садвипра (пурпурная) — цветом отличается от золота монет. */
+.field-purse .fp-seva { width:9px; height:9px; display:block; background:var(--sat, #b06bff);
+  clip-path:polygon(50% 0%,100% 38%,79% 100%,21% 100%,0% 38%); box-shadow:0 0 8px rgba(176,107,255,.7); }
+.field-purse.seva b { color:var(--sat, #b06bff); }
+
+/* Левая колонка Поля Ума: гуны, кошелёк, сева, реликвии. Позиция статичная —
+   колонка была собрана и не вставлена, а место под неё в разметке уже было:
+   счётчики просто висели в дереве без экрана. */
+.field-left { position:absolute; left:12px; top:96px; width:196px; z-index:3; }
+/* Реликвии забега: то, что выбрал, видно всегда. Пустой список не рисуется. */
+.field-relics { margin-top:7px; display:flex; flex-wrap:wrap; gap:3px; }
+.field-relics:empty { display:none; }
+.field-relics .fr-chip { font-size:9.5px; letter-spacing:.02em; padding:2px 5px; border-radius:6px;
+  background:rgba(12,10,18,.72); border:1px solid rgba(242,196,109,.35); color:var(--gold-soft);
+  font-family:var(--font-display); }
+.field-relics .fr-chip.common { border-color:rgba(168,159,142,.4); color:var(--paper); }
+.field-relics .fr-chip.rare { border-color:rgba(79,232,255,.55); color:#9ff0ff; }
+
+/* Карточка реликвии на экране выбора — как дар, но с контурной рамкой: предмет
+   из поля, а не дар чакры. */
+.choice.relic { border-left:3px solid var(--gold); }
+.choice.relic.rare { border-left-color:#4fe8ff; }
+.relic-row { display:flex; gap:9px; flex-wrap:wrap; }
 
 /* ── Лавка (Hades: магазин между комнатами) ── */
 .shop-item { display:flex; align-items:center; gap:11px; width:100%; text-align:left;
@@ -2374,6 +2432,21 @@ body {
 .jade-card .boon-sub { display:block; font-style:normal; font-size:11px;
   color:#6fbfab; letter-spacing:.04em; margin:2px 0 4px; }
 .jade-card:hover { border-color: #4fd0ac; }
+
+/* Ранг нефрита (Hades: Purifying Quartz). Кнопка ранга — ВНУТРИ карточки,
+   поэтому она своя, а не .btn: у неё свой контур и свой «дорогой» цвет. */
+.jade-up { display:block; width:100%; margin-top:7px; padding:7px 10px;
+  font:600 11.5px/1.35 var(--font-ui, system-ui); text-align:left;
+  color:#6fbfab; background:rgba(79,208,172,.08);
+  border:1px solid rgba(79,208,172,.28); border-radius:8px; cursor:pointer; }
+.jade-up.can { color:#0d1a17; background:linear-gradient(180deg,#7fe0c2,#4fd0ac);
+  border-color:#4fd0ac; }
+.jade-up.can:active { transform:translateY(1px); }
+.jade-up.poor { opacity:.5; cursor:default; }
+.jade-rank { display:block; margin-top:7px; padding:6px 10px;
+  font:600 11px/1.35 var(--font-ui, system-ui); text-align:left;
+  color:#f0d9a8; background:#f2c46d12; border:1px solid rgba(242,196,109,.3);
+  border-radius:8px; letter-spacing:.04em; }
 
 /* Нефрит на побег — у лодки-панели действий, слева от мантры */
 .fjade { position:absolute; right:100%; bottom:6px; margin-right:10px;

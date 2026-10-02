@@ -5,10 +5,15 @@
 
 import { h, mount, clear } from '../dom.js'
 import { sfx, fieldSfx, startDrone, stopDrone } from '../fx.js'
-import { drawFoeArt, drawSadhakaArt, drawWareArt, drawFlowerArt, ART } from '../fieldArt.js'
+import { drawFoeArt, drawSadhakaArt, drawWareArt, drawFlowerArt, drawPotArt, ART } from '../fieldArt.js'
 import { haptics } from '../haptics.js'
 import { QUOTES } from '../../core/data.js'
 import { KEEPSAKE_BY_ID } from '../../core/keepsakes.js'
+import { pickHint, hintAllowed } from '../../core/hints.js'
+import { smashPot, potAt } from '../../core/field.js'
+import { fieldRelicView } from '../../core/fieldRelics.js'
+import { relicChips } from '../relicView.js'
+import { sevaPointsFor } from '../../core/workshop.js'
 import {
   createField, stepField, strike, dash, serveWare, parry, parryHint,
   castMantra, mantraById,
@@ -41,6 +46,7 @@ function breathLabel(st) {
 }
 
 export function fieldScreen(state, opts = {}) {
+  const { onHintShown, hintsSeen } = opts
   const root = h('div', { class: 'field screen active' })
 
   const st = state
@@ -68,13 +74,37 @@ export function fieldScreen(state, opts = {}) {
   )
   // Жизнь и щит — одна полоса: щит идёт золотым отрезком перед жизнью
   // (так же в Slay the Spire). Отдельная панель на щит была лишней.
+  //
+  // Число на щите — как в Slay the Spire и Dead Cells: блок всегда виден
+  // цифрой, а не «полоской примерно на треть». Без числа игрок не знает,
+  // сколько ещё выдержит, и сколько сева было потрачено впустую.
   const hpLine = h('div', { class: 'field-hp' },
     h('i', { class: 'fhp-shield', id: 'fshield-b' }),
-    h('i', { id: 'fhp-b' }))
+    h('i', { id: 'fhp-b' }),
+    h('b', { class: 'fhp-n', id: 'fshield-n' }, ''))
 
   // Счётчик монет — как в Hades, слева внизу под гунами.
   const purse = h('div', { class: 'field-purse' },
     h('i', { class: 'fp-coin' }), h('b', { id: 'fp-n' }, '0'))
+
+  // Счётчик СЕВЫ. Сева — единственная валюта, которой платится за то, что
+  // игрок делал в Поле Ума: снял оку терпением, помог, открыл сундук. И до
+  // этой правки она не была видна НИГДЕ в Поле Ума — ни в бою, ни в итоге
+  // забега. Из-за этого любой разговор о том, что мирный путь дороже, был для
+  // игрока лозунгом: сравнить было не с чем.
+  const sevaPurse = h('div', { class: 'field-purse seva' },
+    h('i', { class: 'fp-seva' }), h('b', { id: 'fp-s' }, '0'))
+
+  // РЕЛИКВИИ ЗАБЕГА. Slay the Spire: то, что выбрал, действует до конца
+  // забега, и игрок должен видеть список — иначе он не знает, что у него
+  // есть, и не может играть на наборе. Пустой список не рисуется.
+  const relicRow = h('div', { class: 'field-relics', id: 'frelics' })
+
+  /** Перерисовать чипы реликвий. Список меняется только между комнатами. */
+  function renderRelics(relics) {
+    relicRow.textContent = ''
+    for (const node of relicChips(relics || [])) relicRow.append(node)
+  }
 
   // Смерти за все побеги — в Hades они стоят по центру сверху, и это часть
   // напряжения: чем больше, тем дороже ошибка. Показываем только если есть.
@@ -93,8 +123,18 @@ export function fieldScreen(state, opts = {}) {
     onclick: () => setPause(true),
   }, '❚❚')
 
-  const top = h('div', { class: 'field-top' }, gunas,
+  const top = h('div', { class: 'field-top' },
     h('div', { class: 'field-topright' }, bars, hpLine, states), pauseBtn)
+
+  // ЛЕВАЯ КОЛОНКА: гуны, кошелёк, сева, реликвии.
+  //
+  // Колонка была собрана и НЕ была вставлена в экран — `field-left` создавался
+  // и никуда не монтировался. Из-за этого счётчик монет в Поле Ума не
+  // отображался НИКОГДА, а счётчик севы, добавленный в этой же сессии, — тоже.
+  // Проверка «есть элемент и есть строка обновления» была зелёной: она смотрела
+  // в исходник, а не в собранный экран. Класс тот же — состояние есть, на
+  // экране нет, — но найден уже в моей же правке.
+  const left = h('div', { class: 'field-left' }, gunas, purse, sevaPurse, relicRow)
 
   // Шапка локации: ТОЛЬКО имя и стихия. Длинное описание локации живёт на
   // экране чакр — в бою читать его негде, и оно наезжало на полосы и лог.
@@ -142,6 +182,15 @@ export function fieldScreen(state, opts = {}) {
       ? 'веди пальцем · тапни по окове · двойной тап — рывок'
       : 'идти WASD · дефлект ПКМ или Shift · мантра Пробел · окову — тапни')
 
+  // ПОДСКАЗКИ ВО ВРЕМЯ БОЯ (core/hints.js). Живут под плашкой «ЖМИ ДЕФЛЕКТ»
+  // и НИКОГДА не занимают её место: пока ока в окне — на экране «ЖМИ
+  // ДЕФЛЕКТ», а не наше пояснение. И гаснут сами через несколько секунд:
+  // подсказка, которую не убрали, через три забега перестают читать.
+  const coach = h('div', { class: 'field-coach' })
+  let coachT = 0
+  let lastHintId = null
+  let coachShown = false
+
   // ОБЕТ ВИДЕН ВО БОЯ. Условие, о котором игрок обещался на
   // экране входа, могут забыть в конце заега и домать. Условие, о котором игрок
   // не знает, нельзя собюдить: вошёдую что обет собюдён, а в конце
@@ -152,7 +201,7 @@ export function fieldScreen(state, opts = {}) {
     : null
 
   root.append(cv, h('div', { class: 'field-ui' },
-    head, oathChip, top, log, prompt, dock, hint, pauseEl))
+    head, oathChip, left, top, log, prompt, coach, dock, hint, pauseEl))
 
   // ── Лог событий ──
   const lines = []
@@ -246,12 +295,35 @@ export function fieldScreen(state, opts = {}) {
     return -1
   }
 
+  function potAtPoint(x, y) {
+    // Радиус берётся из ядра (`potAt`), а не пишется здесь второй раз: два
+    // числа в двух местах разъезжаются, и потом «горшок не ломается» чинится
+    // в одном файле, а ломается в другом.
+    return potAt(st, x, y, 36)
+  }
+  const potDist = (pt, i) => Math.hypot(st.pots[i].x - pt.x, st.pots[i].y - pt.y)
+  const wareDist = (pt, i) => Math.hypot(st.wares[i].x - pt.x, st.wares[i].y - pt.y)
+
+  // Горшок ломается ударом — тем же тапом, что и ока. Отдельного жеста нет:
+  // лишняя кнопка ради лёгких денег была бы лишним решением игрока.
+  function doSmash(index) {
+    const p = st.pots[index]
+    if (!p || p.broken) return
+    const ev = smashPot(st, index)
+    for (const e of ev) onEvent(e)
+    if (!p.broken) { say(`${p.name}: трещина`, 'dim'); fieldSfx.step() }
+  }
+
   const onDown = (e) => {
     // Правая кнопка — дефлект (Nine Sols: парирование правой).
     if (e.button === 2) { doParry(); e.preventDefault(); return }
     const pt = localPoint(e)
     if (!pt) return                 // холст схлопнулся — касание игнорируем
+    // Сокровище проверяется ДО просящего: они стоят в разных углах, но порядок
+    // должен быть тот, что ближе к пальцу, а не тот, что написан первым.
+    const pi = potAtPoint(pt.x, pt.y)
     const wi = wareAt(pt.x, pt.y)
+    if (pi >= 0 && (wi < 0 || potDist(pt, pi) < wareDist(pt, wi))) { doSmash(pi); return }
     if (wi >= 0) { openSeva(wi); return }
     const fi = foeAt(pt.x, pt.y)
     if (fi >= 0) { doStrike(fi); return }
@@ -380,6 +452,23 @@ export function fieldScreen(state, opts = {}) {
       case 'hit':
         say('попадание', '')
         break
+      // ── Сокровище (Dead Cells: containers) ──
+      // Сообщение говорит и про добычу, и про цену: из горшка падает амбросия,
+      // и за поход силой темнеет. Иначе игрок решит, что ломать выгодно
+      // всегда, а это неправда — самшкара копится.
+      case 'pot':
+        say(`горшок разбит — ${e.coins} амбросии на полу · самшкара`, 'gold')
+        fieldSfx.step()
+        haptics.tap?.()
+        break
+      case 'chest':
+        say('сундук открыт — сева в мастерскую', 'gold')
+        fieldSfx.pacify()
+        haptics.tap?.()
+        break
+      case 'pot_chipped':
+        say(`${e.name}: ещё крепче`, 'dim')
+        break
       case 'shaken':
         say('окова задела тебя — дыхание сбито', 'bad')
         break
@@ -388,7 +477,11 @@ export function fieldScreen(state, opts = {}) {
         haptics.buzz?.()
         break
       case 'served':
-        say(`сева: ${e.label}`, 'good')
+        // Щит от севы называется ВСЕГДА, и полный щит — тоже. Дар на карточке
+        // обещает «любая сева даёт щит», и игрок должен видеть, что обещание
+        // сбылось или что помешало. Молчание здесь читается как поломка.
+        say(`сева: ${e.label}${e.shield > 0 ? ` · щит +${e.shield}` : e.shieldFull ? ' · щит полон' : ''}`,
+          e.shieldFull ? 'tip' : 'good')
         fieldSfx.seva()
         break
       case 'seva_debt':
@@ -471,6 +564,17 @@ export function fieldScreen(state, opts = {}) {
         fieldSfx.bossBreak()
         haptics.buzz?.()
         flashBanner('владыка сломался')
+        break
+      // ── Самадхи (ясность) ──
+      // Окно в девять секунд: твой урон ×1.5, входящий ×0.3. Раньше оно
+      // начиналось и кончалось молча, и бой дважды менялся без причины.
+      case 'samadhi_start':
+        say(`ясность: ${e.time} с — урон твой ×1.5, твой ×0.3`, 'gold')
+        fieldSfx.samadhi()
+        haptics.buzz?.()
+        break
+      case 'samadhi_end':
+        say('ясность прошла', 'dim')
         break
       // ── Крипа (kṛpā) ──
       case 'krpa':
@@ -1014,6 +1118,19 @@ export function fieldScreen(state, opts = {}) {
       }
     }
 
+    // СОКРОВИЩА (Dead Cells: containers). Рисунок живёт в `fieldArt.js` вместе с
+    // остальным и проверяется `fieldArt.test.js` — стиль рисунка в этом
+    // проекте нельзя оставлять непроверенным ( автор однажды пожаловался,
+    // что игра выглядит «как овалы», и это повторялось именно из-за этого).
+    // Разбитый не рисуется: на его месте остаётся пусто.
+    for (const p of st.pots) {
+      if (p.broken) continue
+      ctx.save()
+      ctx.translate(p.x, p.y)
+      drawPotArt(ctx, p)
+      ctx.restore()
+    }
+
     // просящие (сева)
     for (const w of st.wares) {
       groundShadow(w.x, w.y + 2, 8, 0.36)
@@ -1112,6 +1229,21 @@ export function fieldScreen(state, opts = {}) {
       ctx.arc(0, -2, 28, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2)
       ctx.stroke()
       ctx.lineCap = 'butt'
+    }
+
+    // «Дхрувасмрити» — постоянная память: видно, СКОЛЬКО спокойствия оке
+    // нужно, ещё до первого дефлекта. Без этого игрок узнаёт длину боя по
+    // факту, а реликвия обещает знание заранее — то есть обещание без
+    // предмета, ровно то, чего быть не должно.
+    if (st.o.telegraphPeek) {
+      const need = Math.max(1, Math.round(f.calmMax))
+      const left = Math.max(0, Math.round(f.calmMax - f.calm))
+      ctx.save()
+      ctx.font = 'bold 12px var(--font-display), Georgia, serif'
+      ctx.textAlign = 'center'
+      ctx.fillStyle = 'rgba(233,220,196,.92)'
+      ctx.fillText(`${left}/${need}`, 0, -40)
+      ctx.restore()
     }
 
     // ── КОЛЬЦО ЗАМАХА (Nine Sols) ──────────────────────────────────────
@@ -1246,7 +1378,10 @@ export function fieldScreen(state, opts = {}) {
       ctx.stroke()
     }
 
-    // свечение ауры садхака
+    // САМАДХИ (ясность). Свет — это было, а времени не было: окно в девять секунд,
+    // меняющее бой втрое, начиналось и кончалось молча. Кольцо вокруг садхака —
+    // то же кольцо, что вокруг оки показывает спокойствие, только белым и
+    // тающее: один язык на всю игру, учится один раз.
     if (p.inSamadhi) {
       const gr = ctx.createRadialGradient(0, -8, 4, 0, -8, 44)
       gr.addColorStop(0, 'rgba(255,255,255,.35)')
@@ -1255,6 +1390,18 @@ export function fieldScreen(state, opts = {}) {
       ctx.beginPath()
       ctx.arc(0, -8, 44, 0, 7)
       ctx.fill()
+
+      const total = st.o.samadhiTime || 1
+      const frac = Math.max(0, Math.min(1, p.samadhi / total))
+      // Кольцо тает по часовой стрелке — так же, как спокойствие оки. Одна
+      // картинка означает одно и то же всюду в игре.
+      ctx.strokeStyle = frac < 0.25 ? 'rgba(255,180,170,.95)' : 'rgba(255,255,255,.92)'
+      ctx.lineWidth = frac < 0.25 ? 3.4 : 2.6
+      ctx.lineCap = 'round'
+      ctx.beginPath()
+      ctx.arc(0, -8, 36, -Math.PI / 2, -Math.PI / 2 + frac * Math.PI * 2)
+      ctx.stroke()
+      ctx.lineCap = 'butt'
     }
 
     drawSadhakaArt(ctx, p.facing, { flip: p.facing < 0 })
@@ -1325,7 +1472,28 @@ export function fieldScreen(state, opts = {}) {
     $('fhp-b').style.width = (p.hp / p.maxHp * 100) + '%'
     // щит — золотой отрезок перед жизнью, накладывается слева
     $('fshield-b').style.width = (p.shield / st.o.shieldMax * 100) + '%'
+    // Число щита — видно и сколько, и полон ли он. Полный щит помечен: иначе
+    // «полосу не видно» и «щит полон» — одно и то же состояние на глаз.
+    const sn = $('fshield-n')
+    if (sn) {
+      sn.textContent = p.shield > 0 ? String(Math.round(p.shield)) : ''
+      sn.classList.toggle('full', p.shield >= st.o.shieldMax)
+    }
     if ($('fp-n')) $('fp-n').textContent = String((st.o.coins || 0) + st.coinsTaken)
+    // Сева считается ТЕМ ЖЕ правилом, что начисляется в `settleFieldRoom` —
+    // функция берёт текущее состояние боя. Считать «по событию» здесь нельзя:
+    // сева начисляется за комнату (за оков снятых за неё и за помощь в ней),
+    // и прибавление «+1 за каждую севу» внутри `serveWare` посчитало бы
+    // снятые оки второй раз.
+    if ($('fp-s')) $('fp-s').textContent = String(Math.round(sevaPointsFor(st)))
+    // Реликвии — список забега. Перерисовывается только когда он изменился:
+    // чипы не меняются от кадра к кадру, а список и так меняется между
+    // комнатами.
+    const relicKey = (opts.relics || []).join('|')
+    if (renderRelics.lastKey !== relicKey) {
+      renderRelics.lastKey = relicKey
+      renderRelics(opts.relics || [])
+    }
 
     // часы смерти: считают вверх, краснеют после порога
     if ($('fclock-t')) {
@@ -1438,6 +1606,24 @@ export function fieldScreen(state, opts = {}) {
     // Подсказка управления гаснет: прочитал — всё, она мешает бою.
     if (hintT > 0) { hintT -= dt; if (hintT <= 0) hint.classList.remove('on') }
     if (mdescT > 0) { mdescT -= dt; if (mdescT <= 0) mdesc.classList.remove('on') }
+
+    // ПОДСКАЗКИ ВО ВРЕМЯ БОЯ. Показываются, когда сработало УСЛОВИЕ из боя,
+    // и гаснут сами через несколько секунд. Пока открыто окно дефлекта —
+    // не показываются: на экране «ЖМИ ДЕФЛЕКТ», а не пояснение.
+    if (coachT > 0) {
+      coachT -= dt
+      if (coachT <= 0) { coach.classList.remove('on'); lastHintId = null }
+    } else if (!lastHintId && hintAllowed(st) && !st.outcome) {
+      const hnt = pickHint(st, hintsSeen || {})
+      if (hnt) {
+        clear(coach)
+        coach.append(h('span', { class: 'fc-line' }, hnt.text))
+        coach.classList.add('on')
+        coachT = 5.5
+        lastHintId = hnt.id
+        onHintShown?.(hnt.id)
+      }
+    }
 
     // Авидья: высокий гул, тем громче, чем её больше. Слышно без экрана.
     const avR = st.avidya / st.o.avidyaMax

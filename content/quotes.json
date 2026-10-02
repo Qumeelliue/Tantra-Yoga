@@ -899,5 +899,41 @@
     "quote": "Бесконечное счастье — это ананда (блаженство).",
     "original": "Infinite happiness is ānanda (bliss).",
     "source": "«Ánanda Sútram», 2-3"
+  },
+  "kula_kundalini": {
+    "term": "Кулакундалини",
+    "sanskrit": "कुलकुण्डलिनी",
+    "meaning": "Дремущая сила у корня",
+    "life": "Под корнем лежит сила, свёрнутая змеёй. Её нельзя убить силой и нельзя выговорить — её поднимают, чакру за чакрой. Пока она спит, спит и корень.",
+    "quote": "Цель практики — разбудить дремущую джива-шакти, кула-кундалини, и, поднимая её чакру за чакрой, слить её с Брахмабхавой.",
+    "original": "The fundamental goal of this sádhaná is to awaken the dormant jiivashakti, known as kulakuńd́alinii, and, after elevating it stage by stage, to merge it in Brahmabháva [Cosmic Consciousness].",
+    "source": "«A Few Problems Solved», ч. 1"
+  },
+  "sankalpa": {
+    "term": "Самкальпа",
+    "sanskrit": "संकल्प",
+    "meaning": "Воление, ведущее к пара-видье",
+    "life": "Самкальпа — это воление, что ведёт к пара-видье, к знанию Великого. Само по себе оно не плохо: плохо, когда воление требует себе величия, а не ведёт к знанию.",
+    "quote": "Питуитарная чакра управляет двумя вртти: санкалпатмика — одной, ведущей к пара-видье, знанию Великого…",
+    "original": "The subsidiary glands control forty-eight vrttis and the pituitary controls two – saḿkalpátmaka, or one leading to parávidyá (knowledge of the Great) and vikalpátmaka, relating to aparávidyá (knowledge of the mundane).",
+    "source": "«Ananda Márga: Philosophy in a Nutshell», ч. 2, «Число вртти»"
+  },
+  "vikalpa": {
+    "term": "Викальпа",
+    "sanskrit": "विकल्प",
+    "meaning": "Думанье о мирском",
+    "life": "Викальпа строит знание о мирском — и строит хорошо, складно, убедительно. Оно всегда чужое: его нельзя принять за пара-видью, даже если оно звучит как истина.",
+    "quote": "…и викалпатмика, относящейся к апара-видье, знанию мирского.",
+    "original": "saḿkalpátmaka, or one leading to parávidyá (knowledge of the Great) and vikalpátmaka, relating to aparávidyá (knowledge of the mundane).",
+    "source": "«Ananda Márga: Philosophy in a Nutshell», ч. 2, «Число вртти»"
+  },
+  "sanchara": {
+    "term": "Санчара",
+    "sanskrit": "सैञ्चर",
+    "meaning": "Движение от Истока вниз",
+    "life": "Санчара — движение прочь от Истока, всё дальше и дальше, под нарастающей властью гун. Пратисанчара — обратное движение. Забег есть возврат.",
+    "quote": "Санчара — постепенное движение наружу под нарастающим влиянием гун (связывающих начал).",
+    "original": "Saiṋcara (in the Cosmic Cycle) is the gradual extroversial movement under the increasing influence of the guńas (binding principles).",
+    "source": "«Ánanda Sūtram», 1-5"
   }
 }
