@@ -46,7 +46,12 @@ const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
 const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8')
 
-function runSim(args, runs = 30) {
+// Забегов 12, а не 30. Проверке нужно лишь увидеть, что доход реликвий НЕ
+// обнулился («больше половины обычного»), а не различить две близкие проходимости.
+// Больше забегов — значит дольше процесс, а эти проверки идут параллельно с
+// остальными файлами: один прогон упирался в таймаут из-за конкуренции за машину,
+// и падал он редко и по другой причине, чем та, которую проверяет.
+function runSim(args, runs = 12) {
   return execFileSync('node',
     ['--experimental-loader', './scripts/aliases.mjs', 'scripts/fieldBalance.mjs', String(runs), ...args],
     { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 300000 })

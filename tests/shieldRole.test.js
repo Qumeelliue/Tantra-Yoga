@@ -32,7 +32,8 @@
 // игры — то есть правдоподобный вывод о несуществующем эффекте. Проверка ниже
 // требует, чтобы оба флага читались раздельно.
 
-import { describe, it, expect, beforeAll } from 'vitest'
+import { it, expect, beforeAll } from 'vitest'
+import { describeSlow } from './helpers/slow.js'
 import { readFileSync } from 'node:fs'
 import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -64,7 +65,7 @@ const shieldPctOf = (out) => {
 
 let base = null
 
-describe('Щит не заменяет дефлект', () => {
+describeSlow('Щит не заменяет дефлект', () => {
   beforeAll(() => { base = runSim(['--sloppy=0.85', '--seva']) })
 
   it('замер в базовом режиме вообще говорит про щит', () => {
@@ -108,7 +109,7 @@ describe('Щит не заменяет дефлект', () => {
   })
 })
 
-describe('Потолок щита подобран, а не назначен', () => {
+describeSlow('Потолок щита подобран, а не назначен', () => {
   it('сева, потраченная впустую, держится ниже 8 %', () => {
     // При потолке 12 было 12 %: игрок отдавал севу просящему и не получал
     // ничего. Это и есть та причина, по которой потолок поднят.
@@ -131,7 +132,7 @@ describe('Потолок щита подобран, а не назначен', (
   })
 })
 
-describe('Флаги щита читаются раздельно', () => {
+describeSlow('Флаги щита читаются раздельно', () => {
   it('оба флага объявлены, и каждый о своём', () => {
     const sim = read('scripts/fieldBalance.mjs')
     expect(sim).toMatch(/--shield=off/)
