@@ -84,17 +84,17 @@ describe('Служение: данные целы', () => {
     // проверка подтверждает, что он выражен в карточке.
     const planned = {
       seva_gate: {
-        give_seva: { seva: -3, boon: true },
-        give_coin: { coins: -30, seva: 6, heal: 10 },
+        give_seva: { heal: -20, boon: true },
+        give_coin: { coins: -30, heal: 15, seva: 5 },
         pass: {},
       },
       tapah_ashram: {
-        fast: { heal: -10, boon: true, boonId: 'tapah' },
-        eat: { heal: 15, seva: -2 },
+        fast: { heal: -15, boon: true },
+        eat: { heal: 25, seva: -20 },
       },
       aparigraha_stone: {
-        take: { coins: 45, heal: -14 },
-        leave: { shield: 15, seva: 3 },
+        take: { coins: 45, heal: -25 },
+        leave: { shield: 20, seva: 10 },
       },
     }
     const got = {}

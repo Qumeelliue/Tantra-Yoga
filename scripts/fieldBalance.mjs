@@ -84,6 +84,38 @@ const doorsArg = process.argv.slice(3).find((a) => a.startsWith('--doors'))
 // лавки». Это и меряет режим: иначе сравнивались бы разные наборы дверей.
 const DOORS_MODE = doorsArg && ['avoid', 'event'].includes(doorsArg.split('=')[1])
   ? doorsArg.split('=')[1] : 'combat'
+
+// `--event-pick=ID` — бот берёт ОТРОКА ПО ID, а не верхнего.
+//
+// Зачем это, и почему верхнего мало. Событие называет себя выбором. Проверяется
+// это единственным способом: если один отрок всегда правильный, а другой
+// никогда — событие не решение, а арифметика с двусторонней подписью. Меряется
+// так: тот же бот, тот же путь, меняется ТОЛЬКО отрок. Всё остальное — забег,
+// двери, оки, дары — остаётся тем же, поэтому разница принадлежит отроку.
+//
+// Ошибка, которой этот флаг страхует: «все три отрока дают ~74 %» тоже ничего не
+// значит. Если разброс внутри события меньше шума, событие неразличимо.
+const eventPickArg = process.argv.slice(3).find((a) => a.startsWith('--event-pick='))
+const EVENT_PICK = eventPickArg ? eventPickArg.split('=')[1] : ''
+
+// `--event=ID` — заставить выпадать ОДНО событие все забеги.
+//
+// Зачем вместе с `--event-pick`. Первая версия сравнения была сломана и выглядела
+// при этом убедительно: `--event-pick=give_seva` менял отрок только в событии
+// «служение у порога», а в двух других отрока не было — и там молча брался
+// верхний. Четыре замера подряд дали одинаковые 59 из 80, и это выглядело как
+// «числа не меняются». На самом деле сравнивались четыре одинаковых прогона.
+//
+// Правило: **флаг сравнения, который молча не применился, хуже отсутствия
+// флага** — он даёт правдоподобный вывод о несуществующем эффекте.
+const eventForceArg = process.argv.slice(3).find((a) => a.startsWith('--event='))
+const EVENT_FORCE = eventForceArg ? eventForceArg.split('=')[1] : ''
+if (EVENT_PICK && !EVENT_FORCE) {
+  console.warn(
+    `ВНИМАНИЕ: --event-pick без --event. Отрок «${EVENT_PICK}» есть не в каждом `
+    + `событии, и в остальных молча возьмётся верхний. Сравнение получится `
+    + `ложным. Укажи оба: --event=ID --event-pick=CHOICE.`)
+}
 // ── ЛЕГЕНДАРНЫЕ ДАРЫ: КРАСИВО БЕЗ ПОСЛЕДСТВИЙ? (2026-09-30) ────────────
 // Вопрос, который до сих пор не был задан: частота розыгрыша измерена (11 %
 // при собранных предпосылках), а ВЛИЯНИЕ — нет. «Красивый, но пустой» —
@@ -817,9 +849,18 @@ function playRun(rng, extraBoons = null, relicRng = null) {
             // Если бы замер просто пропустил дверь, событие было бы написано и
             // не измерено (МЕХАНИКА 43).
             if (calm.kind === 'event') {
-              const ev = rollFieldEvent({ rng, seen: eventSeen })
+              const ev = EVENT_FORCE
+                ? (FIELD_EVENTS.find((e) => e.id === EVENT_FORCE) || rollFieldEvent({ rng, seen: eventSeen }))
+                : rollFieldEvent({ rng, seen: eventSeen })
               eventSeen.push(ev.id)
-              const choice = ev.choices[0]      // как игрок: читает и берёт верхнее
+              const forcedChoice = EVENT_PICK ? ev.choices.find((c) => c.id === EVENT_PICK) : null
+              if (EVENT_PICK && !forcedChoice) {
+                throw new Error(
+                  `--event-pick=${EVENT_PICK} не сработал в событии «${ev.id}». `
+                  + `Доступные отроки: ${ev.choices.map((c) => c.id).join(', ')}. `
+                  + `Лучше прерваться, чем сравнивать разные прогоны.`)
+              }
+              const choice = forcedChoice || ev.choices[0]
               const p = previewEffects(choice.effects)
               EVENTLOG.seen[ev.id] = (EVENTLOG.seen[ev.id] || 0) + 1
               EVENTLOG.choices[ev.id + '/' + choice.id] = (EVENTLOG.choices[ev.id + '/' + choice.id] || 0) + 1
@@ -981,8 +1022,8 @@ function printDecisions() {
       .map(([id, n]) => `${id} ${((n / eventsSeen) * 100).toFixed(0)}%`).join(' · ')
     const byChoice = Object.entries(EVENTLOG.choices)
       .map(([k, n]) => `${k.split('/')[1]} ${((n / eventsSeen) * 100).toFixed(0)}%`).join(' · ')
-    console.log(`служений за забег: ${(eventsSeen / DEC.runs).toFixed(2)} · события: ${byEvent}`)
-    console.log(`  выбор игрока (верхний вариант): ${byChoice}`)
+    console.log(`служений за забег: ${(eventsSeen / DEC.runs).toFixed(2)} · события: ${EVENT_FORCE ? `принудительно «${EVENT_FORCE}»` : byEvent}`)
+    console.log(`  выбор игрока: ${EVENT_PICK ? `принудительно «${EVENT_PICK}»` : 'верхний отрок'} — ${byChoice}`)
     console.log(`  событий написано ${FIELD_EVENTS.length} — покрытие: ${Object.keys(EVENTLOG.seen).length}/${FIELD_EVENTS.length} выпали`)
   }
   console.log(`всего решений: ${total.toFixed(1)} за забег · для сравнения: комнат с боем за полный забег ${ROOMS_PER_STAGE * FLOORS} + ${FLOORS} владык`)

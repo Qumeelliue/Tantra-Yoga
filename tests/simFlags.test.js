@@ -51,7 +51,10 @@ function declaredFlags(src) {
 function runSim(args, runs = 2) {
   const r = execFileSync('node',
     ['--experimental-loader', './scripts/aliases.mjs', 'scripts/fieldBalance.mjs', String(runs), ...args],
-    { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 120000 })
+    // stderr ТЕПЕРЬ ловится. Раньше был `ignore`, и проверка «замер должен
+    // упасть и назвать доступные отроки» получала в сообщении только строку
+    // «Command failed» — то есть проверять было нечего.
+    { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000 })
   return r
 }
 
@@ -59,6 +62,68 @@ function strikesOf(out) {
   const m = out.match(/удары: (\d+)/)
   return m ? Number(m[1]) : null
 }
+
+describe('Флаг сравнения, который молча не применился (служение)', () => {
+  // Что случилось. Сравнение отроков служения было сделано флагом
+  // `--event-pick=give_seva`. Но отрок `give_seva` есть ТОЛЬКО в событии
+  // «служение у порога», а в двух других событиях его нет — и там бот молча
+  // брал верхний отрок.
+  //
+  // Что получилось: четыре замера подряд дали одинаковые 59 из 80, и это
+  // выглядело как «числа не меняются, событие не решает». На самом деле
+  // сравнивались четыре одинаковых прогона, потому что изолировано не было
+  // ничего, кроме одного отрока из трёх событий.
+  //
+  // Правило, которое из этого вышло: **флаг сравнения, который молча не
+  // применился, хуже отсутствия флага** — он даёт правдоподобный вывод о
+  // несуществующем эффекте.
+
+  it('`--event-pick` без `--event` ругается, а не сравнивает разные прогоны', () => {
+    let out = ''
+    let failed = false
+    try {
+      out = runSim(['--doors=event', '--event-pick=give_seva'])
+    } catch (e) {
+      failed = true
+      out = String(e.stderr || e.message || '')
+    }
+    expect(failed || /ВНИМАНИЕ/.test(out),
+      'замер молча согласился на --event-pick без --event — сравнение будет ложным, '
+      + `а он напечатал: ${out.slice(0, 160)}`).toBe(true)
+  })
+
+  it('несуществующий отрок РОНАЕТ замер, а не берётся молча за верхний', () => {
+    // `fast` есть в «Ашраме голодного поста» и его нет в «Служении у порога».
+    // Молчаливая подстановка верха — ровно то, что портило прошлый замер.
+    let failed = false
+    let msg = ''
+    try {
+      runSim(['--doors=event', '--event=seva_gate', '--event-pick=fast'])
+    } catch (e) {
+      failed = true
+      msg = String(e.stderr || e.message || '')
+    }
+    expect(failed, `несуществующий отрок принят молча; вывод: ${msg.slice(0, 160)}`).toBe(true)
+    expect(msg, 'падение должно называть доступные отроки, а не просто остановиться')
+      .toMatch(/give_seva/)
+  })
+
+  it('`--event` действительно держит одно событие все забеги', () => {
+    const out = runSim(['--doors=event', '--event=aparigraha_stone', '--event-pick=take'])
+    expect(out, 'замер не печатает, какое событие принудительно').toContain('aparigraha_stone')
+    // В принудительном режиме строки распределения по событиям быть не должно:
+    // если она есть, значит событие всё-таки розыгрывалось.
+    expect(out, 'при --event события всё равно чередуются — флаг не работает')
+      .not.toMatch(/события: \w+ \d+/)
+  })
+
+  it('принудительный отрок выбирается, а не верхний', () => {
+    const out = runSim(['--doors=event', '--event=aparigraha_stone', '--event-pick=leave'])
+    expect(out, 'замер не подтвердил, какой отрок взят').toContain('принудительно «leave»')
+    expect(out, 'бот взял не тот отрок, который заказан').toMatch(/leave \d+%/)
+    expect(out, 'взято больше одного отрока — флаг не работает').not.toMatch(/take \d+%/)
+  })
+})
 
 describe('Флаг, который ничего не делает, не считается флагом', () => {
   it('`--strike-careful` реально бьёт — а не печатает «бот не бьёт»', () => {
