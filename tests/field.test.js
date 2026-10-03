@@ -5,7 +5,7 @@ import {
   checkSamadhi, checkOutcome, fieldProgress, recomputeGuna, leadingGuna,
   GUNA_META, DEFAULT_FIELD_OPTIONS,
 } from '@webapp/js/core/field.js'
-import { buildFieldFloor, worldLook } from '@webapp/js/core/fieldBuild.js'
+import { buildFieldFloor, worldLook, DEFAULT_FIELD_SIZE } from '@webapp/js/core/fieldBuild.js'
 import { WORLDS, worldForFloor } from '@webapp/js/core/data.js'
 
 function mkFoe(over = {}) {
@@ -732,7 +732,7 @@ describe('Поле Ума: локации отличаются друг от д�
 
   it('каждая локация собирает свой вид в поле', () => {
     for (let f = 0; f <= 6; f++) {
-      const b = buildFieldFloor(f, { field: { w: 412, h: 600 } })
+      const b = buildFieldFloor(f, { field: { ...DEFAULT_FIELD_SIZE } })
       expect(b.look.motif).toBe(worldLook(f).motif)
       const st = createField({
         player: { x: 100, y: 200, hp: 60 },
@@ -745,7 +745,7 @@ describe('Поле Ума: локации отличаются друг от д�
 
   it('у каждой локации есть владыка из контента', () => {
     for (let f = 0; f <= 6; f++) {
-      const b = buildFieldFloor(f, { field: { w: 412, h: 600 } })
+      const b = buildFieldFloor(f, { field: { ...DEFAULT_FIELD_SIZE } })
       expect(b.boss).toBeTruthy()
       expect(b.boss.name).toBeTruthy()
       expect(Array.isArray(b.boss.moves)).toBe(true)
@@ -754,8 +754,8 @@ describe('Поле Ума: локации отличаются друг от д�
   })
 
   it('первая локация — рипу, поздние — паши (SPEC §9.5)', () => {
-    const early = buildFieldFloor(0, { field: { w: 412, h: 600 } })
-    const late = buildFieldFloor(5, { field: { w: 412, h: 600 } })
+    const early = buildFieldFloor(0, { field: { ...DEFAULT_FIELD_SIZE } })
+    const late = buildFieldFloor(5, { field: { ...DEFAULT_FIELD_SIZE } })
     expect(early.foes.every((f) => f.kind === 'ripu')).toBe(true)
     expect(late.foes.every((f) => f.kind === 'pasha')).toBe(true)
   })

@@ -56,6 +56,55 @@ export function fieldScreen(state, opts = {}) {
   const cv = h('canvas', { class: 'field-canvas' })
   const ctx = cv.getContext('2d')
 
+  // ── КАМЕРА ──
+  //
+  // Раньше арена была 412×600, то есть комната целиком помещалась на экране.
+  // Автор посмотрел на игру и сказал: «текстура, которая ходит по клеточкам в
+  // рамках одного экрана». Он был прав: когда видно всю комнату, она не
+  // ощущается местом.
+  //
+  // Теперь арена 780×1120 (см. DEFAULT_FIELD_SIZE) — больше экрана, и камера
+  // идёт за садхакой. Видимая область остаётся прежней, 420×640: то есть
+  // увеличилось МЕСТО, а не размер фигур.
+  const WORLD_W = (st.field && st.field.w) || W
+  const WORLD_H = (st.field && st.field.h) || H
+  const cam = { x: 0, y: 0 }
+
+  /**
+   * Камера за садхакой — но на центр боя, а не только на игрока.
+   *
+   * Арена стала больше экрана, и камера только на игрке давала бой вслепую:
+   * садхака внизу, ока вверху, на экране ни одной оки. Смотреть на центр боя —
+   * то есть на середину между игроком и живыми оками — значит держать бой в
+   * кадре всегда, и не только в начале.
+   *
+   * Если ока ушли за край (арена больше двух экранов), камера идёт на игрока и
+   * ока показывают стрелки у края кадра — см. `drawOffscreen`.
+   */
+  function camFollow(p) {
+    const live = st.foes.filter((f) => !f.dead && !f.pacified)
+    let tx = p.x
+    let ty = p.y
+    if (live.length) {
+      let fx = 0
+      let fy = 0
+      for (const f of live) { fx += f.x; fy += f.y }
+      fx /= live.length
+      fy /= live.length
+      // Середина между игроком и центром оков: игрок остаётся в кадре, но бой
+      // не уезжает за верхний край.
+      tx = p.x + (fx - p.x) * 0.5
+      ty = p.y + (fy - p.y) * 0.5
+    }
+    cam.x = Math.max(0, Math.min(WORLD_W - W, tx - W / 2))
+    cam.y = Math.max(0, Math.min(WORLD_H - H, ty - H / 2))
+    st.cam = { x: cam.x, y: cam.y, w: WORLD_W, h: WORLD_H }
+  }
+
+  // Камера определена сразу: иначе до первого кадра `st.cam` не существует, и
+  // проверка «все оки видны при входе» не имеет чего проверять.
+  camFollow(st.player)
+
   // Лицензионные спрайты (Calciumtrice, CC-BY 3.0 — источники в
   // `assets/field/CREDITS.md`). Пока не приехали, рисуются векторы, поэтому
   // загрузка ничего не блокирует и игра никогда не остаётся пустой.
@@ -281,8 +330,17 @@ export function fieldScreen(state, opts = {}) {
     // одно касание навсегда портит позицию садхаки (NaN). Нет размера —
     // нет и касания: палец просто ничего не делает.
     if (!(r.width > 0) || !(r.height > 0)) return null
-    const x = (e.clientX - r.left) * (W / r.width)
-    const y = (e.clientY - r.top) * (H / r.height)
+    // Камера обновляется ЗДЕСЬ, а не только при отрисовке.
+    //
+    // Проверка поймала: палец приходил раньше первого кадра, cam был ещё {0,0},
+    // и координата уезжала. То есть на живом телефоне то же самое — первое
+    // касание после входа в комнату ушло бы мимо. Камера должна быть верной
+    // в момент вопроса «куда бьём», а не в момент рисования.
+    camFollow(st.player)
+    // +cam — потому что арена больше экрана. Без этого касание в левом верхнем
+    // углу экрана било в точку, которой на карте нет.
+    const x = (e.clientX - r.left) * (W / r.width) + cam.x
+    const y = (e.clientY - r.top) * (H / r.height) + cam.y
     return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null
   }
 
@@ -687,12 +745,12 @@ export function fieldScreen(state, opts = {}) {
     g.addColorStop(0.55, rgb(mixc(L.ground2, [0, 0, 0], 0.5)))
     g.addColorStop(1, rgb(mixc(L.ground2, [0, 0, 0], 0.72)))
     ctx.fillStyle = g
-    ctx.fillRect(0, WALL.top, W, WALL.base - WALL.top)
+    ctx.fillRect(0, WALL.top, WORLD_W, WALL.base - WALL.top)
 
     // кладка: ряды ниже — выше (это перспектива), швы вразброс
     ctx.save()
     ctx.beginPath()
-    ctx.rect(0, WALL.top, W, WALL.base - WALL.top)
+    ctx.rect(0, WALL.top, WORLD_W, WALL.base - WALL.top)
     ctx.clip()
     const rowH = 20
     const rows = Math.ceil((WALL.base - WALL.top) / rowH)
@@ -703,8 +761,8 @@ export function fieldScreen(state, opts = {}) {
       const off = (r % 2) * 46 + r * 7
       ctx.strokeStyle = rgb(mixc(L.ground2, [0, 0, 0], 0.82), 0.9)
       ctx.lineWidth = 1
-      ctx.beginPath(); ctx.moveTo(0, y + h); ctx.lineTo(W, y + h); ctx.stroke()
-      for (let x = off; x < W + 60; x += 60 + r * 3) {
+      ctx.beginPath(); ctx.moveTo(0, y + h); ctx.lineTo(WORLD_W, y + h); ctx.stroke()
+      for (let x = off; x < WORLD_W + 60; x += 60 + r * 3) {
         ctx.strokeStyle = rgb(mixc(L.ground2, [0, 0, 0], 0.7), 0.7)
         ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.stroke()
       }
@@ -727,16 +785,16 @@ export function fieldScreen(state, opts = {}) {
     cg.addColorStop(0, 'rgba(0,0,0,.8)')
     cg.addColorStop(1, 'rgba(0,0,0,0)')
     ctx.fillStyle = cg
-    ctx.fillRect(0, WALL.top - 16, W, 50)
+    ctx.fillRect(0, WALL.top - 16, WORLD_W, 50)
     ctx.strokeStyle = rgb(L.accent, 0.18)
     ctx.lineWidth = 2
-    ctx.beginPath(); ctx.moveTo(0, WALL.top + 0.5); ctx.lineTo(W, WALL.top + 0.5); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(0, WALL.top + 0.5); ctx.lineTo(WORLD_W, WALL.top + 0.5); ctx.stroke()
 
     // БОКОВЫЕ стены: уходят вниз-вперёд к краям экрана. Их угол даёт
     // ощущение, что комната замкнута, а не выставлена наружу.
     for (const side of [-1, 1]) {
-      const x0 = side < 0 ? 0 : W
-      const x1 = side < 0 ? WALL.inset : W - WALL.inset
+      const x0 = side < 0 ? 0 : WORLD_W
+      const x1 = side < 0 ? WALL.inset : WORLD_W - WALL.inset
       ctx.save()
       const wg = ctx.createLinearGradient(x0, 0, x1, 0)
       wg.addColorStop(0, rgb(mixc(L.ground2, [0, 0, 0], 0.86)))
@@ -745,8 +803,8 @@ export function fieldScreen(state, opts = {}) {
       ctx.beginPath()
       ctx.moveTo(x0, WALL.top)
       ctx.lineTo(x1, WALL.base - 6)
-      ctx.lineTo(x1 - side * 16, H)
-      ctx.lineTo(x0, H)
+      ctx.lineTo(x1 - side * 16, WORLD_H)
+      ctx.lineTo(x0, WORLD_H)
       ctx.closePath()
       ctx.fill()
       // швы на боковой стене
@@ -754,21 +812,21 @@ export function fieldScreen(state, opts = {}) {
       ctx.lineWidth = 1
       for (let k = 1; k < 9; k++) {
         const y = WALL.base + k * 44
-        const e = (y - WALL.base) / (H - WALL.base)
+        const e = (y - WALL.base) / (WORLD_H - WALL.base)
         const xs = x1 - side * 16 * e
         ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(xs, y - 10 * e); ctx.stroke()
       }
       // светлая кромка у пола
       ctx.strokeStyle = rgb(L.accent, 0.14)
       ctx.lineWidth = 1.6
-      ctx.beginPath(); ctx.moveTo(x1, WALL.base - 6); ctx.lineTo(x1 - side * 16, H); ctx.stroke()
+      ctx.beginPath(); ctx.moveTo(x1, WALL.base - 6); ctx.lineTo(x1 - side * 16, WORLD_H); ctx.stroke()
       ctx.restore()
     }
 
     // плинтус: где стена становится полом
     ctx.strokeStyle = rgb(mixc(L.ground, [0, 0, 0], 0.4), 0.9)
     ctx.lineWidth = 3
-    ctx.beginPath(); ctx.moveTo(0, WALL.base); ctx.lineTo(W, WALL.base); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(0, WALL.base); ctx.lineTo(WORLD_W, WALL.base); ctx.stroke()
   }
 
   // ── ДВЕРЬ (Hades) ─────────────────────────────────────────────────
@@ -908,6 +966,11 @@ export function fieldScreen(state, opts = {}) {
   function draw(t) {
     const p = st.player
     ctx.clearRect(0, 0, W, H)
+    // Камера — до всего мира. Фон, стены, оков, пол — всё рисуется в
+    // координатах арены; на экран попадает окно 420×640 внутри неё.
+    camFollow(p)
+    ctx.save()
+    ctx.translate(-cam.x, -cam.y)
     // Тряска (Hades: screen shake). Смещаем ВСЮ сцену: пол, стены, оков,
     // садхаку. Сдвигать только пол — значит оки остаются на месте и удар
     // по-прежнему не читается.
@@ -918,17 +981,17 @@ export function fieldScreen(state, opts = {}) {
 
     // фон: стихия локации + состояние гун
     const tint = st.tint || [40, 32, 58]
-    const g0 = ctx.createLinearGradient(0, 0, 0, H)
+    const g0 = ctx.createLinearGradient(0, 0, 0, WORLD_H)
     g0.addColorStop(0, rgb(L.sky))
     g0.addColorStop(0.5, rgb(mixc(tint, L.sky, 0.35)))
     g0.addColorStop(1, rgb(mixc(L.sky, [0, 0, 0], 0.55)))
     ctx.fillStyle = g0
-    ctx.fillRect(0, 0, W, H)
+    ctx.fillRect(0, 0, WORLD_W, WORLD_H)
 
     // пыль света
     ctx.save()
     for (let i = 0; i < 26; i++) {
-      const sx = (i * 97) % W, sy = ((i * 53) % H)
+      const sx = (i * 97) % WORLD_W, sy = ((i * 53) % WORLD_H)
       const tw = 0.15 + 0.15 * Math.sin(t * 0.6 + i)
       ctx.fillStyle = `rgba(255,235,190,${tw * (L.motif === 'stars' ? 0.5 : 1)})`
       ctx.beginPath()
@@ -944,7 +1007,7 @@ export function fieldScreen(state, opts = {}) {
     const FL = { y: 168, half: 300, thick: 26 }
     const iso = (fn) => {
       ctx.save()
-      ctx.translate(W / 2, FL.y)
+      ctx.translate(WORLD_W / 2, FL.y)
       ctx.scale(1, 0.5)
       ctx.rotate(Math.PI / 4)
       fn()
@@ -986,11 +1049,11 @@ export function fieldScreen(state, opts = {}) {
 
     // 5) вокруг площадки — темнота: за краем пропасть, а не фон
     ctx.save()
-    const vg = ctx.createRadialGradient(W / 2, FL.y + 190, 90, W / 2, FL.y + 190, 400)
+    const vg = ctx.createRadialGradient(WORLD_W / 2, FL.y + 190, 90, WORLD_W / 2, FL.y + 190, 400)
     vg.addColorStop(0, 'rgba(0,0,0,0)')
     vg.addColorStop(1, 'rgba(0,0,0,.62)')
     ctx.fillStyle = vg
-    ctx.fillRect(0, FL.y - 40, W, H - FL.y + 40)
+    ctx.fillRect(0, FL.y - 40, WORLD_W, WORLD_H - FL.y + 40)
     ctx.restore()
 
     // ── УЗОР ЗЕМЛИ: своя стихия ─────────────────────────────────────────
@@ -1040,7 +1103,7 @@ export function fieldScreen(state, opts = {}) {
       ctx.lineWidth = 2
       for (let k = 0; k < 6; k++) {
         const y = 240 + k * 60
-        const off = (t * 40 + k * 90) % (W + 200) - 100
+        const off = (t * 40 + k * 90) % (WORLD_W + 200) - 100
         ctx.beginPath()
         ctx.moveTo(off - 90, y)
         ctx.bezierCurveTo(off - 30, y - 12, off + 40, y + 12, off + 100, y)
@@ -1059,7 +1122,7 @@ export function fieldScreen(state, opts = {}) {
       }
     } else if (L.motif === 'stars') {
       for (let k = 0; k < 22; k++) {
-        const sx = (k * 89) % W, sy = 230 + ((k * 131) % 340)
+        const sx = (k * 89) % WORLD_W, sy = 230 + ((k * 131) % 340)
         const tw = 0.3 + 0.5 * Math.abs(Math.sin(t * 0.8 + k))
         ctx.fillStyle = rgb(L.accent, tw * 0.8)
         ctx.beginPath()
@@ -1488,6 +1551,43 @@ export function fieldScreen(state, opts = {}) {
       ctx.globalAlpha = 1
     }
     ctx.restore()
+    drawOffscreen()
+  }
+
+  /**
+   * Ока за краем кадра.
+   *
+   * Камера сделала комнату больше экрана, и ока за краем просто исчезает: игрок
+   * не знает, что она идёт. В Hades и Slay the Spire такие вещи помечаются
+   * стрелкой у края экрана. Без этого Bigger-world — не подарок, а ловушка.
+   */
+  function drawOffscreen() {
+    const p = st.player
+    const pad = 26
+    for (const f of st.foes) {
+      if (f.dead || f.pacified) continue
+      const sx = f.x - cam.x
+      const sy = f.y - cam.y
+      if (sx >= 0 && sx <= W && sy >= 0 && sy <= H) continue
+      // Стрелка у края в направлении оки. Позиция — на рамке кадра.
+      const cx = W / 2
+      const cy = H / 2
+      const dx = sx - cx
+      const dy = sy - cy
+      const k = Math.min((W / 2 - pad) / Math.max(1, Math.abs(dx)),
+        (H / 2 - pad) / Math.max(1, Math.abs(dy)))
+      const ax = cx + dx * k
+      const ay = cy + dy * k
+      ctx.save()
+      ctx.translate(ax, ay)
+      ctx.rotate(Math.atan2(dy, dx))
+      ctx.fillStyle = f.calm >= f.calmMax ? 'rgba(242,196,109,.95)' : 'rgba(255,140,120,.9)'
+      ctx.beginPath()
+      ctx.moveTo(11, 0); ctx.lineTo(-7, -7); ctx.lineTo(-4, 0); ctx.lineTo(-7, 7)
+      ctx.closePath()
+      ctx.fill()
+      ctx.restore()
+    }
   }
 
   // ── HUD-обновление ──

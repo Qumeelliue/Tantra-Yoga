@@ -112,10 +112,54 @@ const R_POT = 36
 const R_WARE = 40
 const R_FOE = 32
 
+/**
+ * Две свободные точки по разные стороны от садхаки.
+ *
+ * Нужны там, где проверка говорит «первый палец ведёт, второй не перехватывает»:
+ * для этого точки обязаны лежать в разных направлениях от игрока, иначе движение
+ * к первой закономерно приближает и ко второй, и проверка падает на своей же
+ * геометрии.
+ */
+function twoFreeSpots(st) {
+  const ww = st.field?.w || 420
+  const wh = st.field?.h || 640
+  const radius = 150
+  const dirs = []
+  for (let a = 0; a < 12; a++) dirs.push((a / 12) * Math.PI * 2)
+  const far = (dir) => {
+    const x = Math.round(st.player.x + Math.cos(dir) * radius)
+    const y = Math.round(st.player.y + Math.sin(dir) * radius)
+    if (x < 20 || y < 20 || x > ww - 20 || y > wh - 20) return null
+    const fromFoes = st.foes.every((o) => Math.hypot(o.x - x, o.y - y) > R_FOE + 20)
+    const fromWares = st.wares.every((o) => Math.hypot(o.x - x, o.y - y) > R_WARE + 20)
+    const fromPots = st.pots.every((o) => Math.hypot(o.x - x, o.y - y) > R_POT + 20)
+    return fromFoes && fromWares && fromPots ? { x, y } : null
+  }
+  const found = []
+  for (const d of dirs) {
+    const p = far(d)
+    if (p && found.every((q) => Math.hypot(q.x - p.x, q.y - p.y) >= 200)) found.push(p)
+    if (found.length === 2) return found
+  }
+  throw new Error(`не нашлось двух свободных точек по разные стороны. оков: ${st.foes.length}`)
+}
+
 /** Свободное место: подальше от оков, просящих, горшков и садхаки. */
 function freeSpot(st, wantX, wantY) {
-  const spots = [[wantX, wantY], [24, 24], [396, 24], [24, 616], [396, 616], [210, 40], [210, 600], [40, 320], [380, 320]]
+  // Сетка кандидатов строится от арены и от садхаки, а не от прежних 420×640.
+  //
+  // Арена стала 780×1120, и список девяти точек уехал в левый верхний угол
+  // мимо камеры: палец тапал в坐标, которых на экране нет. Проверка падала не
+  // по своей логике, а потому что у неё было другое представление о комнате.
+  const ww = st.field?.w || 420
+  const wh = st.field?.h || 640
+  const spots = [[wantX, wantY]]
+  for (const dx of [-120, -60, 60, 120]) for (const dy of [-120, -60, 60, 120]) {
+    spots.push([Math.round(st.player.x + dx), Math.round(st.player.y + dy)])
+  }
+  for (let x = 40; x < ww - 40; x += 80) for (let y = 40; y < wh - 40; y += 80) spots.push([x, y])
   const ok = (x, y) => {
+    if (x < 20 || y < 20 || x > ww - 20 || y > wh - 20) return false
     const fromFoes = st.foes.every((o) => Math.hypot(o.x - x, o.y - y) > R_FOE + 12)
     const fromWares = st.wares.every((o) => Math.hypot(o.x - x, o.y - y) > R_WARE + 12)
     const fromPots = st.pots.every((o) => Math.hypot(o.x - x, o.y - y) > R_POT + 12)
@@ -125,9 +169,7 @@ function freeSpot(st, wantX, wantY) {
   for (const [x, y] of spots) if (ok(x, y)) return { x, y }
   // Запасные места — сеткой, а не девятью точками: девять точек хватало не
   // всегда, и тест молчал на центре (210, 320), где может стоять что угодно.
-  for (let x = 40; x < 380; x += 40) {
-    for (let y = 40; y < 580; y += 40) if (ok(x, y)) return { x, y }
-  }
+
   throw new Error(
     `в комнате не осталось места, куда можно ткнуть пальцем, не задев ни ока, `
     + `ни просящего, ни горшок. оков: ${st.foes.length}, просящих: ${st.wares.length}`,
@@ -233,8 +275,15 @@ describe('телефон: палец ведёт', () => {
 
   it('второй палец не уводит садхаку: ведёт тот, кто коснулся первым', () => {
     const s = enterField()
-    const first = freeSpot(s, 24, 24)
-    const second = freeSpot(s, 396, 616)
+    // Две точки — ПО РАЗНЫЕ СТОРОНЫ от садхаки и не ближе 200 друг к другу.
+    //
+    // Прежде брались две произвольные свободные точки. При арене 412×600 это
+    // случайно срабатывало: вторая почти всегда оказывалась по другую сторону
+    // игрока. При 780×1120 обе точки оказались вверху-слева от садхаки, и
+    // проверка «второй палец не перехватил» стала проверкой геометрии теста,
+    // а не игры: игрок шёл к первому пальцу и заодно закономерно приближался
+    // ко второму.
+    const [first, second] = twoFreeSpots(s)
     expect(second, 'второе место должно отличаться от первого').not.toEqual(first)
     const p1 = finger(first.x, first.y)
     const p2 = finger(second.x, second.y)

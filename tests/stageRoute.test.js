@@ -5,11 +5,11 @@
 
 import { describe, it, expect } from 'vitest'
 import { nextStage, ROOMS_PER_STAGE } from '@webapp/js/core/stageRoute.js'
-import { buildFieldFloor } from '@webapp/js/core/fieldBuild.js'
+import { buildFieldFloor, DEFAULT_FIELD_SIZE } from '@webapp/js/core/fieldBuild.js'
 import { readFileSync } from 'node:fs'
 
 const main = readFileSync(new URL('../webapp/js/main.js', import.meta.url), 'utf8')
-const F = { w: 412, h: 600 }
+const F = { ...DEFAULT_FIELD_SIZE }
 
 describe('Маршрут этапа', () => {
   it('этап — это несколько комнат, потом владыка', () => {

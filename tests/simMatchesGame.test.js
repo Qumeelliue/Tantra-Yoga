@@ -18,7 +18,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
-import { calmMulFor, buildFieldFloor } from '@webapp/js/core/fieldBuild.js'
+import { calmMulFor, buildFieldFloor, DEFAULT_FIELD_SIZE } from '@webapp/js/core/fieldBuild.js'
 import { DEFAULT_FIELD_OPTIONS } from '@webapp/js/core/field.js'
 
 const read = (p) => readFileSync(new URL('../' + p, import.meta.url), 'utf8')
@@ -97,8 +97,8 @@ describe('Сцена собирается одинаково в игре и в �
     // Доказательство, а не обещание: собираем комнату 1-й и 7-й чакры и
     // смотрим `calmMax`. Если бы роста не было, все разговоры о сложности
     // последних чакр были бы выдумкой.
-    const first = buildFieldFloor(0, { field: { w: 412, h: 600 }, room: 0 })
-    const last = buildFieldFloor(6, { field: { w: 412, h: 600 }, room: 0 })
+    const first = buildFieldFloor(0, { field: { ...DEFAULT_FIELD_SIZE }, room: 0 })
+    const last = buildFieldFloor(6, { field: { ...DEFAULT_FIELD_SIZE }, room: 0 })
     const avg = (b) => b.foes.reduce((a, f) => a + (f.calmMax || 0), 0) / (b.foes.length || 1)
     expect(avg(last), 'на 7-й чакре оки требуют не больше спокойствия, чем на 1-й')
       .toBeGreaterThan(avg(first))

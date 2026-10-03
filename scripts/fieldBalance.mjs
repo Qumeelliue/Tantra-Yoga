@@ -13,7 +13,7 @@ import { pathToFileURL } from 'node:url'
 import {
   createField, stepField, parry, castMantra, parryHint, checkOutcome, serveWare, strike, smashPot, FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS,
 } from '../webapp/js/core/field.js'
-import { buildFieldFloor, stageHasBoss, setLordCalmMul } from '../webapp/js/core/fieldBuild.js'
+import { buildFieldFloor, stageHasBoss, setLordCalmMul, DEFAULT_FIELD_SIZE } from '../webapp/js/core/fieldBuild.js'
 import { applyVarna } from '../webapp/js/core/varnaKits.js'
 import { MENTALITIES, ENEMIES, MENTALITY_LEVELS } from '../webapp/js/core/data.js'
 import { floorVarnaFood } from '../webapp/js/core/mentalityFood.js'
@@ -164,6 +164,34 @@ const SAMLOG = { starts: 0, ends: 0, seconds: 0, oddTime: false }
 // Реликвии забега и счётчик выдачи. `--relics=off` — бот их не берёт: без этого
 // нельзя сказать, что даёт сама механика, а не то, что бот идёт до конца.
 const RELIC_MODE = (process.argv.slice(3).find((a) => a.startsWith('--relics=')) || '').split('=')[1] || 'take'
+// `--arena=WxH` — размер арены Поля Ума.
+//
+// Нужен потому, что размер арены меняет не картинку, а сложность: чем больше
+// комната, тем дольше ока идёт к садхаке и тем дольше садхака под уроном. При
+// 412x600 (комната целиком в экране) было 77 % побед, при 780x1120 — 57 % на тех
+// же 240 забегах. Разница в 20 пунктов, и она не шум: те же забеги, те же
+// решения, больше расстояние.
+//
+// Подбирать размер правкой кода нельзя — это ровно тот случай, когда меняешь
+// код и сразу меряешь, и не можешь сравнить два варианта на одних и тех же
+// забегах. Флаг даёт оба числа рядом.
+const ARENA = (() => {
+  const raw = process.argv.slice(3).find((a) => a.startsWith('--arena='))
+  if (!raw) return { ...DEFAULT_FIELD_SIZE }
+  const m = /^(\d+)x(\d+)$/.exec(raw.split('=')[1] || '')
+  if (!m) { console.error('--arena ждёт ВxЧ, например --arena=620x900'); process.exit(1) }
+  return { w: Number(m[1]), h: Number(m[2]) }
+})()
+// `--walk=X` — во сколько раз быстрее идёт садхака.
+//
+// Арена стала больше экрана (камера вместо вида на всю комнату), и это не только
+// картинка: садхаке теперь надо больше идти, а он всё это время под уроном. Замерено
+// на 240 забегах: арена 412x600 — 77 % побед, 780x1120 — 57 %.
+//
+// Этот флаг нужен, чтобы честно разделить две правки: увеличение места (то, что
+// автор просил) и увеличение скорости (то, чем за это платим). Обе можно было бы
+// вносить правкой кода, но тогда нельзя сравнить их на одних и тех же забегах.
+const WALK_MUL = Number((process.argv.slice(3).find((a) => a.startsWith('--walk=')) || '').split('=')[1] || 1)
 const RELICLOG = { taken: 0, byRarity: {} }
 // Лавка: сколько реликвий предложено и сколько куплено на монеты.
 // `--shop=off` — бот не покупает: это измерение амбросии БЕЗ траты, то есть
@@ -386,7 +414,7 @@ const VARNA_POOL = VARNA_FIX && VARNAS.includes(VARNA_FIX) ? [VARNA_FIX] : VARNA
 
 /** Опции боя для забега — ровно как собирает настоящая игра. */
 function optsFor(floor, rng, varna, keepsake, boons, extra = []) {
-  const built = buildFieldFloor(floor, { field: { w: 412, h: 600 } })
+  const built = buildFieldFloor(floor, { field: { ...ARENA } })
   // Уровень варны — ЧАСТЬ боя, а не украшение экрана выбора. Раньше здесь стояло
   // ровно `playerHp: 60`: ни уровня ментальности, ни её бонуса к жизни. То
   // есть замер мерил бой, в котором игрок с прокачанной варной НИКОГДА не
@@ -772,7 +800,7 @@ function playRun(rng, extraBoons = null, relicRng = null) {
       // игре (`app.runLordFloor` помнит, для какой чакры выбор сделан).
       if (stage === 'room' && room === 0) lord = pickLord(floor, rng)
       const built = buildFieldFloor(floor, {
-        field: { w: 412, h: 600 }, room,
+        field: { ...ARENA }, room,
         // Владыка: кто сидит на троне. Без этой строки замер считал бы бой с
         // владыкой по умолчанию — то есть измерял бы игру, которой уже нет.
         lordId: lord,
@@ -803,6 +831,9 @@ function playRun(rng, extraBoons = null, relicRng = null) {
       if (SHIELD_OFF) opts.shieldMax = 0
       else if (Number.isFinite(SHIELD_CAP) && SHIELD_CAP > 0) opts.shieldMax = SHIELD_CAP
       if (eventShield) opts.roomStartShield = (opts.roomStartShield || 0) + eventShield
+      if (WALK_MUL !== 1) opts.walkSpeed = (opts.walkSpeed || DEFAULT_FIELD_OPTIONS.walkSpeed) * WALK_MUL
+      // `--close=X` — во сколько ока торопится издалека. Прямая проверка рычага,
+      // которым чинится падение проходимости от большой арены.
       optsNow = opts
       // Жар — ПОСЛЕ опций, ровно как в `startFieldRun`. Иначе замер мерил бы
       // не то, что игра: усиление из мастерской перекрыло бы условие жара,

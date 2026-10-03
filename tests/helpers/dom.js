@@ -483,11 +483,24 @@ export function installDom() {
    * арифметика, чтобы тест мог сказать «палец на окове», а не «палец в
    * пикселе 137, 402».
    */
-  installed.worldPoint = (el, wx, wy, worldW = 420, worldH = 640) => {
+  /**
+   * Точка мира → точка экрана.
+   *
+   * Учитывает камеру: арена больше экрана, и координата мира — это координата
+   * плюс смещение камеры. Без этого проверка телефона тапала «в ока» туда, где
+   * оки нет, и падала — причём падала не по своей логике, а потому что
+   * преобразование у неё было другое, чем у игры.
+   */
+  installed.worldPoint = (el, wx, wy) => {
     const r = el.getBoundingClientRect()
+    const viewW = 420
+    const viewH = 640
+    const cam = globalThis.window?.__field?.cam || { x: 0, y: 0 }
+    const sx = wx - cam.x
+    const sy = wy - cam.y
     return {
-      x: r.left + (wx / worldW) * r.width,
-      y: r.top + (wy / worldH) * r.height,
+      x: r.left + (sx / viewW) * r.width,
+      y: r.top + (sy / viewH) * r.height,
     }
   }
 

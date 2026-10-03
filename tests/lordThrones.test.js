@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs'
 import {
   rollLords, lordPool, lordFor, stageHasLord, allLordIds, lordName, lordChakra, LORD_CHOICES,
 } from '@webapp/js/core/lords.js'
-import { buildFieldFloor, stageHasBoss } from '@webapp/js/core/fieldBuild.js'
+import { buildFieldFloor, stageHasBoss, DEFAULT_FIELD_SIZE } from '@webapp/js/core/fieldBuild.js'
 import { rollDoors, hasCombatDoor } from '@webapp/js/core/doors.js'
 import { ENEMIES, QUOTES, WORLDS, CITY_TEACHERS, worldForFloor } from '@webapp/js/core/data.js'
 import { LORD_QUOTES, lordChain, nextLordQuote, reachableQuoteIds, brokenTeaching } from '@webapp/js/core/teaching.js'
@@ -141,7 +141,7 @@ describe('Троны чакры: три кандидата на этап', () =>
 
 describe('Выбор влияет на забег', () => {
   it('в комнату приходит ТОТ владыка, которого назвали', () => {
-    const F = { w: 412, h: 600 }
+    const F = { ...DEFAULT_FIELD_SIZE }
     for (const f of floors) {
       for (const id of lordPool(f)) {
         const built = buildFieldFloor(f, { field: F, room: 3, lordId: id })

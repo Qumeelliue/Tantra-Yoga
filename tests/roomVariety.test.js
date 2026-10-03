@@ -17,7 +17,7 @@
 //      чакры (ранние — рипу, поздние — паши, §9.5).
 
 import { describe, it, expect } from 'vitest'
-import { buildFieldFloor, calmMulFor } from '../webapp/js/core/fieldBuild.js'
+import { buildFieldFloor, calmMulFor, DEFAULT_FIELD_SIZE } from '../webapp/js/core/fieldBuild.js'
 import { ENEMIES } from '../webapp/js/core/data.js'
 
 /** Случай с seed — тот же, что у симулятора. */
@@ -105,7 +105,7 @@ describe('поле: розыгрыш комнат', () => {
   it('к��аждая комната кладётся на поле', () => {
     // Ока за краем поля — её не видно и не достать: «бесплатный» побег.
     const rng = seeded(31337)
-    const field = { w: 412, h: 600 }
+    const field = { ...DEFAULT_FIELD_SIZE }
     for (let f = 0; f < FLOORS; f++) {
       for (let r = 0; r < ROOMS; r++) {
         const b = buildFieldFloor(f, { room: r, rng, field })
