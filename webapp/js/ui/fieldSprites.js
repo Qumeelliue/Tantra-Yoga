@@ -210,7 +210,7 @@ export function drawFieldSprite(ctx, charId, anim, t = 0, opt = {}) {
   const img = IMAGES.get(def.sheet)
   if (!img) return false
   const a = ANIMS[anim] || ANIMS.idle
-  const cell = 32
+  const cell = ANIM_CELL
   const idx = opt.frame != null
     ? opt.frame
     : Math.min(a.frames.length - 1, Math.floor(t * a.fps))
@@ -258,3 +258,89 @@ export function loadedSheetCount() {
 }
 
 export const SPRITE_SHEET_COUNT = new Set(Object.values(CHARACTERS).map((c) => c.sheet)).size
+
+// ── ПОЛ ИЗ ТАЙЛСЕТА ────────────────────────────────────────────────────────
+//
+// Тот же CC-BY 3.0 набор Calciumtrice, что и персонажи. Пол собирается один раз
+// в отдельный холст на весь арену и выводится одним `drawImage` за кадр.
+//
+// Почему не «найти в тайлсете пол и кидать на лету»: таких плиток на кадр
+// выходит около тысячи, и на телефоне это заметно. Один блит вместо тысячи
+// вызовов — разница в цене, а не в виде.
+//
+// Почему плитки отобраны измером, а не на глаз: `scripts/pngReader.mjs` печатает
+// по каждой плитке средний тон, разброс и разницу верха с низом. «Земля под
+// ногами» — это средний тон, малый разброс и отсутствие резкой горизонтальной
+// границы; стена — наоборот, с резкой границей. Отбор дал 14 плиток, и они
+// легли кластером в рядах 1–2 и 6 — то есть это действительно пол, а не
+// случайные куски.
+//
+// Семантического попадания здесь не требуется: для пола годится любой
+// средний по тону тайл подземелья. Ошибка в выборе видна не как «не то
+// изображение», а как «пол другого оттенка».
+export const FLOOR_TILES = [
+  [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [2, 3], [2, 4], [6, 9], [6, 10], [6, 11],
+]
+
+/**
+ * Плитка пола — 16×16, а кадр персонажа — 32×32.
+ *
+ * Это два разных размера в одном наборе, и путать их нельзя: автор пишет в
+ * своей инструкции «16x16 tiles and a wall height of 32 pixels». Первая версия
+ * здесь взяла 32 и молча брала кусок 2×2 плитки вместо одной — то есть на пол
+ * выходила бы четверть тайлсета, и заметить это можно было бы только глазами.
+ * Поэтому имена разные: FLOOR_CELL — плитка пола, ANIM_CELL — кадр фигуры.
+ */
+export const FLOOR_CELL = 16
+export const ANIM_CELL = 32
+
+let tileImage = null
+let floorCanvas = null
+
+/** Загрузить тайлсет. Тот же идемпотентный порядок, что у остальных листов. */
+export function loadFieldTileset() {
+  if (tileImage) return Promise.resolve(true)
+  if (typeof Image === 'undefined' || typeof document === 'undefined') {
+    return Promise.resolve(false)
+  }
+  return new Promise((done) => {
+    const img = new Image()
+    img.onload = () => { tileImage = img; done(true) }
+    img.onerror = () => done(false)
+    img.src = `${BASE}/dungeon.png`
+  })
+}
+
+/**
+ * Собрать пол арены один раз.
+ *
+ * @returns {HTMLCanvasElement|null} — null, если тайлсет не приехал. Тогда
+ *   отрисовка падает назад на процедурный фон, и это не поломка.
+ */
+export function buildFloorCanvas(worldW, worldH) {
+  if (!tileImage) return null
+  if (floorCanvas && floorCanvas.width === worldW && floorCanvas.height === worldH) return floorCanvas
+  const c = document.createElement('canvas')
+  c.width = Math.max(1, Math.round(worldW))
+  c.height = Math.max(1, Math.round(worldH))
+  const g = c.getContext('2d')
+  if (!g) return null
+  g.imageSmoothingEnabled = false
+  // Выбор плитки — по позиции, а не случайно: иначе пол «дышал» бы при каждом
+  // кадре, и это видно глазом как рябь.
+  for (let ty = 0; ty < Math.ceil(worldH / FLOOR_CELL); ty++) {
+    for (let tx = 0; tx < Math.ceil(worldW / FLOOR_CELL); tx++) {
+      const h = (tx * 73856093) ^ (ty * 19349663)
+      const [tr, tc] = FLOOR_TILES[Math.abs(h) % FLOOR_TILES.length]
+      g.drawImage(tileImage, tc * FLOOR_CELL, tr * FLOOR_CELL, FLOOR_CELL, FLOOR_CELL,
+        tx * FLOOR_CELL, ty * FLOOR_CELL, FLOOR_CELL, FLOOR_CELL)
+    }
+  }
+  floorCanvas = c
+  return c
+}
+
+/** Готов ли пол. Проверяется тестом: пол не должен молчать. */
+export function floorReady() {
+  return !!floorCanvas
+}

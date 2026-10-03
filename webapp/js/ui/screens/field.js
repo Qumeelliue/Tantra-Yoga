@@ -8,6 +8,7 @@ import { sfx, fieldSfx, startDrone, stopDrone } from '../fx.js'
 import { drawFoeArt, drawSadhakaArt, drawWareArt, drawFlowerArt, drawPotArt, ART } from '../fieldArt.js'
 import {
   loadFieldSprites, spritesReady, drawFieldSprite, drawFieldShadow, FOE_SPRITE,
+  loadFieldTileset, buildFloorCanvas, floorReady,
 } from '../fieldSprites.js'
 import { haptics } from '../haptics.js'
 import { QUOTES } from '../../core/data.js'
@@ -69,6 +70,9 @@ export function fieldScreen(state, opts = {}) {
   const WORLD_W = (st.field && st.field.w) || W
   const WORLD_H = (st.field && st.field.h) || H
   const cam = { x: 0, y: 0 }
+  // Пол собирается один раз и живёт здесь, а не внутри функции рисования:
+  // иначе он пересобирался бы каждый кадр.
+  let floorCanvasNow = null
 
   /**
    * Камера за садхакой — но на центр боя, а не только на игрока.
@@ -109,6 +113,10 @@ export function fieldScreen(state, opts = {}) {
   // `assets/field/CREDITS.md`). Пока не приехали, рисуются векторы, поэтому
   // загрузка ничего не блокирует и игра никогда не остаётся пустой.
   loadFieldSprites()
+  // Пол из того же тайлсета CC-BY 3.0. Собирается один раз на всю арену и
+  // выводится одним drawImage за кадр: плиток на кадр выходит около тысячи, и
+  // на телефоне это дорого. Пока тайлсет едет — рисуется процедурный фон.
+  loadFieldTileset().then((ok) => { if (ok) floorCanvasNow = buildFloorCanvas(WORLD_W, WORLD_H) })
 
   // ── DOM-оверлеи ──
   const gunas = h('div', { class: 'field-guna' },
@@ -987,6 +995,13 @@ export function fieldScreen(state, opts = {}) {
     g0.addColorStop(1, rgb(mixc(L.sky, [0, 0, 0], 0.55)))
     ctx.fillStyle = g0
     ctx.fillRect(0, 0, WORLD_W, WORLD_H)
+
+    // Пол из тайлсета — поверх фоновой заливки, до света и стен.
+    //
+    // Порядок важен: градиент ложится ПЕРВЫМ, иначе он закрыл бы пол, а пол
+    // первым — иначе он закрыл бы градиент. Темнота по краям (вигнетка) идёт
+    // поверх обоих, и это то, что делает комнату углублённой.
+    if (floorCanvasNow) ctx.drawImage(floorCanvasNow, 0, 0)
 
     // пыль света
     ctx.save()

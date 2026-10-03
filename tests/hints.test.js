@@ -19,6 +19,7 @@
 // быть предмет, на котором она висит в момент чтения.
 
 import { describe, it, expect } from 'vitest'
+import { describeSlow } from './helpers/slow.js'
 import { readFileSync } from 'node:fs'
 import { HINTS, pickHint, markHint, hintAllowed, availableHints } from '@webapp/js/core/hints.js'
 import { DEFAULT_FIELD_OPTIONS } from '@webapp/js/core/field.js'
@@ -219,7 +220,7 @@ describe('Подсказка связана с профилем, а не с за
   })
 })
 
-describe('Подсказка в настоящем бою, а не только в unit-тесте', () => {
+describeSlow('Подсказка в настоящем бою, а не только в unit-тесте', () => {
   it('появляется, когда ока замахнулась, и гаснет', async () => {
     const { installDom, textOf, clickables, chooseLordIfShown } = await import('./helpers/dom.js')
     const dom = installDom()

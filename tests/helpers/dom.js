@@ -18,6 +18,11 @@
 // ещё, стенд скажет об этом точно, а не упадёт молча.
 
 // ── элемент ────────────────────────────────────────────────────────────
+import { existsSync } from 'node:fs'
+import { join, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { readPng } from '../../scripts/pngReader.mjs'
+
 let nodeId = 0
 
 class StubNode {
@@ -208,18 +213,184 @@ const CTX_METHODS = [
   'setLineDash',
 ]
 
-function makeCtx() {
+function makeCtx(canvas) {
   const ctx = {
-    canvas: null,
+    canvas: canvas || null,
     fillStyle: '#000', strokeStyle: '#000', lineWidth: 1, lineCap: 'butt',
     font: '10px sans-serif', textAlign: 'start', textBaseline: 'alphabetic',
     globalAlpha: 1, shadowBlur: 0, shadowColor: 'transparent',
+    imageSmoothingEnabled: true,
     measureText: (t) => ({ width: String(t).length * 6 }),
   }
   for (const m of CTX_METHODS) ctx[m] = () => {}
   ctx.createLinearGradient = () => ({ addColorStop() {} })
   ctx.createRadialGradient = () => ({ addColorStop() {} })
+
+  // ── Пиксели ──
+  //
+  // Раньше здесь был `() => {}` на всё, включая drawImage. То есть холст в
+  // проверках принимал любую картинку и хранил ничего: «нарисован ли спрайт»
+  // нельзя было проверить в принципе — а это ровно тот вопрос, ради которого
+  // существует правило «проверять собранный экран, а не исходник».
+  //
+  // Теперь холст держит буфер и умеет в него копировать. Растеризация честная
+  // только для `drawImage` с прямоугольным источником — этого хватает, потому
+  // что вся лицензионная графика приходит именно так (лист → кадр). Всё
+  // остальное (дуги, текст, заливки) по-прежнему ничего не пишет: имитация
+  // растеризатора была бы вернее отказу, потому что выглядела бы настоящей.
+  const buf = canvas && canvas.__px ? canvas.__px : null
+  const ensure = (w, h) => {
+    if (!canvas) return null
+    if (!canvas.__px || canvas.__px.width !== w || canvas.__px.height !== h) {
+      canvas.__px = { width: w, height: h, data: new Uint8ClampedArray(w * h * 4) }
+    }
+    return canvas.__px
+  }
+  if (canvas) ensure(canvas.width || 300, canvas.height || 150)
+
+  ctx.clearRect = (x, y, w, h) => {
+    const px = ensure(canvas.width || 300, canvas.height || 150)
+    if (!px) return
+    for (let yy = Math.max(0, y | 0); yy < Math.min(px.height, (y + h) | 0); yy++) {
+      for (let xx = Math.max(0, x | 0); xx < Math.min(px.width, (x + w) | 0); xx++) {
+        const i = (yy * px.width + xx) * 4
+        px.data[i] = px.data[i + 1] = px.data[i + 2] = px.data[i + 3] = 0
+      }
+    }
+  }
+
+  // Только форма (img, sx, sy, sw, sh, dx, dy, dw, dh) и (img, dx, dy).
+  ctx.drawImage = (img, ...a) => {
+    const px = canvas && ensure(canvas.width || 300, canvas.height || 150)
+    if (!px || !img || !img.__img) return
+    const src = img.__img
+    let sx = 0; let sy = 0; let sw = src.w; let sh = src.h
+    let dx; let dy; let dw; let dh
+    if (a.length >= 8) { [sx, sy, sw, sh, dx, dy, dw, dh] = a }
+    else if (a.length >= 4) { [dx, dy, dw, dh] = a; sw = img.width || src.w; sh = img.height || src.h }
+    else if (a.length >= 2) { [dx, dy] = a; dw = img.width || src.w; dh = img.height || src.h }
+    else return
+    const sx0 = Math.max(0, sx | 0); const sy0 = Math.max(0, sy | 0)
+    const sw0 = Math.max(1, Math.min(sw | 0, src.w - sx0))
+    const sh0 = Math.max(1, Math.min(sh | 0, src.h - sy0))
+    const dx0 = dx | 0; const dy0 = dy | 0
+    const dw0 = Math.max(1, dw | 0); const dh0 = Math.max(1, dh | 0)
+    for (let y = 0; y < dh0; y++) {
+      const ty = dy0 + y
+      if (ty < 0 || ty >= px.height) continue
+      // Ближний сосед: масштабирование пиксельной графики не должно мылить.
+      const uy = Math.min(sh0 - 1, Math.floor((y * sh0) / dh0))
+      for (let x = 0; x < dw0; x++) {
+        const tx = dx0 + x
+        if (tx < 0 || tx >= px.width) continue
+        const ux = Math.min(sw0 - 1, Math.floor((x * sw0) / dw0))
+        const si = ((sy0 + uy) * src.w + (sx0 + ux)) * 4
+        const di = (ty * px.width + tx) * 4
+        px.data[di] = src.data[si]
+        px.data[di + 1] = src.data[si + 1]
+        px.data[di + 2] = src.data[si + 2]
+        px.data[di + 3] = src.data[si + 3]
+      }
+    }
+  }
+
+  ctx.getImageData = (x, y, w, h) => {
+    const px = ensure(canvas.width || 300, canvas.height || 150)
+    const out = new Uint8ClampedArray(w * h * 4)
+    for (let yy = 0; yy < h; yy++) {
+      for (let xx = 0; xx < w; xx++) {
+        const tx = (x | 0) + xx
+        const ty = (y | 0) + yy
+        const di = (yy * w + xx) * 4
+        if (tx < 0 || ty < 0 || tx >= px.width || ty >= px.height) continue
+        const si = (ty * px.width + tx) * 4
+        out[di] = px.data[si]
+        out[di + 1] = px.data[si + 1]
+        out[di + 2] = px.data[si + 2]
+        out[di + 3] = px.data[si + 3]
+      }
+    }
+    return { data: out, width: w, height: h }
+  }
+  ctx.putImageData = (imgData, x, y) => {
+    const px = ensure(canvas.width || 300, canvas.height || 150)
+    if (!px || !imgData) return
+    for (let yy = 0; yy < imgData.height; yy++) {
+      const ty = (y | 0) + yy
+      if (ty < 0 || ty >= px.height) continue
+      for (let xx = 0; xx < imgData.width; xx++) {
+        const tx = (x | 0) + xx
+        if (tx < 0 || tx >= px.width) continue
+        const si = (yy * imgData.width + xx) * 4
+        const di = (ty * px.width + tx) * 4
+        px.data[di] = imgData.data[si]
+        px.data[di + 1] = imgData.data[si + 1]
+        px.data[di + 2] = imgData.data[si + 2]
+        px.data[di + 3] = imgData.data[si + 3]
+      }
+    }
+  }
+
+  /** Сколько непрозрачных пикселей в прямоугольнике — удобно для проверок. */
+  ctx.__opaqueIn = (x, y, w, h) => {
+    const d = ctx.getImageData(x, y, w, h)
+    let n = 0
+    for (let i = 3; i < d.data.length; i += 4) if (d.data[i] > 0) n++
+    return n
+  }
+
   return ctx
+}
+
+// ── Image ───────────────────────────────────────────────────────────────
+//
+// Стенду не было `Image` вообще, поэтому лицензионные спрайты не могли
+// загрузиться ни в игре, ни в проверке: слой молча уходил на векторный
+// запасной путь, и проверка «спрайт нарисован» была недостижима.
+//
+// Здесь `Image` читает файл из `webapp/public` тем же распаковщиком PNG, что и
+// `scripts/pngReader.mjs`. Путь относительный — как в браузере: игра просит
+// `assets/field/warrior.png`.
+const PUBLIC_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'webapp', 'public')
+
+function makeImageClass() {
+  return class StubImage {
+    constructor() {
+      this.onload = null
+      this.onerror = null
+      this.complete = false
+      this.naturalWidth = 0
+      this.naturalHeight = 0
+      this.width = 0
+      this.height = 0
+      this.__img = null
+    }
+    set src(v) {
+      this.__src = v
+      // Загрузка в браузере асинхронна, и игра на это рассчитывает. Здесь —
+      // тоже: иначе проверка проходила бы по коду, который в браузере ведёт
+      // себя иначе.
+      queueMicrotask(() => {
+        try {
+          const rel = String(v).replace(/^\/+/, '')
+          const file = join(PUBLIC_DIR, rel)
+          if (!existsSync(file)) throw new Error(`нет файла ${rel}`)
+          const img = readPng(file)
+          this.__img = img
+          this.naturalWidth = img.w
+          this.naturalHeight = img.h
+          this.width = img.w
+          this.height = img.h
+          this.complete = true
+          this.onload?.()
+        } catch (e) {
+          this.complete = true
+          this.onerror?.(e)
+        }
+      })
+    }
+    get src() { return this.__src }
+  }
 }
 
 // ── установка ──────────────────────────────────────────────────────────
@@ -267,7 +438,9 @@ export function installDom() {
     if (tag === 'canvas') {
       el.width = 300
       el.height = 150
-      el.getContext = () => makeCtx()
+      // Контекст один и тот же, как в браузере: иначе пиксельный буфер
+      // терялся бы между вызовами и «нарисован ли спрайт» нельзя было бы проверить.
+      el.getContext = () => (el.__ctx || (el.__ctx = makeCtx(el)))
     }
     el.setAttribute = StubNode.prototype.setAttribute.bind(el)
     el.addEventListener = StubNode.prototype.addEventListener.bind(el)
@@ -523,6 +696,7 @@ export function installDom() {
   installed.profileNow = () => ({ ...profile })
 
   globalThis.document = document
+  globalThis.Image = makeImageClass()
   globalThis.window = win
   globalThis.addEventListener = win.addEventListener
   globalThis.removeEventListener = win.removeEventListener
