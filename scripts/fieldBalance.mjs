@@ -168,7 +168,17 @@ const RELICLOG = { taken: 0, byRarity: {} }
 // Лавка: сколько реликвий предложено и сколько куплено на монеты.
 // `--shop=off` — бот не покупает: это измерение амбросии БЕЗ траты, то есть
 // чистый эффект сокровищ в углу.
+// `--relics=off` обязан выключать реликвии ВСЕ, а не только владычные.
+//
+// Найдено проверкой флага: лавка брала свой поток отдельно от `RELIC_MODE`, и
+// при `--relics=off` за забег всё равно выпадало около пяти реликвий — из лавки.
+// То есть все замеры «без реликвий» на самом деле были «без владычных, но с
+// лавкой», и число 63 % против 77 % означало не то, о чём думали.
+//
+// Флаг, который выключает не то, названо неверно. Теперь `off` выключает и
+// лавку: иначе «без реликвий» вообще нельзя измерить.
 const SHOP_RELICS = process.argv.slice(3).find((a) => a.startsWith('--shop='))?.split('=')[1] !== 'off'
+  && RELIC_MODE !== 'off'
 const SHOPLOG = { offers: 0, bought: 0, spent: 0 }
 
 // ПЛОТНОСТЬ РЕШЕНИЙ и РАЗНООБРАЗИЕ СБОРОК.
@@ -273,6 +283,14 @@ setLordCalmMul(LORD_MUL)
 // целиком и проходимость почти не изменится — значит щит держит игру, а главный
 // глагол (дефлект) не нужен. Это проверка не на «щит полезен», а на то, держит ли
 // он игру вместо дефлекта.
+const EVENT_CAREFUL = process.argv.slice(3).includes('--event=careful')
+// `--shield-per-room=N` — столько щита на входе в КАЖДУЮ комнату.
+//
+// Нужен для изоляции механизма. Замерено противоречие: отрок «Омыться» даёт
+// +20 жизни и щит 20, и это чистая выгода — а проходимость падает на 14 пунктов.
+// Чистая выгода не может вредить, значит вредит щит на входе. Что именно —
+// выясняется этим флагом, а не догадкой.
+const SHIELD_ROOM = Number((process.argv.slice(3).find((a) => a.startsWith('--shield-per-room=')) || '').split('=')[1] || '')
 const SHIELD_OFF = process.argv.slice(3).includes('--shield=off')
 // `--parry=off` — бот не парирует ВООБЩЕ.
 //
@@ -781,6 +799,7 @@ function playRun(rng, extraBoons = null, relicRng = null) {
       const opts = applyFieldRelics(optsFor(floor, rng, varna, keepsake, boons, EXTRA), relics)
       // Щит, обещанный служением, живёт до конца забега и встаёт в каждой
       // следующей комнате — ровно как `mod_combat_start_block` у реликвии.
+      if (Number.isFinite(SHIELD_ROOM) && SHIELD_ROOM > 0) opts.roomStartShield = (opts.roomStartShield || 0) + SHIELD_ROOM
       if (SHIELD_OFF) opts.shieldMax = 0
       else if (Number.isFinite(SHIELD_CAP) && SHIELD_CAP > 0) opts.shieldMax = SHIELD_CAP
       if (eventShield) opts.roomStartShield = (opts.roomStartShield || 0) + eventShield
@@ -900,9 +919,19 @@ function playRun(rng, extraBoons = null, relicRng = null) {
             // Если бы замер просто пропустил дверь, событие было бы написано и
             // не измерено (МЕХАНИКА 43).
             if (calm.kind === 'event') {
+              // Розыгрыш ВСЕГДА, даже при принудительном событии.
+              //
+              // Третий случай одного и того же класса за сессию (первый — розыгрыш
+              // владыки, второй — «Вершина Света» на троне вместо финала). Когда
+              // событие принудительное и `rollFieldEvent` не вызывается, поток
+              // случайных чисел сдвигается, и сравнение «с этим событием против
+              // без» меряет два РАЗНЫХ забега. Замерено: принудительные прогоны
+              // давали «+20 жизни и щит = минус 8 пунктов», что невозможно для
+              // чистой выгоды.
+              const drawnEvent = rollFieldEvent({ rng, seen: eventSeen })
               const ev = EVENT_FORCE
-                ? (FIELD_EVENTS.find((e) => e.id === EVENT_FORCE) || rollFieldEvent({ rng, seen: eventSeen }))
-                : rollFieldEvent({ rng, seen: eventSeen })
+                ? (FIELD_EVENTS.find((e) => e.id === EVENT_FORCE) || drawnEvent)
+                : drawnEvent
               eventSeen.push(ev.id)
               const forcedChoice = EVENT_PICK ? ev.choices.find((c) => c.id === EVENT_PICK) : null
               if (EVENT_PICK && !forcedChoice) {
@@ -911,7 +940,23 @@ function playRun(rng, extraBoons = null, relicRng = null) {
                   + `Доступные отроки: ${ev.choices.map((c) => c.id).join(', ')}. `
                   + `Лучше прерваться, чем сравнивать разные прогоны.`)
               }
-              const choice = forcedChoice || ev.choices[0]
+              // ОСТОРОЖНЫЙ ИГРОК (`--event=careful`): берёт отрок только если
+              // плата не съедает больше половины жизни. Нужен для честного ответа
+              // на вопрос «стоит ли служение», потому что бот по умолчанию берёт
+              // первый отрок ВСЕГДА — даже с 20 % жизни. Это не игрок, это
+              // максимально жадная политика, и единственный способ узнать вторую
+              // границу — задать её явно.
+              const risky = ev.choices.find((c) => previewEffects(c.effects).heal < 0)
+              let choice = forcedChoice || ev.choices[0]
+              if (!forcedChoice && EVENT_CAREFUL && risky) {
+                const full = (optsNow.playerHp || 60) + maxHpBonus
+                const have = runHp == null ? full : runHp
+                const cost = -previewEffects(risky.effects).heal
+                if (have - cost < full * 0.5) {
+                  choice = ev.choices.find((c) => !c.effects.some((x) => x.kind === 'chaos')
+                    && previewEffects(c.effects).heal >= 0) || ev.choices[ev.choices.length - 1]
+                }
+              }
               const p = previewEffects(choice.effects)
               EVENTLOG.seen[ev.id] = (EVENTLOG.seen[ev.id] || 0) + 1
               EVENTLOG.choices[ev.id + '/' + choice.id] = (EVENTLOG.choices[ev.id + '/' + choice.id] || 0) + 1
@@ -1038,9 +1083,18 @@ function afterBoss(floor, boons, rng, fullHp, setHp, addMaxHp, relics, rRng, pur
   // фильтр. `only:ID` — изоляция одной реликвии, единственный способ узнать,
   // какая именно мешает.
   const forced = RELIC_MODE.startsWith('only:') ? RELIC_MODE.slice(5) : null
+  // `|| null` здесь был ловушкой: стоило `|| null`, и после ПЕРВОЙ копии
+  // `find` переставал находить X — а вместе с ним переставал выдаваться ЛЮБОЙ
+  // реликвии. То есть `--relics=only:X` измерял не «одна копия X», а «одна
+  // копия X и ноль остальных»: 59–65 % против 77 % у обычного забега. На этих
+  // цифрах можно было объявить, что шесть реликвий из четырнадцати вредит игроку,
+  // и начать «чинить» контент, который тут ни при чём.
+  //
+  // Правильный смысл флага: X берётся, когда предложен; когда уже взят —
+  // берётся обычный. Иначе сравнивать реликвии между собой нечем.
   const relicPick = RELIC_MODE === 'off'
     ? null
-    : (forced ? relicChoice.find((r) => r.id === forced) || null
+    : (forced ? (relicChoice.find((r) => r.id === forced) || relicChoice[0])
       : RELIC_MODE === 'rare' ? (relicChoice.find((r) => r.rarity === 'rare') || relicChoice[0])
         : relicChoice[0])
   if (relicPick) {

@@ -56,6 +56,9 @@ const onDoors = () => !!dom.root.querySelector('.door-card')
 // Класс отрока — `choice event` (через ПРОБЕЛ). Стенд умеет искать по ОДНОМУ
 // классу, поэтому составной селектор `.choice.event` ищет класс с именем
 // «choice.event» — то есть ничего. Ищем по одному классу и фильтруем по второму.
+/** Есть ли заголовок события на экране. */
+const wholeHas = (t) => text().includes(t)
+
 const eventCards = () => [...dom.root.querySelectorAll('.choice')]
   .filter((n) => /\bevent\b/.test(String(n.className || '')))
 const onEvent = () => eventCards().length > 0
@@ -145,6 +148,35 @@ describe('Служение открывается настоящим экран�
     }
   })
 
+  it('отрок с проклятием на экране начинается с ЦЕНЫ, а не с выгоды', () => {
+    // Страховка на СОБРАННОМ экране. В данных порядок величин задан (проклятие
+    // первым), и подпись печатает эффекты по порядку — механизм один.
+    //
+    // Раньше порядок навязывался ещё и при отрисовке (`effectOrder`). Два
+    // механизма, делающих одно и то же, невозможно проверить по отдельности:
+    // откат одного оставлял второй, и проверка оставалась зелёной. Механизм
+    // оставлен один, а эта проверка ловит его отказ на экране.
+    const ev = FIELD_EVENTS.find((e) => wholeHas(e.title))
+    expect(ev, 'на экране нет ни одного известного события').toBeTruthy()
+    const cursed = ev.choices.filter((c) => c.effects.some((x) => x.kind === 'chaos'))
+    if (!cursed.length) {
+      // Не во всех событиях есть проклятие — это законно. Тогда проверяем, что
+      // событие вообще найдено и отроки на экране (остальное сделано выше).
+      expect(ev.choices.length, 'у события на экране нет отроков').toBeGreaterThanOrEqual(2)
+      return
+    }
+    for (const c of cursed) {
+      const card = [...dom.root.querySelectorAll('.choice')]
+        .find((n) => /event/.test(String(n.className || ''))
+          && helper.textOf(n.querySelector('.c-main')) === c.label)
+      expect(card, `отрок «${c.label}» не нарисован`).toBeTruthy()
+      const sub = helper.textOf(card.querySelector('.c-sub'))
+      expect(/^урон вдвое/.test(sub),
+        `на экране отрок «${c.label}» начинается с выгоды, и цена её заглушает: «${sub}»`)
+        .toBe(true)
+    }
+  })
+
   it('подпись на отроке совпадает с данными этого события — слово в слово', () => {
     // Экран не придумывает подпись: он печатает `effectText`. Проверяем, что
     // на экране написано ровно то, что лежит в данных для ЭТОГО события.
@@ -165,27 +197,39 @@ describe('Служение: обещание исполнилось', () => {
     const cards = eventCards()
     expect(cards.length, 'нет отроков — нечего проверять').toBeGreaterThanOrEqual(2)
 
-    // Ищем отрок, у которого в подписи назван расход жизни или монет: он
-    // проверяем без «согласия бота», потому что бот всегда берёт первый.
-    const costs = /[-−](\d+)\s*(жизни|монет)/
+    // Ищем отрок, у которого в подписи назван расход жизни.
+    //
+    // Первая версия мерила `__field.player.hp` ДО и ПОСЛЕ и была неверна: на
+    // экране дверей живого поля нет (комната уже закрыта), игра пишет живучесть
+    // в `runHp`, а объект `__field` — мёртвый. Проверка читала поле, которое
+    // никто не меняет, и получала «жизни не списалось».
+    //
+    // Теперь мерится то, что игрок увидит: сколько жизни будет в СЛЕДУЮЩЕЙ
+    // комнате. Это и есть исполнение обещания, а не факт записи в переменную.
+    const costs = /[-−](\d+)\s*жизни/
     let checked = 0
     for (const card of cards) {
       const sub = helper.textOf(card.querySelector('.c-sub'))
       const m = costs.exec(sub)
       if (!m) continue
       const n = Number(m[1])
-      const before = globalThis.window.__field?.player?.hp ?? null
-      const purseBefore = readPurse()
       card.dispatch('click')
-      for (let i = 0; i < 8 && !onField() && !onDoors() && onEvent(); i++) dom.flushRaf(1)
-      const after = globalThis.window.__field?.player?.hp ?? null
-      if (before != null && after != null) {
-        expect(before - after, `жизни списалось не ${n}`).toBe(n)
-        checked++
-      } else if (purseBefore != null) {
-        expect(purseBefore - readPurse(), `монет списалось не ${n}`).toBe(n)
-        checked++
+      for (let i = 0; i < 16 && !onField(); i++) {
+        if (byClass(/boon-card/)) break
+        if (byText(/Идти дальше/)) break
+        dom.flushRaf(2)
       }
+      for (let i = 0; i < 20 && !onField(); i++) {
+        if (!byClass(/^btn/) && !byText(/← |дальше/)) break
+        dom.flushRaf(2)
+      }
+      const st = globalThis.window.__field
+      expect(st, `отрок «${m[0]}» не довёл до следующей комнаты — обещание неисполнимо`)
+        .toBeTruthy()
+      const lost = st.player.maxHp - st.player.hp
+      expect(lost, `жизни списалось ${lost}, а обещано ${n}: карточка обещает одно, `
+        + `в комнату игрок входит с другим`).toBe(n)
+      checked++
       break
     }
     expect(checked, 'ни один отрок не называет расход — проверить было нечего')
