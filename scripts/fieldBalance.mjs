@@ -13,7 +13,7 @@ import { pathToFileURL } from 'node:url'
 import {
   createField, stepField, parry, castMantra, parryHint, checkOutcome, serveWare, strike, smashPot, FLOOR_MANTRA, DEFAULT_FIELD_OPTIONS,
 } from '../webapp/js/core/field.js'
-import { buildFieldFloor, stageHasBoss } from '../webapp/js/core/fieldBuild.js'
+import { buildFieldFloor, stageHasBoss, setLordCalmMul } from '../webapp/js/core/fieldBuild.js'
 import { applyVarna } from '../webapp/js/core/varnaKits.js'
 import { MENTALITIES, ENEMIES, MENTALITY_LEVELS } from '../webapp/js/core/data.js'
 import { floorVarnaFood } from '../webapp/js/core/mentalityFood.js'
@@ -242,10 +242,30 @@ const LORDS_ARG = (process.argv.slice(3).find((a) => a.startsWith('--lords=')) |
 let LORD_FIX = LORDS_ARG && LORDS_ARG !== 'all' ? LORDS_ARG : null
 /** Кого бот ставит на трон в этой чакре. */
 function pickLord(floor, rng) {
-  if (LORD_FIX && lordPool(floor).includes(LORD_FIX)) return LORD_FIX
+  // Розыгрыш ВЫЗЫВАЕТСЯ ВСЕГДА, даже когда владыка принудительный.
+  //
+  // Раньше стояло наоборот: `if (LORD_FIX && ...) return LORD_FIX` — то есть при
+  // принудительном троне `rollLords` НЕ вызывался. Розыгрыш владыки ест
+  // случайные числа, и без него весь дальнейший забег сдвигается: комнаты,
+  // двери и оки становятся другими. Сравнение `--lords=A` с `--lords=B` мерило
+  // не «владыку А против владыки Б», а «забег с А против забега с Б» — два
+  // разных забега. Это ровно тот же класс, что был с реликвиями, и лечится так
+  // же: розыгрыш обязан идти всегда, переопределение — после него.
   const drawn = rollLords(floor, rng)
+  if (LORD_FIX && lordPool(floor).includes(LORD_FIX)) return LORD_FIX
   return drawn[0] || lordPool(floor)[0]
 }
+
+// `--lord-mul=X` — во сколько раз крепче владыка. ИЗМЕРИТЕЛЬНЫЙ флаг.
+//
+// Вопрос, который он открывает: трон устроен как кульминация (выбор владыки, имя
+// на двери, трон открывает чакру), а замерено — 2 смерти в комнате владыки из 512
+// дошедших против 19 из 1579 в обычных комнатах. То есть трон втрое безопаснее
+// комнаты. Пока нечем задать его крепость, вопрос решается на глаз; этим флагом
+// он превращается в кривую.
+const LORD_MUL_ARG = (process.argv.slice(3).find((a) => a.startsWith('--lord-mul=')) || '').split('=')[1]
+const LORD_MUL = LORD_MUL_ARG ? Number(LORD_MUL_ARG) : 1
+setLordCalmMul(LORD_MUL)
 
 const SEVA = { got: 0, runs: 0 }
 // `--pots` — бот ломает сокровища (Dead Cells: containers). По умолчанию идёт
@@ -260,6 +280,10 @@ const COINS = { got: 0, runs: 0 }
 let skipNextRoom = false
 /** Сколько забегов дошло до комнаты каждого владыки и сколько умерло в ней. */
 const LORDLOG = {}
+// Смерти по типу комнаты. Без этого «побед 74 %» не говорит, ГДЕ забег
+// кончается: трон может быть бессмертным, а умирать игрок будет в обычной
+// комнате — и тогда кульминация окажется не там, где её построили.
+const DEATHLOG = { total: 0, boss: 0, room: 0 }
 let calmTaken = 0      // небоевые двери, взятые на этом этапе
 const DOORLOG = {}
 const DOORLOG_SKIP = {}
@@ -812,7 +836,12 @@ function playRun(rng, extraBoons = null, relicRng = null) {
         if (!st.player.alive) rec.died++
         else if (!st.foes.some((f) => f.isBoss && !f.pacified && !f.dead)) rec.clears++
       }
-      if (!st.player.alive) { died = true; break }
+      if (!st.player.alive) {
+        died = true
+        DEATHLOG.total++
+        if (stage === 'boss') DEATHLOG.boss++; else DEATHLOG.room++
+        break
+      }
       if (st.foes.some((f) => f.isBoss && !f.pacified && !f.dead)) {
         if (BUILD_HOOK) BUILD_HOOK([...boons, ...relics].sort().join('+'))
         return { win: false, stuck: true, why: `владыка чакры ${floor + 1} не успокоен`, floor, time }
@@ -1058,6 +1087,7 @@ function resetStats() {
   SHOPLOG.offers = 0; SHOPLOG.bought = 0; SHOPLOG.spent = 0
   DEC.doors = 0; DEC.boons = 0; DEC.relics = 0; DEC.shopBuys = 0
   DEC.calmSkips = 0; DEC.runs = 0; DEC.events = 0
+  DEATHLOG.total = 0; DEATHLOG.boss = 0; DEATHLOG.room = 0
   for (const k of Object.keys(EVENTLOG.seen)) delete EVENTLOG.seen[k]
   for (const k of Object.keys(EVENTLOG.choices)) delete EVENTLOG.choices[k]
   BUILDS.clear(); BUILD_KEY = ''
@@ -1190,6 +1220,21 @@ function simulate(quiet = false) {
     console.log('реликвии: бот их не берёт (--relics=off) — это измерение боя без них')
   }
   console.log(`статистика бота: комнат ${STATS.rooms} · снято оков ${STATS.pacified} · мантр ${STATS.mantra} · крипа ${STATS.krpa} · амбросия ${STATS.spring} · попаданий ${STATS.hurt} на ${Math.round(STATS.dmg)} урона · блефов ${STATS.feints}`)
+  // ГДЕ ЗАБЕГ ЗАКАНЧИВАЕТСЯ. Перебор тронов (`--lords=all`) показал: у каждого
+  // из 14 владык «0 смертей из 60–80 дошедших». То есть трон не место, где
+  // забег решается, — а игра строит из него кульминацию (выбор владыки, имя на
+  // двери, трон открывает чакру). Это расхождение надо назвать, а не оставить
+  // в выводе замера невидимым.
+  {
+    const sum = Object.values(LORDLOG).reduce((a, r) => ({
+      reached: a.reached + r.reached, died: a.died + r.died, clears: a.clears + r.clears,
+    }), { reached: 0, died: 0, clears: 0 })
+    const deaths = DEATHLOG.total || 0
+    console.log(`где забег кончается: смертей в комнате владыки ${sum.died} из ${sum.reached} дошедших · в обычных комнатах ${deaths - sum.died} из ${STATS.rooms - sum.reached} дошедших`)
+    if (sum.reached >= 30 && sum.died === 0) {
+      console.log('  ВНИМАНИЕ: владыка за 30+ доходов ни разу не убил. Если так же и у человека — трон не кульминация, а остановка. Это вопрос к числам владык, а не к замеру.')
+    }
+  }
   // ЯСНОСТЬ. Окно в девять секунд, меняющее бой втрое. Печатается всегда: ноль
   // означал бы «состояние есть в коде, но не наступает» — и тогда чинить надо
   // не сообщение, а порог.

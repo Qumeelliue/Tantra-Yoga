@@ -93,6 +93,30 @@ export function calmMulFor(floor) {
 }
 
 /**
+ * Множитель крепости ВЛАДЫКИ — измерительный, а не игровой.
+ *
+ * Зачем он в коде игры, если игра его не читает. Замерено: смертей в комнате
+ * владыки **2 из 512** дошедших, в обычных комнатах **19 из 1579**. То есть трон,
+ * который игра называет кульминацией (выбор владыки, имя на двери, трон открывает
+ * чакру), втрое БЕЗОПАСНЕЕ обычной комнаты.
+ *
+ * Это не жалоба на числа, а недостающий инструмент: пока нечем задать вопрос
+ * «насколько крепким должен быть трон», обсуждать его приходится голословно.
+ * Значение по умолчанию — 1, то есть игра не меняется ни на единицу.
+ *
+ * Источник: `setLordCalmMul()` — его вызывает замер (`--lord-mul`), и больше
+ * никто. Проверка `tests/lordDanger.test.js` требует, чтобы вне замера это
+ * значение оставалось единицей.
+ */
+let LORD_CALM_MUL = 1
+export function setLordCalmMul(v) {
+  const n = Number(v)
+  LORD_CALM_MUL = Number.isFinite(n) && n > 0 ? n : 1
+  return LORD_CALM_MUL
+}
+export function lordCalmMul() { return LORD_CALM_MUL }
+
+/**
  * Есть ли у этапа владыка.
  *
  * Отдельная функция, потому что «есть ли владыка у ЭТАПА» и «есть ли владыка в
@@ -187,7 +211,7 @@ export function buildFieldFloor(
       x: field.w / 2,
       y: field.h * 0.44,
       hp: Math.round(d.maxHp * 0.5),
-      calmMax: Math.round((d.calmMax || 3) * calmMulFor(floor)),
+      calmMax: Math.round((d.calmMax || 3) * calmMulFor(floor) * lordCalmMul()),
       light: AURA_TABLE[d.id] || 'dark',
       fakeLight: null,
       speedMul: 0.8,
