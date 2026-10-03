@@ -267,6 +267,26 @@ const LORD_MUL_ARG = (process.argv.slice(3).find((a) => a.startsWith('--lord-mul
 const LORD_MUL = LORD_MUL_ARG ? Number(LORD_MUL_ARG) : 1
 setLordCalmMul(LORD_MUL)
 
+// `--shield=off` — игра без щита.
+//
+// Вопрос: щит съедает 72 % урона (замерено на 80 забегах). Если вынести его
+// целиком и проходимость почти не изменится — значит щит держит игру, а главный
+// глагол (дефлект) не нужен. Это проверка не на «щит полезен», а на то, держит ли
+// он игру вместо дефлекта.
+const SHIELD_OFF = process.argv.slice(3).includes('--shield=off')
+// `--parry=off` — бот не парирует ВООБЩЕ.
+//
+// Вопрос, который закрывает щит. Щит съедает 72 % урона, а без него проходимость
+// падает с 74 % до 29 %. Из этого нельзя заключить, что дефлект не нужен: возможно,
+// дефлект и щит делят одну работу, и без щита дефлект её не удержит. Ответ даёт
+// только этот флаг — он убирает дефлект, оставляя щит.
+const PARRY_OFF = process.argv.slice(3).includes('--parry=off')
+const SHIELD_CAP = Number((process.argv.slice(3).find((a) => a.startsWith('--shield-cap=')) || '').split('=')[1] || '')
+// Потолок, по которому СЧИТАЛИСЬ в этом прогоне. Строчка вывода обязана
+// называть его, а не константу другой конфигурации: при `--shield-cap=24`
+// печаталось «максимум 24 из потолка 12» — числа, которого в игре нет.
+const SHIELD_CAP_USED = SHIELD_OFF ? 0 : (Number.isFinite(SHIELD_CAP) && SHIELD_CAP > 0 ? SHIELD_CAP : DEFAULT_FIELD_OPTIONS.shieldMax)
+
 const SEVA = { got: 0, runs: 0 }
 // `--pots` — бот ломает сокровища (Dead Cells: containers). По умолчанию идёт
 // мимо, как человек, которому лень свернуть с боя за лёгкие деньги. Без флага
@@ -453,7 +473,7 @@ function playRoom(st, rng, maxSec = 90) {
     // 1) ока в окне удара — возвращаем удар. Это главное действие боя.
     const target = parryHint(st)
     const inWindow = target && target.timer <= st.o.parryWindow
-    if (inWindow && rng() >= SLOPPY) {
+    if (inWindow && !PARRY_OFF && rng() >= SLOPPY) {
       const q0 = p.psychic
       for (const e of parry(st)) { STATS.pacified += (e.type === 'pacified' ? 1 : 0) }
       QI.fromDeflect += Math.max(0, p.psychic - q0)
@@ -761,6 +781,8 @@ function playRun(rng, extraBoons = null, relicRng = null) {
       const opts = applyFieldRelics(optsFor(floor, rng, varna, keepsake, boons, EXTRA), relics)
       // Щит, обещанный служением, живёт до конца забега и встаёт в каждой
       // следующей комнате — ровно как `mod_combat_start_block` у реликвии.
+      if (SHIELD_OFF) opts.shieldMax = 0
+      else if (Number.isFinite(SHIELD_CAP) && SHIELD_CAP > 0) opts.shieldMax = SHIELD_CAP
       if (eventShield) opts.roomStartShield = (opts.roomStartShield || 0) + eventShield
       optsNow = opts
       // Жар — ПОСЛЕ опций, ровно как в `startFieldRun`. Иначе замер мерил бы
@@ -1268,7 +1290,7 @@ function simulate(quiet = false) {
     const total = SHIELD.absorbed + Math.round(STATS.dmg)
     const pct = Math.round((SHIELD.absorbed / (total || 1)) * 100)
     const avgShield = SHIELD.seen ? (SHIELD.sum / SHIELD.seen).toFixed(1) : '—'
-    console.log(`щит: сработал в ${SHIELD.blocked} из ${SHIELD.samples} попаданий · съел ${SHIELD.absorbed} урона из ${total} (${pct}%) · на потолке в ${SHIELD.atCap} · средний щит в момент удара ${avgShield} · максимум ${SHIELD.max} из потолка ${DEFAULT_FIELD_OPTIONS.shieldMax}`)
+    console.log(`щит: сработал в ${SHIELD.blocked} из ${SHIELD.samples} попаданий · съел ${SHIELD.absorbed} урона из ${total} (${pct}%) · на потолке в ${SHIELD.atCap} · средний щит в момент удара ${avgShield} · максимум ${SHIELD.max} из потолка ${SHIELD_CAP_USED}`)
   }
   // Дар «щит от севы»: работал или срабатывал вхолостую. Печатается всегда,
   // даже когда севы не было: ноль — это ответ «бот не служил», а не «дар пуст».
