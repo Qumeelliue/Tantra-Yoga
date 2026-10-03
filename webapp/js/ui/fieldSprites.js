@@ -1,0 +1,260 @@
+// СПРАЙТЫ ИЗ ЛИЦЕНЗИОННЫХ НАБОРОВ — вместо своих векторов.
+//
+// ## Откуда это
+//
+// Рисунок весь — не мой. Взяты готовые листы Calciumtrice с OpenGameArt:
+// персонажи (анимированные) и тайлсет подземелья, все под **CC-BY 3.0**.
+// Kenney Roguelike Pack (CC0) — запасной вариант. Полный список источников и
+// условия лицензий — `webapp/public/assets/field/CREDITS.md`.
+//
+// ## Почему это появилось
+//
+// Автор посмотрел на игру и сказал: «это какое-то убожество, всё кривое, косое —
+// текстура, которая типа ходит по клеточкам». По коду это было верно: все фигуры
+// рисовались моими векторами в `fieldArt.js`, статичными, без единого кадра
+// анимации. Правило проекта («геймплей копируем») я прочитал как «копируем
+// механики» и отдал слой показа себе — то есть ровно туда, куда нельзя.
+//
+// ## Правило, которое теперь здесь записано
+//
+// > **Рисунок — лицензионный, если есть лицензионный.** Своё рисование допустимо
+// > только там, где лицензионного взять нечего. Исключение — заглушка, пока
+// > картинка грузится.
+//
+// ## Что здесь НЕ выдумано
+//
+// Раскладку листов я не придумывал, а прочитал по пикселям: сетка 32×32,
+// 10 столбцов, 5 полос анимаций на персонажа (`scripts/pngReader.mjs` печатает
+// подпись каждого кадра, и по ним видно, какая полоса симметрична — это шаг).
+//
+// Порядок полос у автора описан словами на странице листа: idle, gesture, walk,
+// attack, death. У листа «воин» полоса 1 зеркально-симметрична (значит шаг), и
+// на этом раскладка проверена, а не угадана. Остальные полосы назначены по
+// порядку, как у автора; если какая-то полоса окажется не тем движением, это
+// видно в игре и правится одной строкой.
+//
+// ## Запасной путь
+//
+// `drawFieldSprite` возвращает `false`, если картинка ещё не грузится. Тогда
+// вызывающий код рисует старый вектор. Игра никогда не остаётся пустой, и
+// проверки, где `Image` не существует, идут по векторной ветке.
+
+/** Источник: `assets/field/...` — папка `webapp/public`, отдаётся как `/assets/...`. */
+const BASE = 'assets/field'
+
+/**
+ * Полосы анимаций. Строка — в листе, кадры — в строке.
+ *
+ * `once: true` — кадр доходит до последнего и стоит: для удара и смерти это
+ * правильно, иначе садхака после удара продолжает «бить» в воздух.
+ */
+const ANIMS = {
+  idle: { row: 0, frames: [2, 3, 4, 5, 4, 3], fps: 2.5 },
+  walk: { row: 1, frames: [1, 2, 3, 4, 5, 6, 7, 8], fps: 9 },
+  attack: { row: 2, frames: [1, 2, 3, 4, 5, 6, 7, 8, 9], fps: 13, once: true },
+  hurt: { row: 3, frames: [1, 2, 3, 4, 5, 6, 7, 8, 9], fps: 12, once: true },
+  death: { row: 4, frames: [1, 2, 3, 4, 5, 6, 7, 8, 9], fps: 7, once: true },
+}
+
+export const ANIM_NAMES = Object.keys(ANIMS)
+
+/** Сама таблица полос — наружу, чтобы проверки сверяли раскладку с картинками. */
+export { ANIMS }
+
+/**
+ * Персонажи: где лист и с какой полосы начинается его блок.
+ *
+ * `firstRow` — потому что в листе сидят ДВА персонажа: первый занимает полосы
+ * 0–4, второй 5–9. У «слизи» персонажей четыре (20 полос), у «змеи» один (5).
+ */
+export const CHARACTERS = {
+  sadhaka: { sheet: 'warrior.png', firstRow: 0 },
+  sadhaka_alt: { sheet: 'warrior.png', firstRow: 5 },
+
+  warrior: { sheet: 'warrior.png', firstRow: 5 },
+  cleric: { sheet: 'animated-cleric.png', firstRow: 0 },
+  cleric_alt: { sheet: 'animated-cleric.png', firstRow: 5 },
+  ranger: { sheet: 'animated-ranger.png', firstRow: 0 },
+  ranger_alt: { sheet: 'animated-ranger.png', firstRow: 5 },
+  rogue: { sheet: 'animated-rogue.png', firstRow: 0 },
+  rogue_alt: { sheet: 'animated-rogue.png', firstRow: 5 },
+  wizard: { sheet: 'animated-wizard.png', firstRow: 0 },
+  wizard_alt: { sheet: 'animated-wizard.png', firstRow: 5 },
+  orc: { sheet: 'animated-orcs.png', firstRow: 0 },
+  orc_armored: { sheet: 'animated-orcs.png', firstRow: 5 },
+  goblin_knife: { sheet: 'goblins.png', firstRow: 0 },
+  goblin_hammer: { sheet: 'goblins.png', firstRow: 5 },
+  skeleton: { sheet: 'skeleton.png', firstRow: 0 },
+  slime: { sheet: 'animated-slime.png', firstRow: 0 },
+  slime_blue: { sheet: 'animated-slime.png', firstRow: 5 },
+  slime_red: { sheet: 'animated-slime.png', firstRow: 10 },
+  snake: { sheet: 'animated-snake.png', firstRow: 0 },
+}
+
+/**
+ * Кому какая фигура. Не произвольно: по поведению.
+ *
+ * Нидра — сон, медлительность → слизь. Бхая — страх, быстрое нападение →
+ * лучник. Грна — жжение, укус → змея. Шила — терпение, неподвижность → гоблин с
+ * ножом. Аханкара — «я»-сознание, и это второй человек: а не оков, а его отражение.
+ * Второй человек выбран сознательно — аханкара это и есть «я», то есть садхака
+ * рядом с садхакой.
+ *
+ * Минотавр автора свёрстан со сдвигом (480×240, полосы не ложатся на сетку
+ * 32×32), и подгонять под него особый случай дороже, чем взять другую фигуру.
+ * Поэтому его нет — и это записано здесь, чтобы никто не вернул его «на
+ * всякий случай».
+ */
+export const FOE_SPRITE = {
+  // шесть рипу — внутренние, быстрые и злые
+  krodha: 'orc',
+  lobha: 'goblin_hammer',
+  kama: 'rogue',
+  mada: 'cleric',
+  matsarya: 'skeleton',
+  nidra: 'slime',
+  // восемь паш — внешние, держат дистанцию
+  bhaya_pasha: 'ranger',
+  lajja: 'rogue_alt',
+  ghrna: 'snake',
+  samshaya_pasha: 'wizard',
+  kula: 'cleric_alt',
+  sila: 'goblin_knife',
+  mana_pasha: 'wizard_alt',
+  jugupsa: 'slime_blue',
+  // владыки — крупнее и важнее видом
+  moha: 'ranger_alt',
+  ahankara: 'warrior',
+  kama_raja: 'ranger_alt',
+  krodha_maharaja: 'orc_armored',
+  mada_natha: 'cleric_alt',
+  matsarya_kala: 'skeleton',
+  lobha_pati: 'orc_armored',
+  lord_nidra: 'slime_red',
+  lord_kula_kundalini: 'orc_armored',
+  lord_bhaya: 'ranger_alt',
+  lord_ghrna: 'snake',
+  lord_samshaya: 'wizard_alt',
+  lord_jugupsa: 'slime_blue',
+  lord_mana: 'wizard_alt',
+  lord_lajja: 'rogue_alt',
+  lord_shila: 'goblin_knife',
+  lord_kula: 'cleric',
+  lord_sankalpa: 'rogue',
+  lord_vikalpa: 'wizard',
+  lord_karta: 'orc',
+  lord_sanchara: 'ranger',
+}
+
+/** Загруженные листы: имя файла → картинка. */
+const IMAGES = new Map()
+let loading = null
+let failed = false
+
+/**
+ * Загрузить все листы. Идемпотентно: второй вызов вернёт тот же промис.
+ *
+ * `Image` может не существовать (проверки на заглушке DOM, Node без браузера) —
+ * тогда это не ошибка, а «рисунка нет»: вызывающий код рисует вектор.
+ */
+export function loadFieldSprites() {
+  if (loading) return loading
+  if (typeof Image === 'undefined') {
+    failed = true
+    loading = Promise.resolve(false)
+    return loading
+  }
+  const sheets = [...new Set(Object.values(CHARACTERS).map((c) => c.sheet))]
+  loading = Promise.all(sheets.map((src) => new Promise((done) => {
+    const img = new Image()
+    img.onload = () => { IMAGES.set(src, img); done(true) }
+    img.onerror = () => done(false)
+    img.src = `${BASE}/${src}`
+  }))).then((res) => {
+    // Хотя бы один лист должен прийти: иначе игрока нечем рисовать и надо
+    // честно остаться на векторах, а не мигать пустотой.
+    if (!res.some(Boolean)) failed = true
+    return !failed
+  })
+  return loading
+}
+
+/** Рисунок приехал? */
+export function spritesReady() {
+  return !failed && IMAGES.size > 0 && [...IMAGES.values()].every((i) => i.complete !== false)
+}
+
+/** Есть ли такой персонаж и его лист. */
+export function hasSprite(charId) {
+  const c = CHARACTERS[charId]
+  return !!(c && IMAGES.get(c.sheet))
+}
+
+/**
+ * Нарисовать кадр.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {string} charId — ключ `CHARACTERS`
+ * @param {string} anim — ключ `ANIMS`
+ * @param {number} t — время в секундах (кадр выбирается по нему)
+ * @param {object} [opt]
+ * @param {boolean} [opt.flip] — отразить по горизонтали
+ * @param {number} [opt.scale] — во сколько раз больше 32×32
+ * @param {number} [opt.alpha]
+ * @param {number} [opt.frame] — конкретный кадр, важнее времени (для замаха)
+ * @returns {boolean} — нарисовano ли. `false` = зови вектор.
+ */
+export function drawFieldSprite(ctx, charId, anim, t = 0, opt = {}) {
+  const def = CHARACTERS[charId]
+  if (!def) return false
+  const img = IMAGES.get(def.sheet)
+  if (!img) return false
+  const a = ANIMS[anim] || ANIMS.idle
+  const cell = 32
+  const idx = opt.frame != null
+    ? opt.frame
+    : Math.min(a.frames.length - 1, Math.floor(t * a.fps))
+  const frame = a.frames[Math.max(0, Math.min(a.frames.length - 1, idx))]
+  const sx = frame * cell
+  const sy = (def.firstRow + a.row) * cell
+  const scale = opt.scale || 1
+  const dw = cell * scale
+  const dh = cell * scale
+  // Автор советует сдвинуть фигуру на 4–6 пикселей вниз, чтобы она стояла
+  // в середине плитки, а не на её краю. Сдвиг дан в долях клетки.
+  const dy = -dh / 2 + (opt.groundOffset != null ? opt.groundOffset * scale : 5 * scale)
+  const prevAlpha = ctx.globalAlpha
+  if (opt.alpha != null) ctx.globalAlpha = prevAlpha * opt.alpha
+  if (opt.flip) {
+    ctx.save()
+    ctx.scale(-1, 1)
+    ctx.drawImage(img, sx, sy, cell, cell, -dw / 2, dy, dw, dh)
+    ctx.restore()
+  } else {
+    ctx.drawImage(img, sx, sy, cell, cell, -dw / 2, dy, dw, dh)
+  }
+  ctx.globalAlpha = prevAlpha
+  return true
+}
+
+/**
+ * Тень фигуры. У лицензионного автора тени нет, а без неё фигура «висит»:
+ * он прямо пишет, что тень кладётся слоем умножения между фигурами и полом.
+ * Рисуем椭圆 под ногами — это и есть его метод, а не свой.
+ */
+export function drawFieldShadow(ctx, scale = 1) {
+  const prev = ctx.globalAlpha
+  ctx.globalAlpha = prev * 0.3
+  ctx.fillStyle = '#000'
+  ctx.beginPath()
+  ctx.ellipse(0, 2, 9 * scale, 3 * scale, 0, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.globalAlpha = prev
+}
+
+/** Сколько листов приехало — для проверок и для честной надписи в отладке. */
+export function loadedSheetCount() {
+  return IMAGES.size
+}
+
+export const SPRITE_SHEET_COUNT = new Set(Object.values(CHARACTERS).map((c) => c.sheet)).size

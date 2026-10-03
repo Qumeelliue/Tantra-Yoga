@@ -6,6 +6,9 @@
 import { h, mount, clear } from '../dom.js'
 import { sfx, fieldSfx, startDrone, stopDrone } from '../fx.js'
 import { drawFoeArt, drawSadhakaArt, drawWareArt, drawFlowerArt, drawPotArt, ART } from '../fieldArt.js'
+import {
+  loadFieldSprites, spritesReady, drawFieldSprite, drawFieldShadow, FOE_SPRITE,
+} from '../fieldSprites.js'
 import { haptics } from '../haptics.js'
 import { QUOTES } from '../../core/data.js'
 import { KEEPSAKE_BY_ID } from '../../core/keepsakes.js'
@@ -52,6 +55,11 @@ export function fieldScreen(state, opts = {}) {
   const st = state
   const cv = h('canvas', { class: 'field-canvas' })
   const ctx = cv.getContext('2d')
+
+  // Лицензионные спрайты (Calciumtrice, CC-BY 3.0 — источники в
+  // `assets/field/CREDITS.md`). Пока не приехали, рисуются векторы, поэтому
+  // загрузка ничего не блокирует и игра никогда не остаётся пустой.
+  loadFieldSprites()
 
   // ── DOM-оверлеи ──
   const gunas = h('div', { class: 'field-guna' },
@@ -1211,13 +1219,55 @@ export function fieldScreen(state, opts = {}) {
     updateHud(p)
   }
 
+  /**
+   * Какое движение у оки.
+   *
+   * Замах и удар берут одну полосу `attack` — так игрок видит, что сейчас
+   * будет удар, ещё до самого удара. Это ровно то, ради чего замах вообще
+   * рисуется. Сон и оглушение — `hurt`.
+   */
+  function foeAnimOf(f) {
+    if (f.dead) return 'death'
+    if (f.state === 'telegraph' || f.state === 'attack') return 'attack'
+    if (f.state === 'stunned') return 'hurt'
+    return f.state === 'approach' ? 'walk' : 'idle'
+  }
+
+  /** Двигается ли садхака — по смещению, а не по флажку: флажок врёт при рывке. */
+  let lastPx = null
+  let lastPy = null
+  function playerAnimOf(p) {
+    if (!p.alive) return 'death'
+    if (p.strikeCd > 0.26) return 'attack'
+    let moving = false
+    if (lastPx != null) moving = Math.abs(p.x - lastPx) + Math.abs(p.y - lastPy) > 0.4
+    lastPx = p.x
+    lastPy = p.y
+    return moving ? 'walk' : 'idle'
+  }
+
   function drawFoe(f, t) {
     ctx.save()
     ctx.translate(f.x, f.y)
 
-    // Фигура — из общего модуля рисунка (тушь пером + неон, стиль Hades).
-    // Здесь только игровые сигналы поверх неё: замах, дуги, стойкость, плашки.
-    drawFoeArt(ctx, f, t)
+    // ФИГУРА — лицензионный спрайт, а не самодельный вектор.
+    //
+    // Справа от зрителя ока стоит лицом к садхаке. Раньше ока была безликой
+    // фигурой и всегда смотрела в одну сторону, поэтому игрок не понимал, кто
+    // перед ним и куда он повернулся.
+    const spriteId = FOE_SPRITE[f.id]
+    let drawn = false
+    if (spriteId) {
+      const big = f.isBoss ? 1.5 : 1.15
+      drawFieldShadow(ctx, big)
+      drawn = drawFieldSprite(ctx, spriteId, foeAnimOf(f), t, {
+        flip: f.x > st.player.x,
+        scale: big,
+      })
+    }
+    // Вектор — запасной путь, а не украшение: пока картинка едет или если её
+    // не удалось загрузить вовсе.
+    if (!drawn) drawFoeArt(ctx, f, t)
 
     // счётчик спокойствия — единственный путь
     if (f.calm > 0.02) {
@@ -1404,7 +1454,17 @@ export function fieldScreen(state, opts = {}) {
       ctx.lineCap = 'butt'
     }
 
-    drawSadhakaArt(ctx, p.facing, { flip: p.facing < 0 })
+    // Садхака — лицензионный спрайт. Тень под ним по методу автора тайлсета
+    // (слой между фигурой и полом), иначе фигура выглядит висящей в воздухе.
+    const drawnPlayer = (() => {
+      drawFieldShadow(ctx, 1.15)
+      return drawFieldSprite(ctx, 'sadhaka', playerAnimOf(p), t, {
+        flip: p.facing < 0,
+        scale: 1.15,
+      })
+    })()
+    // вектор — запасной путь, пока спрайт едет
+    if (!drawnPlayer) drawSadhakaArt(ctx, p.facing, { flip: p.facing < 0 })
 
     // «жжёт» (гхрна): ожог видно на садхаке. «сон» (нидра): шаг вялый —
     // садхака бледнеет. Иначе оба состояния чувствуются, но не читаются.
