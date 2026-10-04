@@ -524,6 +524,8 @@ export function fieldScreen(state, opts = {}) {
         break
       case 'strike_ripu':
         say('рипу не ранится — его сдерживают', 'bad')
+        // Звук удара, который НЕ прошёл. Услышать это надо раньше, чем прочесть.
+        fieldSfx.blocked()
         break
       case 'strike_false':
         say('аура оказалась ложной — удар в пустоту', 'bad')
@@ -531,6 +533,9 @@ export function fieldScreen(state, opts = {}) {
         break
       case 'hit':
         say('попадание', '')
+        // Раньше удар по оке был беззвучен, а дефлект гремел. Игрок слышал, что
+        // защитился, и не слышал, что попал.
+        fieldSfx.hit()
         break
       // ── Сокровище (Dead Cells: containers) ──
       // Сообщение говорит и про добычу, и про цену: из горшка падает амбросия,
@@ -551,6 +556,9 @@ export function fieldScreen(state, opts = {}) {
         break
       case 'shaken':
         say('окова задела тебя — дыхание сбито', 'bad')
+        // Садхака беззвучен не был никогда — худший из трёх случаев: игрок
+        // теряет жизнь и не получает знака.
+        fieldSfx.hurt()
         break
       case 'samskara':
         say(e.message, 'bad')
@@ -601,6 +609,10 @@ export function fieldScreen(state, opts = {}) {
         break
       case 'killed':
         say(e.message || 'сила оставила самскару', 'bad')
+        // Падение ока теперь доигрывается (deathT), и у него должен быть звук —
+        // иначе фигура исчезает на кадре падения и молчит.
+        fieldSfx.die()
+        haptics.tap?.()
         break
       // ── Владыка ──
       case 'boss_telegraph': {
