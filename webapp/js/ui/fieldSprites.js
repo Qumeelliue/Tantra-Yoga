@@ -259,6 +259,111 @@ export function loadedSheetCount() {
 
 export const SPRITE_SHEET_COUNT = new Set(Object.values(CHARACTERS).map((c) => c.sheet)).size
 
+/**
+ * Плитка пола — 16×16, а кадр персонажа — 32×32.
+ *
+ * Это два разных размера в одном наборе, и путать их нельзя: автор пишет в
+ * своей инструкции «16x16 tiles and a wall height of 32 pixels». Первая версия
+ * здесь взяла 32 и молча брала кусок 2×2 плитки вместо одной — то есть на пол
+ * выходила бы четверть тайлсета, и заметить это можно было бы только глазами.
+ * Поэтому имена разные: FLOOR_CELL — плитка пола, ANIM_CELL — кадр фигуры.
+ */
+export const FLOOR_CELL = 16
+export const ANIM_CELL = 32
+
+// ── СТЕНЫ ИЗ ТАЙЛСЕТА ──────────────────────────────────────────────────────
+//
+// Фасад стены найден измером: в ряду 30 листа идёт ровная полоса из девяти
+// похожих плиток (колонки 12–20), и это единственное место набора, где
+// одинаковые плитки стоят подряд в линию. У краёв полосы (колонки 12 и 20)
+// рисунок чуть другой — это торцы стены.
+//
+// Почему стена не 32 пикселя, хотя автор пишет «wall height of 32 pixels»:
+// верхней плитки стены рядом нет — в рядах 28, 29 и 31 подходящих плиток нет
+// вовсе. Поэтому стена строится из тёмной плитки пола (это её верхняя
+// грань, та же плоскость, что пол) и фасада снизу. Ширина стены при этом 32
+// пикселя — как у автора, просто верх берётся из набора как «земля, а не
+// пол», а не как отдельная плитка.
+//
+// Отбор проверяется на файле: у фасада обязан быть резкий белый верх и
+// тёмный низ, у верха — ровный средний тон без белой шапки.
+export const WALL_CAP_L = [30, 12]
+export const WALL_BODY = [[30, 13], [30, 14], [30, 15], [30, 16], [30, 17], [30, 18], [30, 19]]
+export const WALL_CAP_R = [30, 20]
+/** Толщина стены в пикселях мира: 16 верх + 16 фасад. */
+export const WALL_THICK = FLOOR_CELL * 2
+
+let wallCanvas = null
+
+/** Темнее обычного пола: верхняя грань стены должна быть глуше. */
+function tintTile(g, src, sx, sy, w, h, dx, dy, dark) {
+  g.save()
+  g.globalAlpha = 1
+  g.drawImage(src, sx, sy, w, h, dx, dy, w, h)
+  g.restore()
+  if (dark) {
+    // Затемнение — заливкой поверх, а не «другим тайлом»: в наборе нет
+    // отдельной плитки для верха стены, и выдумывать оттенок «похожий на
+    // камень» — значит рисовать своё там, где взято лицензионное.
+    g.save()
+    g.globalAlpha = 0.42
+    g.fillStyle = '#000'
+    g.fillRect(dx, dy, w, h)
+    g.restore()
+  }
+}
+
+/**
+ * Собрать стены арены один раз: верхняя грань по всей ширине, фасад под ней,
+ * плюс фасады по левому и правому краю (повёрнутые).
+ */
+export function buildWallCanvas(worldW, worldH) {
+  if (!tileImage) return null
+  if (wallCanvas && wallCanvas.width === worldW && wallCanvas.height === worldH) return wallCanvas
+  const c = document.createElement('canvas')
+  c.width = Math.max(1, Math.round(worldW))
+  c.height = Math.max(1, Math.round(worldH))
+  const g = c.getContext('2d')
+  if (!g) return null
+  g.imageSmoothingEnabled = false
+  const T = FLOOR_CELL
+
+  // Верхняя грань стены: та же плитка, что пол, но затемнённая.
+  for (let x = 0; x < worldW; x += T) {
+    const [tr, tc] = FLOOR_TILES[(x / T) % FLOOR_TILES.length | 0]
+    tintTile(g, tileImage, tc * T, tr * T, T, T, x, 0, true)
+  }
+  // Фасад: слева и справа торцы, между ними тело.
+  const caps = WALL_BODY.length
+  const across = Math.ceil(worldW / T)
+  for (let i = 0; i < across; i++) {
+    const x = i * T
+    const [tr, tc] = i === 0 ? WALL_CAP_L
+      : i === across - 1 ? WALL_CAP_R
+        : WALL_BODY[(i - 1) % caps]
+    g.drawImage(tileImage, tc * T, tr * T, T, T, x, T, T, T)
+  }
+  // Боковые фасады. Поворот на 90° — стена сбоку встаёт вдоль края комнаты.
+  for (const side of [0, 1]) {
+    const x0 = side ? worldW - T : 0
+    for (let i = 0; i < Math.ceil(worldH / T); i++) {
+      const y = i * T
+      const [tr, tc] = WALL_BODY[i % caps]
+      g.save()
+      g.translate(side ? x0 + T : x0, y)
+      g.rotate(side ? Math.PI / 2 : -Math.PI / 2)
+      g.drawImage(tileImage, tc * T, tr * T, T, T, -T, 0, T, T)
+      g.restore()
+    }
+  }
+  wallCanvas = c
+  return c
+}
+
+export function wallReady() {
+  return !!wallCanvas
+}
+
 // ── ПОЛ ИЗ ТАЙЛСЕТА ────────────────────────────────────────────────────────
 //
 // Тот же CC-BY 3.0 набор Calciumtrice, что и персонажи. Пол собирается один раз
@@ -282,17 +387,6 @@ export const FLOOR_TILES = [
   [1, 0], [1, 1], [1, 2], [1, 3], [1, 4], [1, 5], [1, 6], [2, 3], [2, 4], [6, 9], [6, 10], [6, 11],
 ]
 
-/**
- * Плитка пола — 16×16, а кадр персонажа — 32×32.
- *
- * Это два разных размера в одном наборе, и путать их нельзя: автор пишет в
- * своей инструкции «16x16 tiles and a wall height of 32 pixels». Первая версия
- * здесь взяла 32 и молча брала кусок 2×2 плитки вместо одной — то есть на пол
- * выходила бы четверть тайлсета, и заметить это можно было бы только глазами.
- * Поэтому имена разные: FLOOR_CELL — плитка пола, ANIM_CELL — кадр фигуры.
- */
-export const FLOOR_CELL = 16
-export const ANIM_CELL = 32
 
 let tileImage = null
 let floorCanvas = null

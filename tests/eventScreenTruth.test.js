@@ -31,7 +31,7 @@ let targets = () => []
 
 beforeAll(async () => {
   helper = await import('./helpers/dom.js')
-  dom = helper.installDom()
+  dom =   helper.installDom({ fresh: true })
   await import('@webapp/js/main.js')
   targets = () => helper.clickables(dom.root)
   text = () => helper.textOf(dom.root)
@@ -93,20 +93,38 @@ function enterField(limit = 24) {
  * около 1e-10. Если всё же не встретили, проверка падает с честным текстом:
  * молчать об этом нельзя, иначе «служение на экране» останется непроверенным.
  */
-function reachEventDoor(maxDoors = 40) {
+function reachEventDoor(maxDoors = 40, maxRuns = 12) {
   // Класс двери — `door-card d-event` (через ПРОБЕЛ, не точкой). Селектор
   // `door-card.d-event` не находит ни одной двери и тихо превращает проверку в
   // «служение не выпадает» — то есть в сообщение о балансе там, где на самом
   // деле опечатка в адресе. Так уже было с поиском экрана по слову.
   const EVENT_DOOR = /door-card\s+d-event/
   let doorsSeen = 0
-  for (let i = 0; i < maxDoors * 3; i++) {
+  // Забег — семь чакр, то есть семь небоевых дверей. Служение выпадает примерно
+  // в 15 % дверей (замерено на 400 розыгрышах `rollDoors`), и потому в одном
+  // забеге его может не быть: вероятность не встретить — около 32 %.
+  //
+  // Раньше проверка смотрела только на один забег и называлась «служение
+  // выпадает». Это было сравнение игрового вопроса с длиной забега, а не с
+  // розыгрышем двери. Теперь проверка проходит несколько забегов — ровно то,
+  // что делает игрок, который не повстречал служение и пошёл снова.
+  let runs = 0
+  for (let i = 0; i < maxDoors * 3 * maxRuns; i++) {
     if (onEvent()) return true
+    if (runs > maxRuns) return false
     if (onDoors()) {
       doorsSeen++
-      if (doorsSeen > maxDoors) return false
+      if (doorsSeen > maxDoors * maxRuns) return false
       if (byClass(EVENT_DOOR)) return true
-      byClass(/door-card\s+d-room/) || byClass(/door-card/)
+      // Дверь служения берётся ПЕРВОЙ, если она есть. Раньше здесь стояло
+      // «нажми первую дверь», а первая — всегда бой: служение на экране дверей
+      // одно на этап, бой — всегда, и служение выбиралось примерно никогда.
+      // Проверка при этом называлась «служение выпадает» и падала с сообщением
+      // про баланс, хотя речь была о том, какую кнопку нажали.
+      //
+      // Теперь поведение соответствует вопросу: если дверь служения есть — идём
+      // в неё, если нет — идём в бой, чтобы дойти до следующих дверей.
+      byClass(EVENT_DOOR) || byClass(/door-card\s+d-room/) || byClass(/door-card/)
     } else if (onField()) {
       clearRoom()
       for (let k = 0; k < 40 && onField(); k++) {
@@ -114,6 +132,19 @@ function reachEventDoor(maxDoors = 40) {
         const st = globalThis.window.__field
         if (st?.door) { st.player.x = st.door.x; st.player.y = st.door.y }
       }
+    } else if (!onField() && /Город светится|Забег окончен|Пробуждение/i.test(text())) {
+      // Забег кончился, а служения не встретилось — начинаем следующий.
+      // Именно это делает игрок, и именно поэтому проверка смотрит на несколько
+      // забегов, а не на один.
+      //
+      // Ветка стоит ПЕРЕД «нажать любую кнопку»: город — это тоже экран с
+      // кнопками, и общая ветка успевала нажать их вместо того, чтобы начать
+      // новый забег. Три порядка отладки подряд упирались в одно и то же.
+      runs++
+      if (runs > maxRuns) return false
+      doorsSeen = 0
+      enterField()
+      continue
     } else if (!byClass(/choice/) && !byText(/Идти дальше|← уйти|дальше/)) {
       // Экран выбора дара или реликвии: берём верхнее и идём дальше.
       byClass(/boon-card/) || byClass(/\bchoice\b/) || byClass(/^btn/)

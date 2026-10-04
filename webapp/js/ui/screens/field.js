@@ -8,7 +8,7 @@ import { sfx, fieldSfx, startDrone, stopDrone } from '../fx.js'
 import { drawFoeArt, drawSadhakaArt, drawWareArt, drawFlowerArt, drawPotArt, ART } from '../fieldArt.js'
 import {
   loadFieldSprites, spritesReady, drawFieldSprite, drawFieldShadow, FOE_SPRITE,
-  loadFieldTileset, buildFloorCanvas, floorReady,
+  loadFieldTileset, buildFloorCanvas, floorReady, buildWallCanvas, wallReady, WALL_THICK,
 } from '../fieldSprites.js'
 import { haptics } from '../haptics.js'
 import { QUOTES } from '../../core/data.js'
@@ -73,6 +73,8 @@ export function fieldScreen(state, opts = {}) {
   // Пол собирается один раз и живёт здесь, а не внутри функции рисования:
   // иначе он пересобирался бы каждый кадр.
   let floorCanvasNow = null
+  // Стены — тот же тайлсет, собираются один раз вместе с полом.
+  let wallCanvasNow = null
 
   /**
    * Камера за садхакой — но на центр боя, а не только на игрока.
@@ -116,7 +118,11 @@ export function fieldScreen(state, opts = {}) {
   // Пол из того же тайлсета CC-BY 3.0. Собирается один раз на всю арену и
   // выводится одним drawImage за кадр: плиток на кадр выходит около тысячи, и
   // на телефоне это дорого. Пока тайлсет едет — рисуется процедурный фон.
-  loadFieldTileset().then((ok) => { if (ok) floorCanvasNow = buildFloorCanvas(WORLD_W, WORLD_H) })
+  loadFieldTileset().then((ok) => {
+    if (!ok) return
+    floorCanvasNow = buildFloorCanvas(WORLD_W, WORLD_H)
+    wallCanvasNow = buildWallCanvas(WORLD_W, WORLD_H)
+  })
 
   // ── DOM-оверлеи ──
   const gunas = h('div', { class: 'field-guna' },
@@ -748,6 +754,36 @@ export function fieldScreen(state, opts = {}) {
   const WALL = { top: 40, base: 176, inset: 26 }
 
   function drawWalls(t) {
+    // ЛИЦЕНЗИОННАЯ СТЕНА (та же CC-BY 3.0, что пол и фигуры).
+    //
+    // Раньше здесь был самодельный вектор: градиент, кладка, швы вразброс и
+    // трещины, нарисованные в коде. Это была последняя часть картинки Поля
+    // Ума, которая оставалась своей. Фасад и верхняя грань теперь берутся из
+    // тайлсета (см. НАХОДКУ 28 (8)).
+    //
+    // Поверх лицензионной стены остаётся только ТЕНЬ от потолка и боковое
+    // затемнение: они не рисуют стену, а делают её глубиной. Если убрать и их,
+    // комната станет плоской схемой, а не местом.
+    if (wallCanvasNow) {
+      // тень от потолка падает на стену сверху
+      const sg = ctx.createLinearGradient(0, 0, 0, WALL_THICK * 1.6)
+      sg.addColorStop(0, 'rgba(0,0,0,.62)')
+      sg.addColorStop(1, 'rgba(0,0,0,0)')
+      ctx.fillStyle = sg
+      ctx.fillRect(0, 0, WORLD_W, WALL_THICK * 1.6)
+      ctx.drawImage(wallCanvasNow, 0, 0)
+      // боковое затемнение — чтобы края комнаты уходили в темноту
+      for (const side of [0, 1]) {
+        const x0 = side ? WORLD_W - 40 : 0
+        const bg = ctx.createLinearGradient(x0, 0, side ? WORLD_W - 40 : 40, 0)
+        bg.addColorStop(0, 'rgba(0,0,0,.5)')
+        bg.addColorStop(1, 'rgba(0,0,0,0)')
+        ctx.fillStyle = bg
+        ctx.fillRect(x0, 0, 40, WORLD_H)
+      }
+      return
+    }
+
     const g = ctx.createLinearGradient(0, WALL.top, 0, WALL.base)
     g.addColorStop(0, rgb(mixc(L.ground2, [0, 0, 0], 0.78)))
     g.addColorStop(0.55, rgb(mixc(L.ground2, [0, 0, 0], 0.5)))

@@ -12,7 +12,7 @@ import { installDom, textOf, clickables } from './helpers/dom.js'
 
 let dom
 beforeAll(() => {
-  dom = installDom()
+  dom =   installDom({ fresh: true })
   return import('@webapp/js/main.js')
 })
 

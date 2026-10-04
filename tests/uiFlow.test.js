@@ -18,7 +18,7 @@ import { installDom, textOf, clickables, clickEverything , chooseLordIfShown } f
 
 let dom
 beforeAll(() => {
-  dom = installDom()
+  dom =   installDom({ fresh: true })
   return import('@webapp/js/main.js')
 })
 
