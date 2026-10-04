@@ -1311,7 +1311,9 @@ export function fieldScreen(state, opts = {}) {
 
     // оковы
     for (const f of st.foes) {
-      if (f.dead) continue
+      // Ушедшая ока не рисуется. Убитая — доигрывает падение: полоса смерти из
+      // лицензионного спрайта существует, и раньше не показывалась ни разу.
+      if (f.gone) continue
       // тень на земле — фигура стоит, а не висит
       const sr = f.isBoss ? 26 : 11
       groundShadow(f.x, f.y + sr * 0.85, sr, f.isBoss ? 0.55 : 0.42)
@@ -1342,8 +1344,8 @@ export function fieldScreen(state, opts = {}) {
    */
   function foeAnimOf(f) {
     if (f.dead) return 'death'
+    if (f.hurtT > 0) return 'hurt'
     if (f.state === 'telegraph' || f.state === 'attack') return 'attack'
-    if (f.state === 'stunned') return 'hurt'
     return f.state === 'approach' ? 'walk' : 'idle'
   }
 
@@ -1373,10 +1375,14 @@ export function fieldScreen(state, opts = {}) {
     let drawn = false
     if (spriteId) {
       const big = f.isBoss ? 1.5 : 1.15
-      drawFieldShadow(ctx, big)
+      // У падающей оки тень уезжает вместе с ней — так видно, что она падает,
+      // а не растворяется на месте.
+      if (f.dead) drawFieldShadow(ctx, big * Math.max(0.3, f.deathT / (st.o.deathTime || 0.75)))
+      else drawFieldShadow(ctx, big)
       drawn = drawFieldSprite(ctx, spriteId, foeAnimOf(f), t, {
         flip: f.x > st.player.x,
         scale: big,
+        alpha: f.dead ? Math.max(0.25, f.deathT / (st.o.deathTime || 0.75)) : 1,
       })
     }
     // Вектор — запасной путь, а не украшение: пока картинка едет или если её

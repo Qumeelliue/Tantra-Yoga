@@ -183,6 +183,10 @@ export const DEFAULT_FIELD_OPTIONS = {
   shakeBossBreak: 11.0,    // срыв порога владыки
   knockDeflect: 26,        // отдача оковы, пиксели
   knockPacify: 0,          // снятую оку не отбрасываем — она уже ушла
+  // Сколько живёт отдёргивание от удара и падение после смерти. Это НЕ украшение:
+  // безdeathT ока исчезала в тот же кадр, и полоса смерти не показывалась ни разу.
+  hurtTime: 0.3,
+  deathTime: 0.75,
   // ── ЧАСЫ СМЕРТИ (Hades: Death Clock) ────────────────────────────────
   // В Hades примерно через 3.5 минуты забега включается «Гнев Аида»: мир
   // ускоряется, и с каждой минутой враги бьют всё чаще. Это и создаёт
@@ -280,6 +284,12 @@ function makeRipu(def) {
     hp: 1,                // рипу не имеет ХП: его нельзя убить
     dead: false,
     pacified: false,
+    // Реакция фигуры: отдёргивание от удара и падение после смерти.
+    // Обе полосы — из ЛИЦЕНЗИОННОГО спрайта (ряды 3 и 4 листа Calciumtrice).
+    // Появление полосы без поведения — это анимация, которую никто не видел.
+    hurtT: 0,
+    deathT: 0,
+    gone: false,
     ...bossFields(def),
   }
 }
@@ -324,6 +334,20 @@ function startGuna(o) {
 export function createField({ player, foes = [], wares = [], pots = [], field = null, rng = Math.random, opts = {} } = {}) {
   const o = { ...DEFAULT_FIELD_OPTIONS, ...opts }
   const rand = typeof rng === 'function' ? rng : Math.random
+
+  // Поля реакции фигуры — у ВСЕХ оков, кто попадает в поле, независимо от того,
+  // кто их собрал.
+  //
+  // Причина практическая: `createField` принимает готовые оковы и не прогоняет их
+  // через сборщик. Значит, ока из сохранения старой версии (или собранная руками
+  // в проверке) придёт без `hurtT/deathT/gone`, и условие `f.dead && f.deathT > 0`
+  // окажется ложным — то есть ока исчезнет в тот же кадр, в который убита. Ровно
+  // тот дефект, который эта правка и чинит, вернулся бы из сохранений.
+  for (const f of foes) {
+    if (typeof f.hurtT !== 'number') f.hurtT = 0
+    if (typeof f.deathT !== 'number') f.deathT = 0
+    if (typeof f.gone !== 'boolean') f.gone = false
+  }
 
   const st = {
     o,
@@ -998,6 +1022,17 @@ function shieldText(gained) {
 // ── Оковы ────────────────────────────────────────────────────────────────
 
 function stepFoe(st, i, dt, ev) {
+  const foe = st.foes[i]
+  // Падение считается ДО раннего выхода по `dead`.
+  //
+  // Раньше счётчик стоял ниже, где `if (f.dead || f.pacified) return` уже отрезал
+  // мёртвую оку. То есть падение никогда не доходило до конца: ока оставалась на
+  // экране навсегда. Первая версия проверки это показала — «ока не ушла за 200
+  // шагов».
+  if (foe.dead && foe.deathT > 0) {
+    foe.deathT = Math.max(0, foe.deathT - dt)
+    if (foe.deathT === 0) foe.gone = true
+  }
   const f = st.foes[i]
   if (f.dead || f.pacified) return
   const p = st.player
@@ -1017,6 +1052,7 @@ function stepFoe(st, i, dt, ev) {
     if (Math.abs(f.vx) < 1 && Math.abs(f.vy) < 1) { f.vx = 0; f.vy = 0 }
   }
   if (f.knock > 0) f.knock = Math.max(0, f.knock - dt * 3.4)
+  if (f.hurtT > 0) f.hurtT = Math.max(0, f.hurtT - dt)
 
   // Порог 50% — владыка ломается один раз (Hades: berserk below half).
   // Проверяем ДО оглушения: в Hades босс вырывается из стана на половине
@@ -1530,8 +1566,19 @@ export function strike(st, targetIndex = -1, ev = []) {
   if (f.kind === 'pasha') {
     f.hp -= 6 + p.guna.r * 0.5 + (st.o.strikeBonus ?? 0)
     ev.push({ type: 'hit', foe: near.index, hp: f.hp })
+    // Отдёргивание от удара: ока не умирает, но на мгновение видно, что её
+    // задели. Раньше ока просто отлетала тем же пиксельным сдвигом, что и от
+    // дефлекта, — то есть попадание и отброс выглядели одинаково. Теперь у
+    // спрайта есть своя полоса `hurt` (ряд 3 в листе автора), и она наконец
+    // используется: раньше `stunned` не выставлялся никогда, то есть полоса
+    // была мёртвой.
+    f.hurtT = st.o.hurtTime ?? 0.3
     if (f.hp <= 0) {
       f.dead = true
+      // Ока не исчезает в тот же кадр. Раньше отрисовка пропускала всех, у кого
+      // `dead`, а значит полоса смерти из листа (ряд 4) не показывалась НИ
+      // РАЗУ: ока просто исчезала. Теперь она доигрывает падение и уходит.
+      f.deathT = st.o.deathTime ?? 0.75
       st.score += 40
       // Пашу можно только сломать силой — и это оставляет самскары.
       st.samskaraPressure += 12
