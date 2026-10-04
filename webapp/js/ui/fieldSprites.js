@@ -391,6 +391,11 @@ export const FLOOR_TILES = [
 let tileImage = null
 let floorCanvas = null
 
+/** Отдать загруженный тайлсет слою изометрии: один файл — одна загрузка. */
+export function tilesetImage() {
+  return tileImage
+}
+
 /** Загрузить тайлсет. Тот же идемпотентный порядок, что у остальных листов. */
 export function loadFieldTileset() {
   if (tileImage) return Promise.resolve(true)
