@@ -1278,7 +1278,12 @@ export function fieldScreen(state, opts = {}) {
         ctx.arc(0, -18, 30, 0, 7)
         ctx.stroke()
       }
-      drawWareArt(ctx, w, t)
+      // Просящий — человек, а не свечка: это второй практик, который просит о
+      // помощи. Фигура — та же лицензионная (свободный второй воин из того же
+      // листа), а не мой вектор. Служение в игре не «предмет», и рисовать его
+      // предметом было неверно.
+      const drawnWare = drawFieldSprite(ctx, 'sadhaka_alt', 'idle', t, { scale: 1.0 })
+      if (!drawnWare) drawWareArt(ctx, w, t)   // запасной путь, пока лист едет
       ctx.restore()
       if (w.near) {
         ctx.font = '11px var(--font-display), Georgia, serif'
