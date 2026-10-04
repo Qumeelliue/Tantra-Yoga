@@ -195,9 +195,13 @@ describe('Всё, что нарисовано в бою, берётся из л�
   it('запасной вектор остаётся запасным, а не основным путём', () => {
     // Вектор нужен: пока лист едет, поле не должно быть пустым. Но он обязан
     // стоять ПОСЛЕ попытки спрайта, а не вместо неё.
-    const ware = src.slice(Math.max(0, src.indexOf('просящие (сева)') - 200), src.indexOf('просящие (сева)') + 1400)
-    const spriteAt = ware.indexOf('drawFieldSprite(')
-    const vectorAt = ware.indexOf('drawWareArt(')
+    // Ищем по КОДУ, а не по комментарию. Проверка искала кусок исходника по словам
+    // «просящие (сева)» — то есть знала про текст, а не про поведение. Стоило
+    // комментарию переехать (рисунок просящего переехал в общий список по
+    // глубине), и проверка падала с «у просящего нет попытки нарисовать
+    // спрайт» — хотя спрайт никуда не делся.
+    const spriteAt = src.indexOf("drawFieldSprite(ctx, 'sadhaka_alt'")
+    const vectorAt = src.indexOf('drawWareArt(')
     expect(spriteAt, 'у просящего нет попытки нарисовать спрайт').toBeGreaterThanOrEqual(0)
     expect(vectorAt, 'у просящего нет запасного вектора — а он нужен').toBeGreaterThanOrEqual(0)
     expect(spriteAt < vectorAt,

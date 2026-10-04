@@ -127,7 +127,11 @@ function reachEventDoor(maxDoors = 40, maxRuns = 12) {
       byClass(EVENT_DOOR) || byClass(/door-card\s+d-room/) || byClass(/door-card/)
     } else if (onField()) {
       clearRoom()
-      for (let k = 0; k < 40 && onField(); k++) {
+      // 40 кадров — это 0,64 секунды игры. Комната стала больше (896×896 вместо
+      // 620×900), и оки успевают сойтись к игроку раньше, чем он дойдёт до
+      // двери: раньше хватало 40, теперь не хватает. Предел поднят, а не
+      // «ослаблена» проверка: она по-прежнему требует, чтобы игрок дошёл.
+      for (let k = 0; k < 160 && onField(); k++) {
         dom.flushRaf(1)
         const st = globalThis.window.__field
         if (st?.door) { st.player.x = st.door.x; st.player.y = st.door.y }

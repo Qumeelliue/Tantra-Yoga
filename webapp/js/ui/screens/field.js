@@ -27,6 +27,19 @@ import {
 const W = 420
 const H = 640
 
+// ── ИЗОМЕТРИЯ ──
+//
+// Логика боя остаётся в плоскости (сближение, радиусы, попадания — всё как
+// было и покрыто проверками), а экран рисует ромб. Перевод ровно один, в
+// `ui/iso.js`, и обратный к нему — тоже оттуда. Раньше обратный перевод был
+// «почти таким же»: сдвиг комнаты прибавлялся в прямом и не вычитался в
+// обратном, палец уезжал на 1280 единиц, и четыре проверки телефона падали.
+import { roomIso, roomWorld, clampCamera, ISO_W, ISO_H } from '../iso.js'
+import { loadIsoTiles, buildIsoFloor, buildIsoWalls } from '../fieldIso.js'
+
+/** Плоская точка боя → точка ромба. Все рисунки берут координаты только отсюда. */
+const iso = (x, y) => roomIso(x, y)
+
 // Ритм дыхания: вдох — задержка — выдох. Совпадает с сердцебиением.
 const BREATH_CYCLE = 4.0
 
@@ -75,6 +88,9 @@ export function fieldScreen(state, opts = {}) {
   let floorCanvasNow = null
   // Стены — тот же тайлсет, собираются один раз вместе с полом.
   let wallCanvasNow = null
+  // Изометрические слои комнаты: ромбовый пол и фасады стен (ui/fieldIso.js).
+  let isoFloorNow = null
+  let isoWallsNow = null
 
   /**
    * Камера за садхакой — но на центр боя, а не только на игрока.
@@ -102,9 +118,29 @@ export function fieldScreen(state, opts = {}) {
       tx = p.x + (fx - p.x) * 0.5
       ty = p.y + (fy - p.y) * 0.5
     }
-    cam.x = Math.max(0, Math.min(WORLD_W - W, tx - W / 2))
-    cam.y = Math.max(0, Math.min(WORLD_H - H, ty - H / 2))
-    st.cam = { x: cam.x, y: cam.y, w: WORLD_W, h: WORLD_H }
+    const c = iso(tx, ty)
+    const clamped = clampCamera(c.x, c.y, W, H)
+    cam.x = clamped.x
+    cam.y = clamped.y
+    st.cam = { x: cam.x, y: cam.y, w: ISO_W, h: ISO_H }
+  }
+
+  /**
+   * Где на экране стоит точка боя.
+   *
+   * Отдаётся наружу, чтобы проверки и стенд НЕ переписывали перевод сами: раньше
+   * стенд считал экранную точку как «мировая минус камера», то есть знал про
+   * устройство рисунка. Стоило рисунку измениться — проверки падали, хотя игра
+   * была права, а чинить приходилось стенд.
+   *
+   * @param {number} wx — координата боя
+   * @param {number} wy — координата боя
+   * @returns {{x: number, y: number}} — точка видимой области 0…420 × 0…640
+   */
+  st.screenPoint = (wx, wy) => {
+    camFollow(st.player)
+    const q = iso(wx, wy)
+    return { x: q.x - cam.x, y: q.y - cam.y }
   }
 
   // Камера определена сразу: иначе до первого кадра `st.cam` не существует, и
@@ -122,6 +158,14 @@ export function fieldScreen(state, opts = {}) {
     if (!ok) return
     floorCanvasNow = buildFloorCanvas(WORLD_W, WORLD_H)
     wallCanvasNow = buildWallCanvas(WORLD_W, WORLD_H)
+  })
+
+  // Изометрическая комната. Раньше она не строилась вовсе: комната была
+  // прямоугольником с площадкой из кода. Набор приехал — ромб есть.
+  loadIsoTiles().then((ok) => {
+    if (!ok) return
+    isoFloorNow = buildIsoFloor()
+    isoWallsNow = buildIsoWalls()
   })
 
   // ── DOM-оверлеи ──
@@ -353,8 +397,15 @@ export function fieldScreen(state, opts = {}) {
     camFollow(st.player)
     // +cam — потому что арена больше экрана. Без этого касание в левом верхнем
     // углу экрана било в точку, которой на карте нет.
-    const x = (e.clientX - r.left) * (W / r.width) + cam.x
-    const y = (e.clientY - r.top) * (H / r.height) + cam.y
+    // Экран → ромб → плоскость. Камера берётся та, по которой нарисован текущий
+    // кадр: палец должен попадать в ту картинку, которую видит игрок.
+    const screenCam = st.cam || cam
+    const isoPt = roomWorld(
+      (e.clientX - r.left) * (W / r.width) + screenCam.x,
+      (e.clientY - r.top) * (H / r.height) + screenCam.y,
+    )
+    const x = isoPt.x
+    const y = isoPt.y
     return Number.isFinite(x) && Number.isFinite(y) ? { x, y } : null
   }
 
@@ -716,8 +767,9 @@ export function fieldScreen(state, opts = {}) {
     const sp = st.spring
     if (!sp) return
     const pulse = 0.6 + 0.3 * Math.sin(t * 1.8)
+    const spI = iso(sp.x, sp.y)
     ctx.save()
-    ctx.translate(sp.x, sp.y)
+    ctx.translate(spI.x, spI.y)
     // тень на полу
     ctx.fillStyle = 'rgba(0,0,0,.5)'
     ctx.beginPath(); ctx.ellipse(0, 14, 20, 6, 0, 0, 7); ctx.fill()
@@ -757,133 +809,20 @@ export function fieldScreen(state, opts = {}) {
     ctx.restore()
   }
 
-  // ── СТЕНЫ КОМНАТЫ (Hades) ──────────────────────────────────────────
-  // В Hades комната — это ПОМЕЩЕНИЕ: задняя стена с дверью, две боковые,
-  // уходящие вглубь, тень от потолка. Без них сцена читается как
-  // «площадка, висящая в пустоте» — сколько бы её ни поднимали.
-  // Здесь: задняя стена с кладкой, боковые стены, уходящие на перспетиве,
-  // и тёмный карниз сверху. Дверь потом дорисовывается поверх стены.
-  const WALL = { top: 40, base: 176, inset: 26 }
-
+  // ── СТЕНЫ КОМНАТЫ ──────────────────────────────────────────────────
+  //
+  // Стена — это фасады на двух дальних краях ромба. Собраны ОДИН раз в
+  // `ui/fieldIso.js` вместе с полом; здесь только вывод.
+  //
+  // Раньше здесь был самодельный вектор: градиент, кладка, швы вразбок, трещины
+  // в коде, плюс прямоугольная стена поперёк экрана. Прямоугольная стена в
+  // изометрии — самое заметное, что выдаёт подделку: она стоит не на грани
+  // ромба, а поперёк кадра.
   function drawWalls(t) {
-    // ЛИЦЕНЗИОННАЯ СТЕНА (та же CC-BY 3.0, что пол и фигуры).
-    //
-    // Раньше здесь был самодельный вектор: градиент, кладка, швы вразброс и
-    // трещины, нарисованные в коде. Это была последняя часть картинки Поля
-    // Ума, которая оставалась своей. Фасад и верхняя грань теперь берутся из
-    // тайлсета (см. НАХОДКУ 28 (8)).
-    //
-    // Поверх лицензионной стены остаётся только ТЕНЬ от потолка и боковое
-    // затемнение: они не рисуют стену, а делают её глубиной. Если убрать и их,
-    // комната станет плоской схемой, а не местом.
-    if (wallCanvasNow) {
-      // тень от потолка падает на стену сверху
-      const sg = ctx.createLinearGradient(0, 0, 0, WALL_THICK * 1.6)
-      sg.addColorStop(0, 'rgba(0,0,0,.62)')
-      sg.addColorStop(1, 'rgba(0,0,0,0)')
-      ctx.fillStyle = sg
-      ctx.fillRect(0, 0, WORLD_W, WALL_THICK * 1.6)
-      ctx.drawImage(wallCanvasNow, 0, 0)
-      // боковое затемнение — чтобы края комнаты уходили в темноту
-      for (const side of [0, 1]) {
-        const x0 = side ? WORLD_W - 40 : 0
-        const bg = ctx.createLinearGradient(x0, 0, side ? WORLD_W - 40 : 40, 0)
-        bg.addColorStop(0, 'rgba(0,0,0,.5)')
-        bg.addColorStop(1, 'rgba(0,0,0,0)')
-        ctx.fillStyle = bg
-        ctx.fillRect(x0, 0, 40, WORLD_H)
-      }
-      return
-    }
-
-    const g = ctx.createLinearGradient(0, WALL.top, 0, WALL.base)
-    g.addColorStop(0, rgb(mixc(L.ground2, [0, 0, 0], 0.78)))
-    g.addColorStop(0.55, rgb(mixc(L.ground2, [0, 0, 0], 0.5)))
-    g.addColorStop(1, rgb(mixc(L.ground2, [0, 0, 0], 0.72)))
-    ctx.fillStyle = g
-    ctx.fillRect(0, WALL.top, WORLD_W, WALL.base - WALL.top)
-
-    // кладка: ряды ниже — выше (это перспектива), швы вразброс
-    ctx.save()
-    ctx.beginPath()
-    ctx.rect(0, WALL.top, WORLD_W, WALL.base - WALL.top)
-    ctx.clip()
-    const rowH = 20
-    const rows = Math.ceil((WALL.base - WALL.top) / rowH)
-    for (let r = 0; r < rows; r++) {
-      const y = WALL.top + r * rowH
-      const k = r / Math.max(1, rows - 1)              // 0 сверху, 1 снизу
-      const h = rowH * (0.72 + 0.5 * k)                // перспектива
-      const off = (r % 2) * 46 + r * 7
-      ctx.strokeStyle = rgb(mixc(L.ground2, [0, 0, 0], 0.82), 0.9)
-      ctx.lineWidth = 1
-      ctx.beginPath(); ctx.moveTo(0, y + h); ctx.lineTo(WORLD_W, y + h); ctx.stroke()
-      for (let x = off; x < WORLD_W + 60; x += 60 + r * 3) {
-        ctx.strokeStyle = rgb(mixc(L.ground2, [0, 0, 0], 0.7), 0.7)
-        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y + h); ctx.stroke()
-      }
-    }
-    // редкие трещины по стене — стена старая, а не напечатанная
-    for (let k = 0; k < 3; k++) {
-      const cx = 46 + ((k * 137) % 320)
-      ctx.strokeStyle = 'rgba(0,0,0,.45)'
-      ctx.lineWidth = 1.4
-      ctx.beginPath()
-      ctx.moveTo(cx, WALL.top + 6)
-      ctx.lineTo(cx + 7, WALL.top + 40 + k * 9)
-      ctx.lineTo(cx - 4, WALL.top + 74 + k * 7)
-      ctx.stroke()
-    }
-    ctx.restore()
-
-    // карниз сверху: тень от потолка + светлая кромка
-    const cg = ctx.createLinearGradient(0, WALL.top - 16, 0, WALL.top + 34)
-    cg.addColorStop(0, 'rgba(0,0,0,.8)')
-    cg.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = cg
-    ctx.fillRect(0, WALL.top - 16, WORLD_W, 50)
-    ctx.strokeStyle = rgb(L.accent, 0.18)
-    ctx.lineWidth = 2
-    ctx.beginPath(); ctx.moveTo(0, WALL.top + 0.5); ctx.lineTo(WORLD_W, WALL.top + 0.5); ctx.stroke()
-
-    // БОКОВЫЕ стены: уходят вниз-вперёд к краям экрана. Их угол даёт
-    // ощущение, что комната замкнута, а не выставлена наружу.
-    for (const side of [-1, 1]) {
-      const x0 = side < 0 ? 0 : WORLD_W
-      const x1 = side < 0 ? WALL.inset : WORLD_W - WALL.inset
-      ctx.save()
-      const wg = ctx.createLinearGradient(x0, 0, x1, 0)
-      wg.addColorStop(0, rgb(mixc(L.ground2, [0, 0, 0], 0.86)))
-      wg.addColorStop(1, rgb(mixc(L.ground2, [0, 0, 0], 0.34)))
-      ctx.fillStyle = wg
-      ctx.beginPath()
-      ctx.moveTo(x0, WALL.top)
-      ctx.lineTo(x1, WALL.base - 6)
-      ctx.lineTo(x1 - side * 16, WORLD_H)
-      ctx.lineTo(x0, WORLD_H)
-      ctx.closePath()
-      ctx.fill()
-      // швы на боковой стене
-      ctx.strokeStyle = 'rgba(0,0,0,.4)'
-      ctx.lineWidth = 1
-      for (let k = 1; k < 9; k++) {
-        const y = WALL.base + k * 44
-        const e = (y - WALL.base) / (WORLD_H - WALL.base)
-        const xs = x1 - side * 16 * e
-        ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(xs, y - 10 * e); ctx.stroke()
-      }
-      // светлая кромка у пола
-      ctx.strokeStyle = rgb(L.accent, 0.14)
-      ctx.lineWidth = 1.6
-      ctx.beginPath(); ctx.moveTo(x1, WALL.base - 6); ctx.lineTo(x1 - side * 16, WORLD_H); ctx.stroke()
-      ctx.restore()
-    }
-
-    // плинтус: где стена становится полом
-    ctx.strokeStyle = rgb(mixc(L.ground, [0, 0, 0], 0.4), 0.9)
-    ctx.lineWidth = 3
-    ctx.beginPath(); ctx.moveTo(0, WALL.base); ctx.lineTo(WORLD_W, WALL.base); ctx.stroke()
+    if (!isoWallsNow) return
+    ctx.drawImage(isoWallsNow, 0, 0)
   }
+
 
   // ── ДВЕРЬ (Hades) ─────────────────────────────────────────────────
   // Пока комната не зачищена — тёмный проём. Зачищена — светится золотом.
@@ -892,8 +831,9 @@ export function fieldScreen(state, opts = {}) {
     const d = st.door
     if (!d) return
     const open = d.open && !locked
+    const dI = iso(d.x, d.y)
     ctx.save()
-    ctx.translate(d.x, d.y)
+    ctx.translate(dI.x, dI.y)
     // проём: арка в стене
     ctx.beginPath()
     ctx.moveTo(-d.r, d.r)
@@ -1025,6 +965,14 @@ export function fieldScreen(state, opts = {}) {
     // Камера — до всего мира. Фон, стены, оков, пол — всё рисуется в
     // координатах арены; на экран попадает окно 420×640 внутри неё.
     camFollow(p)
+    // Фон ВИДИМОЙ ОБЛАСТИ, а не всей арены. За краем ромба — «небо» комнаты, и
+    // оно не двигается вместе с камерой: за краем не «ещё арена», а конец
+    // комнаты, и показывать его нечем.
+    const sky = ctx.createLinearGradient(0, 0, 0, H)
+    sky.addColorStop(0, rgb(mixc(L.sky, [0, 0, 0], 0.25), 1))
+    sky.addColorStop(1, rgb(mixc(L.sky, [0, 0, 0], 0.8), 1))
+    ctx.fillStyle = sky
+    ctx.fillRect(0, 0, W, H)
     ctx.save()
     ctx.translate(-cam.x, -cam.y)
     // Тряска (Hades: screen shake). Смещаем ВСЮ сцену: пол, стены, оков,
@@ -1035,318 +983,145 @@ export function fieldScreen(state, opts = {}) {
       ctx.translate((Math.random() - 0.5) * k, (Math.random() - 0.5) * k)
     }
 
-    // фон: стихия локации + состояние гун
-    const tint = st.tint || [40, 32, 58]
-    const g0 = ctx.createLinearGradient(0, 0, 0, WORLD_H)
-    g0.addColorStop(0, rgb(L.sky))
-    g0.addColorStop(0.5, rgb(mixc(tint, L.sky, 0.35)))
-    g0.addColorStop(1, rgb(mixc(L.sky, [0, 0, 0], 0.55)))
-    ctx.fillStyle = g0
-    ctx.fillRect(0, 0, WORLD_W, WORLD_H)
-
-    // Пол из тайлсета — поверх фоновой заливки, до света и стен.
+    // ── КОМНАТА: РОМБ ──────────────────────────────────────────────────
     //
-    // Порядок важен: градиент ложится ПЕРВЫМ, иначе он закрыл бы пол, а пол
-    // первым — иначе он закрыл бы градиент. Темнота по краям (вигнетка) идёт
-    // поверх обоих, и это то, что делает комнату углублённой.
-    if (floorCanvasNow) ctx.drawImage(floorCanvasNow, 0, 0)
+    // Раньше здесь стоял прямоугольник с площадкой, нарисованной в коде: пять
+    // слоёв, узор стихии, реквизит по краям. Это и был тот самый «мусор 2д» —
+    // и дело не в числе слоёв, а в том, что комната была прямоугольной.
+    //
+    // Теперь пол — ромбы из лицензионного набора, стены — фасады на двух дальних
+    // краях ромба, и то и другое собрано ОДИН раз (`ui/fieldIso.js`), а выводится
+    // одним drawImage. Побочно выигрываем скорость: раньше на кадр приходилось
+    // пятнадцать полноэкранных заливок, и честный стенд (он действительно
+    // растрирует заливки, а не делает вид) ронял проверку телефона по таймауту.
+    if (isoFloorNow) {
+      ctx.drawImage(isoFloorNow, 0, 0)
+    } else {
+      // Набор ещё едет — ровный пол комнаты, чтобы игрок не смотрел в пустоту.
+      ctx.fillStyle = rgb(mixc(L.ground, [0, 0, 0], 0.4), 1)
+      ctx.fillRect(0, 0, ISO_W, ISO_H)
+    }
 
-    // пыль света
+    // Пыль света — немного жизни над камнем. Дёшево: это кружки, а не заливки.
     ctx.save()
-    for (let i = 0; i < 26; i++) {
-      const sx = (i * 97) % WORLD_W, sy = ((i * 53) % WORLD_H)
+    for (let i = 0; i < 22; i++) {
+      const sp = iso(((i * 197) % ISO_W), ((i * 131) % ISO_H))
       const tw = 0.15 + 0.15 * Math.sin(t * 0.6 + i)
       ctx.fillStyle = `rgba(255,235,190,${tw * (L.motif === 'stars' ? 0.5 : 1)})`
       ctx.beginPath()
-      ctx.arc(sx, sy + Math.sin(t * 0.3 + i) * 6, 1.1, 0, 7)
+      ctx.arc(sp.x, sp.y + Math.sin(t * 0.3 + i) * 6, 1.1, 0, 7)
       ctx.fill()
     }
     ctx.restore()
 
-    // ── ЗЕМЛЯ: платформа с краем, а не плоский квадрат ───────────────
-    // Плоский повёрнутый квадрат читался как «квадрат». В Hades и в
-    // Into the Breach пол — это приподнятая площадка: видно её толщину,
-    // за краем — темнота. Три слоя: тень, боковая стенка, верх.
-    const FL = { y: 168, half: 300, thick: 26 }
-    const iso = (fn) => {
-      ctx.save()
-      ctx.translate(WORLD_W / 2, FL.y)
-      ctx.scale(1, 0.5)
-      ctx.rotate(Math.PI / 4)
-      fn()
-      ctx.restore()
+    // ── ВСЁ ЖИВОЕ — ОДНИМ СПИСКОМ, ПО ГЛУБИНЕ ─────────────────────────
+    //
+    // В прямоугольной комнате порядок отрисовки не mattered: кто нарисован
+    // последним, тот сверху. В ромбе это неверно — ока, которая БЛИЖЕ к
+    // зрителю, обязана перекрывать ту, что дальше, иначе она «выглядывает» из-за
+    // задней и сцена читается как набор наклеек, а не как место.
+    //
+    // Глубина — это сумма координат: она же «ниже по экрану». Значит, сортировка
+    // по глубине И ЕСТЬ порядок отрисовки, отдельного сравнения «выше/ниже» не
+    // нужно. Проверяется в `tests/isoDepth.test.js`.
+    const order = []
+    for (const pot of st.pots) {
+      if (pot.broken) continue
+      order.push({ d: pot.x + pot.y, kind: 'pot', o: pot })
     }
-
-    // 1) падающая тень площадки на «нижнюю» пустоту
-    ctx.save()
-    ctx.globalAlpha = 0.5
-    ctx.fillStyle = '#000'
-    iso(() => ctx.fillRect(-FL.half, -FL.half, FL.half * 2, FL.half * 2))
-    ctx.restore()
-
-    // 2) боковая стенка: тот же квадрат, сдвинутый вниз — видно толщину
-    ctx.save()
-    ctx.fillStyle = rgb(mixc(L.ground2, [0, 0, 0], 0.55), 1)
-    iso(() => ctx.fillRect(-FL.half, -FL.half + FL.thick * 2, FL.half * 2, FL.half * 2))
-    ctx.restore()
-
-    // 3) верх площадки
-    iso(() => {
-      ctx.fillStyle = rgb(L.ground, 0.62)
-      ctx.fillRect(-FL.half, -FL.half, FL.half * 2, FL.half * 2)
-      // швы плит — тонкие, чтобы читалась кладка, а не сетка
-      ctx.strokeStyle = rgb(L.accent, 0.10)
-      ctx.lineWidth = 1.2
-      for (let i = -FL.half; i <= FL.half; i += 60) {
-        ctx.beginPath(); ctx.moveTo(i, -FL.half); ctx.lineTo(i, FL.half); ctx.stroke()
-        ctx.beginPath(); ctx.moveTo(-FL.half, i); ctx.lineTo(FL.half, i); ctx.stroke()
-      }
-    })
-
-    // 4) светлая кромка сверху — «край» платформы
-    ctx.save()
-    ctx.strokeStyle = rgb(L.accent, 0.32)
-    ctx.lineWidth = 1.6
-    iso(() => ctx.strokeRect(-FL.half, -FL.half, FL.half * 2, FL.half * 2))
-    ctx.restore()
-
-    // 5) вокруг площадки — темнота: за краем пропасть, а не фон
-    ctx.save()
-    const vg = ctx.createRadialGradient(WORLD_W / 2, FL.y + 190, 90, WORLD_W / 2, FL.y + 190, 400)
-    vg.addColorStop(0, 'rgba(0,0,0,0)')
-    vg.addColorStop(1, 'rgba(0,0,0,.62)')
-    ctx.fillStyle = vg
-    ctx.fillRect(0, FL.y - 40, WORLD_W, WORLD_H - FL.y + 40)
-    ctx.restore()
-
-    // ── УЗОР ЗЕМЛИ: своя стихия ─────────────────────────────────────────
-    ctx.save()
-    const acc = rgb(L.accent, 1)
-    if (L.motif === 'roots') {
-      ctx.globalAlpha = 0.85
-      for (const [rx, ry, rr, rot] of [[70, 250, 150, 0.1], [352, 330, 130, -0.12], [210, 585, 190, 0.03]]) {
-        ctx.fillStyle = rgb(mixc(L.ground2, [0, 0, 0], 0.4), 0.7)
-        ctx.save(); ctx.translate(rx, ry); ctx.rotate(rot)
-        ctx.beginPath(); ctx.ellipse(0, 0, rr, 9, 0, 0, 7); ctx.fill()
-        ctx.restore()
-      }
-    } else if (L.motif === 'water') {
-      // рябь: расходящиеся кольца
-      ctx.strokeStyle = rgb(L.accent, 0.22)
-      ctx.lineWidth = 1.6
-      for (let k = 0; k < 5; k++) {
-        const ph = (t * 0.32 + k * 0.2) % 1
-        ctx.globalAlpha = 0.5 * (1 - ph)
-        ctx.beginPath()
-        ctx.ellipse(206, 470, 24 + ph * 250, (24 + ph * 250) * 0.5, 0, 0, 7)
-        ctx.stroke()
-      }
-    } else if (L.motif === 'embers') {
-      // трещины, из которых идёт свет
-      ctx.lineCap = 'round'
-      for (let k = 0; k < 7; k++) {
-        const bx = 40 + (k * 137) % 340, by = 250 + (k * 83) % 320
-        const pulse = 0.4 + 0.35 * Math.sin(t * 1.6 + k)
-        ctx.strokeStyle = `rgba(255,132,52,${0.35 + pulse * 0.35})`
-        ctx.lineWidth = 2.2
-        ctx.beginPath()
-        ctx.moveTo(bx, by)
-        ctx.lineTo(bx + 22, by - 8)
-        ctx.lineTo(bx + 34, by + 12)
-        ctx.lineTo(bx + 58, by + 2)
-        ctx.stroke()
-        // искра вверх
-        ctx.fillStyle = `rgba(255,190,90,${pulse * 0.5})`
-        ctx.beginPath()
-        ctx.arc(bx + 34 + Math.sin(t * 2 + k) * 5, by + 12 - (t * 22 + k * 30) % 40, 1.6, 0, 7)
-        ctx.fill()
-      }
-    } else if (L.motif === 'wind') {
-      ctx.strokeStyle = rgb(L.accent, 0.24)
-      ctx.lineWidth = 2
-      for (let k = 0; k < 6; k++) {
-        const y = 240 + k * 60
-        const off = (t * 40 + k * 90) % (WORLD_W + 200) - 100
-        ctx.beginPath()
-        ctx.moveTo(off - 90, y)
-        ctx.bezierCurveTo(off - 30, y - 12, off + 40, y + 12, off + 100, y)
-        ctx.stroke()
-      }
-    } else if (L.motif === 'sound') {
-      // звуковые кольна от центра
-      ctx.strokeStyle = rgb(L.accent, 0.3)
-      for (let k = 0; k < 4; k++) {
-        const ph = (t * 0.4 + k * 0.25) % 1
-        ctx.globalAlpha = 0.55 * (1 - ph)
-        ctx.lineWidth = 2.4
-        ctx.beginPath()
-        ctx.ellipse(206, 430, 20 + ph * 300, (20 + ph * 300) * 0.42, 0, 0, 7)
-        ctx.stroke()
-      }
-    } else if (L.motif === 'stars') {
-      for (let k = 0; k < 22; k++) {
-        const sx = (k * 89) % WORLD_W, sy = 230 + ((k * 131) % 340)
-        const tw = 0.3 + 0.5 * Math.abs(Math.sin(t * 0.8 + k))
-        ctx.fillStyle = rgb(L.accent, tw * 0.8)
-        ctx.beginPath()
-        ctx.arc(sx, sy, 1.5, 0, 7); ctx.fill()
-        ctx.strokeStyle = rgb(L.accent, tw * 0.35)
-        ctx.lineWidth = 1
-        ctx.beginPath()
-        ctx.moveTo(sx - 5, sy); ctx.lineTo(sx + 5, sy)
-        ctx.moveTo(sx, sy - 5); ctx.lineTo(sx, sy + 5)
-        ctx.stroke()
-      }
-    } else if (L.motif === 'petals') {
-      for (let k = 0; k < 16; k++) {
-        const ph = (t * 0.09 + k * 0.0625) % 1
-        const px = 20 + (k * 103) % 372
-        const py = 150 + ph * 430 + Math.sin(t * 0.8 + k) * 8
-        ctx.save()
-        ctx.translate(px, py)
-        ctx.rotate(t * 0.5 + k)
-        ctx.fillStyle = `rgba(255,232,170,${0.5 * (1 - ph * 0.7)})`
-        ctx.beginPath()
-        ctx.ellipse(0, 0, 3.4, 1.6, 0, 0, 7)
-        ctx.fill()
-        ctx.restore()
-      }
-    }
-    ctx.restore()
-
-    // ── СИЛУЭТЫ ПО СТИХИИ (ориентиры на горизонте) ──────────────────────
-    const props = [[58, 210, 0.9], [366, 196, 0.72], [70, 505, 0.8], [356, 520, 0.95]]
-    const dark = rgb(mixc(L.ground2, [0, 0, 0], 0.62), 0.92)
-    for (const [tx, ty, sc] of props) {
-      ctx.fillStyle = dark
-      if (L.prop === 'tree') {
-        ctx.fillRect(tx - 3 * sc, ty - 42 * sc, 6 * sc, 42 * sc)
-        ctx.beginPath(); ctx.arc(tx, ty - 50 * sc, 22 * sc, 0, 7); ctx.fill()
-      } else if (L.prop === 'reeds') {
-        for (let r = -2; r <= 2; r++) {
-          ctx.fillRect(tx + r * 5 * sc - 1.4, ty - (36 - Math.abs(r) * 7) * sc, 2.8, (36 - Math.abs(r) * 7) * sc)
-        }
-      } else if (L.prop === 'spire') {
-        ctx.beginPath()
-        ctx.moveTo(tx - 7 * sc, ty); ctx.lineTo(tx, ty - 48 * sc); ctx.lineTo(tx + 7 * sc, ty)
-        ctx.closePath(); ctx.fill()
-      } else if (L.prop === 'column') {
-        ctx.fillRect(tx - 4 * sc, ty - 60 * sc, 8 * sc, 60 * sc)
-        ctx.fillRect(tx - 8 * sc, ty - 64 * sc, 16 * sc, 5 * sc)
-        ctx.fillRect(tx - 7 * sc, ty - 4 * sc, 14 * sc, 4 * sc)
-      } else if (L.prop === 'arch') {
-        ctx.lineWidth = 5 * sc
-        ctx.beginPath()
-        ctx.arc(tx, ty - 6 * sc, 20 * sc, Math.PI, 0)
-        ctx.stroke()
-      } else if (L.prop === 'obelisk') {
-        ctx.beginPath()
-        ctx.moveTo(tx - 5 * sc, ty); ctx.lineTo(tx - 3 * sc, ty - 46 * sc)
-        ctx.lineTo(tx, ty - 54 * sc); ctx.lineTo(tx + 3 * sc, ty - 46 * sc)
-        ctx.lineTo(tx + 5 * sc, ty)
-        ctx.closePath(); ctx.fill()
-      } else if (L.prop === 'crown') {
-        ctx.beginPath()
-        ctx.arc(tx, ty - 26 * sc, 24 * sc, Math.PI, 0)
-        ctx.fill()
-      }
-    }
-
-    // СОКРОВИЩА (Dead Cells: containers). Рисунок живёт в `fieldArt.js` вместе с
-    // остальным и проверяется `fieldArt.test.js` — стиль рисунка в этом
-    // проекте нельзя оставлять непроверенным ( автор однажды пожаловался,
-    // что игра выглядит «как овалы», и это повторялось именно из-за этого).
-    // Разбитый не рисуется: на его месте остаётся пусто.
-    for (const p of st.pots) {
-      if (p.broken) continue
-      ctx.save()
-      ctx.translate(p.x, p.y)
-      drawPotArt(ctx, p)
-      ctx.restore()
-    }
-
-    // просящие (сева)
     for (const w of st.wares) {
-      groundShadow(w.x, w.y + 2, 8, 0.36)
       if (w.done) continue
-      ctx.save()
-      ctx.translate(w.x, w.y)
-      if (w.near) {
-        ctx.strokeStyle = 'rgba(242,196,109,.8)'
-        ctx.lineWidth = 1.5
-        ctx.beginPath()
-        ctx.arc(0, -18, 30, 0, 7)
-        ctx.stroke()
-      }
-      // Просящий — человек, а не свечка: это второй практик, который просит о
-      // помощи. Фигура — та же лицензионная (свободный второй воин из того же
-      // листа), а не мой вектор. Служение в игре не «предмет», и рисовать его
-      // предметом было неверно.
-      const drawnWare = drawFieldSprite(ctx, 'sadhaka_alt', 'idle', t, { scale: 1.0 })
-      if (!drawnWare) drawWareArt(ctx, w, t)   // запасной путь, пока лист едет
-      ctx.restore()
-      if (w.near) {
-        ctx.font = '11px var(--font-display), Georgia, serif'
-        ctx.fillStyle = '#e9dcc4'
-        ctx.textAlign = 'center'
-        ctx.fillText(w.name, w.x, w.y + 40)
-      }
+      order.push({ d: w.x + w.y, kind: 'ware', o: w })
     }
-
-    // Стены комнаты — после пола и реквизита (они стоят на нём), но до оков
-    // и дверей, чтобы замкнуть комнату позади всего живого.
-    drawWalls(t)
-    drawSpring(t)
-    drawChaos(t)
-
-    // Комната владыки: дверь закрыта, пока он не падёт (Hades: босс-комната).
-    const bossRoom = st.foes.some((f) => f.isBoss && !f.dead && !f.pacified)
-    drawDoor(t, bossRoom && !st.roomCleared)
-
-    // Монеты (драхмы) — золотые кружочки, лежат где упали.
     for (const c of st.coins) {
       if (c.taken) continue
-      const bob = Math.sin(t * 3 + c.x * 0.1) * 1.6
-      ctx.save()
-      ctx.translate(c.x, c.y + bob)
-      ctx.fillStyle = 'rgba(0,0,0,.45)'
-      ctx.beginPath()
-      ctx.ellipse(0, 6 - bob, 5, 2, 0, 0, 7)
-      ctx.fill()
-      ctx.fillStyle = '#ffcf4a'
-      ctx.shadowBlur = 8
-      ctx.shadowColor = 'rgba(255,207,74,.8)'
-      ctx.beginPath()
-      ctx.ellipse(0, 0, 4.4, 4.4, 0, 0, 7)
-      ctx.fill()
-      ctx.shadowBlur = 0
-      ctx.strokeStyle = 'rgba(0,0,0,.6)'
-      ctx.lineWidth = 1
-      ctx.stroke()
-      ctx.restore()
+      order.push({ d: c.x + c.y, kind: 'coin', o: c })
     }
-
-    // оковы
     for (const f of st.foes) {
       // Ушедшая ока не рисуется. Убитая — доигрывает падение: полоса смерти из
       // лицензионного спрайта существует, и раньше не показывалась ни разу.
       if (f.gone) continue
-      // тень на земле — фигура стоит, а не висит
-      const sr = f.isBoss ? 26 : 11
-      groundShadow(f.x, f.y + sr * 0.85, sr, f.isBoss ? 0.55 : 0.42)
-      if (f.pacified) {
-        // На месте освобождённой оковы остаётся цветок — след, а не добыча.
+      order.push({ d: f.x + f.y, kind: 'foe', o: f })
+    }
+    order.push({ d: p.x + p.y, kind: 'player', o: p })
+    order.sort((a, b) => a.d - b.d)
+
+    for (const item of order) {
+      const o = item.o
+      const at = iso(o.x, o.y)
+      if (item.kind === 'pot') {
+        // Сокровище (Dead Cells: containers). Рисунок живёт в `fieldArt.js`
+        // вместе с остальным и проверяется `fieldArt.test.js`.
         ctx.save()
-        ctx.translate(f.x, f.y + 4)
-        drawFlowerArt(ctx, t)
+        ctx.translate(at.x, at.y)
+        drawPotArt(ctx, o)
         ctx.restore()
         continue
       }
-      drawFoe(f, t)
+      if (item.kind === 'ware') {
+        // Просящий — человек, а не свечка: это второй практик, который просит
+        // о помощи. Тень на полу — фигура стоит, а не висит.
+        groundShadow(at.x, at.y + 2, 8, 0.36)
+        ctx.save()
+        ctx.translate(at.x, at.y)
+        if (o.near) {
+          ctx.strokeStyle = 'rgba(242,196,109,.8)'
+          ctx.lineWidth = 1.5
+          ctx.beginPath()
+          ctx.arc(0, -18, 30, 0, 7)
+          ctx.stroke()
+        }
+        const drawnWare = drawFieldSprite(ctx, 'sadhaka_alt', 'idle', t, { scale: 1.0 })
+        if (!drawnWare) drawWareArt(ctx, o, t)   // запасной путь, пока лист едет
+        ctx.restore()
+        if (o.near) {
+          ctx.font = '11px var(--font-display), Georgia, serif'
+          ctx.fillStyle = '#e9dcc4'
+          ctx.textAlign = 'center'
+          ctx.fillText(o.name, at.x, at.y + 40)
+        }
+        continue
+      }
+      if (item.kind === 'coin') {
+        const bob = Math.sin(t * 3 + o.x * 0.1) * 1.6
+        ctx.save()
+        ctx.translate(at.x, at.y + bob)
+        ctx.fillStyle = 'rgba(0,0,0,.45)'
+        ctx.beginPath()
+        ctx.ellipse(0, 6 - bob, 5, 2, 0, 0, 7)
+        ctx.fill()
+        ctx.fillStyle = '#ffcf4a'
+        ctx.shadowBlur = 8
+        ctx.shadowColor = 'rgba(255,207,74,.8)'
+        ctx.beginPath()
+        ctx.ellipse(0, 0, 4.4, 4.4, 0, 0, 7)
+        ctx.fill()
+        ctx.shadowBlur = 0
+        ctx.strokeStyle = 'rgba(0,0,0,.6)'
+        ctx.lineWidth = 1
+        ctx.stroke()
+        ctx.restore()
+        continue
+      }
+      if (item.kind === 'foe') {
+        const f = o
+        // тень на земле — фигура стоит, а не висит
+        const sr = f.isBoss ? 26 : 11
+        groundShadow(at.x, at.y + sr * 0.85, sr, f.isBoss ? 0.55 : 0.42)
+        if (f.pacified) {
+          // На месте освобождённой оковы остаётся цветок — след, а не добыча.
+          ctx.save()
+          ctx.translate(at.x, at.y + 4)
+          drawFlowerArt(ctx, t)
+          ctx.restore()
+          continue
+        }
+        drawFoe(f, t)
+        continue
+      }
+      drawPlayer(o, t)
     }
 
-    // садхака
-    drawPlayer(p, t)
 
     // HUD
     updateHud(p)
@@ -1380,8 +1155,9 @@ export function fieldScreen(state, opts = {}) {
   }
 
   function drawFoe(f, t) {
+    const fI = iso(f.x, f.y)
     ctx.save()
-    ctx.translate(f.x, f.y)
+    ctx.translate(fI.x, fI.y)
 
     // ФИГУРА — лицензионный спрайт, а не самодельный вектор.
     //
@@ -1540,8 +1316,9 @@ export function fieldScreen(state, opts = {}) {
   }
 
   function drawPlayer(p, t) {
+    const pI = iso(p.x, p.y)
     ctx.save()
-    ctx.translate(p.x, p.y)
+    ctx.translate(pI.x, pI.y)
     if (p.invuln > 0 && Math.floor(t * 20) % 2 === 0) ctx.globalAlpha = 0.4
 
     // щит — кольцо вокруг садхака (Slay the Spire: block)

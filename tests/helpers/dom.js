@@ -208,37 +208,163 @@ const CTX_METHODS = [
   'save', 'restore', 'scale', 'rotate', 'translate', 'setTransform',
   'beginPath', 'closePath', 'moveTo', 'lineTo', 'arc', 'ellipse', 'rect',
   'bezierCurveTo', 'quadraticCurveTo', 'clip',
-  'fill', 'stroke', 'fillRect', 'strokeRect', 'clearRect',
+  'fill', 'stroke', 'strokeRect', 'clearRect',
   'fillText', 'strokeText', 'measureText',
   'setLineDash',
 ]
 
 function makeCtx(canvas) {
+  // ── Матрица 2×3 ──
+  //
+  // Зачем она здесь: пол комнаты — ромбы, они ложатся внахлёст, и прозрачные
+  // углы соседней плитки НЕ должны стирать её соседа. Раньше стенд копировал
+  // альфу как есть, и изометрический пол выходил кольцом: оставались только
+  // границы ромбов. Это была поломка прибора, а не рисунка, и она выглядела
+  // как «пол нарисован неправильно» — выглядело бы глазом, если бы глаз был.
+  //
+  // Теперь наложение честное (`source-over` как в браузере) и `source-atop` для
+  // затемнения по глубине. Плюс скос через `transform`: без него фасад стены
+  // в принципе нельзя было бы проверить — он рисуется именно наклоном.
+  const I = [1, 0, 0, 1, 0, 0]
+  const mul = (m, n) => [
+    m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1],
+    m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
+    m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5],
+  ]
+  let M = I.slice()
+  const stack = []
+
   const ctx = {
     canvas: canvas || null,
     fillStyle: '#000', strokeStyle: '#000', lineWidth: 1, lineCap: 'butt',
     font: '10px sans-serif', textAlign: 'start', textBaseline: 'alphabetic',
-    globalAlpha: 1, shadowBlur: 0, shadowColor: 'transparent',
+    globalAlpha: 1, globalCompositeOperation: 'source-over',
+    shadowBlur: 0, shadowColor: 'transparent',
     imageSmoothingEnabled: true,
     measureText: (t) => ({ width: String(t).length * 6 }),
   }
   for (const m of CTX_METHODS) ctx[m] = () => {}
-  ctx.createLinearGradient = () => ({ addColorStop() {} })
-  ctx.createRadialGradient = () => ({ addColorStop() {} })
+  ctx.save = () => { stack.push(M.slice()); stack.push([ctx.globalAlpha, ctx.globalCompositeOperation]) }
+  ctx.restore = () => {
+    const mode = stack.pop()
+    M = stack.pop() || I.slice()
+    if (mode) { ctx.globalAlpha = mode[0]; ctx.globalCompositeOperation = mode[1] }
+  }
+  ctx.transform = (a, b, c, d, e, f) => { M = mul(M, [a, b, c, d, e, f]) }
+  ctx.setTransform = (a = 1, b = 0, c = 0, d = 1, e = 0, f = 0) => { M = [a, b, c, d, e, f] }
+  ctx.translate = (x, y) => { M = mul(M, [1, 0, 0, 1, x, y]) }
+  ctx.scale = (x, y) => { M = mul(M, [x, 0, 0, y, 0, 0]) }
+  ctx.rotate = (a) => { M = mul(M, [Math.cos(a), Math.sin(a), -Math.sin(a), Math.cos(a), 0, 0]) }
+  ctx.createLinearGradient = (x0 = 0, y0 = 0, x1 = 0, y1 = 1) => {
+    const g = { __grad: { x0, y0, x1, y1, stops: [] }, addColorStop(t, c) { this.__grad.stops.push([t, c]) } }
+    return g
+  }
+  ctx.createRadialGradient = (x0 = 0, y0 = 0, r0 = 0, x1 = 0, y1 = 0, r1 = 1) => {
+    const g = { __grad: { x0, y0, x1, y1, r0, r1, radial: true, stops: [] }, addColorStop(t, c) { this.__grad.stops.push([t, c]) } }
+    return g
+  }
 
-  // ── Пиксели ──
+  // ── Цвет ──
   //
-  // Раньше здесь был `() => {}` на всё, включая drawImage. То есть холст в
-  // проверках принимал любую картинку и хранил ничего: «нарисован ли спрайт»
-  // нельзя было проверить в принципе — а это ровно тот вопрос, ради которого
-  // существует правило «проверять собранный экран, а не исходник».
-  //
-  // Теперь холст держит буфер и умеет в него копировать. Растеризация честная
-  // только для `drawImage` с прямоугольным источником — этого хватает, потому
-  // что вся лицензионная графика приходит именно так (лист → кадр). Всё
-  // остальное (дуги, текст, заливки) по-прежнему ничего не пишет: имитация
-  // растеризатора была бы вернее отказу, потому что выглядела бы настоящей.
-  const buf = canvas && canvas.__px ? canvas.__px : null
+  // Заливка нужна не для красоты прибора, а ради одного утверждения: «дальний
+  // край комнаты темнее ближнего». Без заливки это нечем проверить — а глазом
+  // здесь не проверить ничего.
+  const parseColour = (c) => {
+    if (Array.isArray(c)) return [c[0], c[1], c[2], c.length > 3 ? c[3] : 1]
+    const s = String(c).trim()
+    let m = /^#([0-9a-f]{3})$/i.exec(s)
+    if (m) return [parseInt(m[1][0] + m[1][0], 16), parseInt(m[1][1] + m[1][1], 16), parseInt(m[1][2] + m[1][2], 16), 1]
+    m = /^#([0-9a-f]{6})$/i.exec(s)
+    if (m) return [parseInt(m[1].slice(0, 2), 16), parseInt(m[1].slice(2, 4), 16), parseInt(m[1].slice(4, 6), 16), 1]
+    m = /^rgba?\(([^)]+)\)$/i.exec(s)
+    if (m) {
+      const p = m[1].split(',').map((v) => parseFloat(v))
+      return [p[0] || 0, p[1] || 0, p[2] || 0, p.length > 3 ? p[3] : 1]
+    }
+    return [255, 0, 255, 1]   // незнакомый цвет виден сразу, а не тихо
+  }
+
+  const gradAt = (gr, x, y) => {
+    const stops = gr.stops
+    if (!stops.length) return [0, 0, 0, 0]
+    if (!gr.__lut) {
+      // Таблица на 256 шагов вдоль оси градиента, считается один раз на градиент.
+      // Без неё каждый пиксель полноэкранной заливки снова и снова считает
+      // положение и смешивает цвета — проверка вставала по таймауту, а не
+      // говорила правду. Шаг 1/255 незаметен глазом, а работы в 256 раз меньше.
+      const lut = new Float32Array(256 * 4)
+      for (let i = 0; i < 256; i++) lut.set(gradColourAt(stops, i / 255), i * 4)
+      gr.__lut = lut
+    }
+    let t
+    if (gr.radial) {
+      // Без Math.hypot: он заметно медленнее, а вызывается на каждый пиксель
+      // полноэкранной заливки.
+      const ddx = x - gr.x1
+      const ddy = y - gr.y1
+      const d = Math.sqrt(ddx * ddx + ddy * ddy)
+      t = gr.r1 > gr.r0 ? (d - gr.r0) / (gr.r1 - gr.r0) : 0
+    } else {
+      const dx = gr.x1 - gr.x0
+      const dy = gr.y1 - gr.y0
+      const len = dx * dx + dy * dy
+      t = len ? ((x - gr.x0) * dx + (y - gr.y0) * dy) / len : 0
+    }
+    const i = (t <= 0 ? 0 : t >= 1 ? 255 : (t * 255) | 0) * 4
+    // Результат кладётся в общий буфер, а не в новый массив. Новый массив на
+    // каждый пиксель полноэкранной заливки — это миллион мелких объектов в
+    // кадре; сборщик мусора съедал больше времени, чем сама растеризация.
+    GRAD_OUT[0] = gr.__lut[i]
+    GRAD_OUT[1] = gr.__lut[i + 1]
+    GRAD_OUT[2] = gr.__lut[i + 2]
+    GRAD_OUT[3] = gr.__lut[i + 3]
+    return GRAD_OUT
+  }
+
+  const GRAD_OUT = new Float32Array(4)
+
+  /** Цвет градиента в точке `t`, со цветами разобранными. */
+  const gradColourAt = (stops, t) => {
+    const ps = stops.map(([o, c]) => [o, parseColour(c)])
+    let a = ps[0]
+    let b = ps[ps.length - 1]
+    for (let i = 0; i < ps.length - 1; i++) {
+      if (t >= ps[i][0] && t <= ps[i + 1][0]) { a = ps[i]; b = ps[i + 1]; break }
+    }
+    const span = b[0] - a[0]
+    const k = span ? (t - a[0]) / span : 0
+    return [
+      a[1][0] + (b[1][0] - a[1][0]) * k,
+      a[1][1] + (b[1][1] - a[1][1]) * k,
+      a[1][2] + (b[1][2] - a[1][2]) * k,
+      a[1][3] + (b[1][3] - a[1][3]) * k,
+    ]
+  }
+
+  /** Положить цвет в пиксель с учётом прозрачности и режима наложения. */
+  const put = (px, di, rgb, alpha, gaArg = null, atopArg = null) => {
+    const ga = (gaArg === null ? Math.max(0, Math.min(1, ctx.globalAlpha)) : gaArg)
+      * Math.max(0, Math.min(1, alpha))
+    if (ga <= 0) return
+    const atop = atopArg === null ? ctx.globalCompositeOperation === 'source-atop' : atopArg
+    const da = px.data[di + 3]
+    // Две частые дороги обходятся без деления: непрозрачная заливка по пустому
+    // месту — это буквально три записи в буфер.
+    if (ga >= 1 && da === 0) {
+      px.data[di] = rgb[0]; px.data[di + 1] = rgb[1]; px.data[di + 2] = rgb[2]; px.data[di + 3] = 255
+      return
+    }
+    if (atop && da === 0) return
+    const sa = ga
+    const daf = da / 255
+    const oa = atop ? daf : sa + daf * (1 - sa)
+    if (oa <= 0) { px.data[di + 3] = 0; return }
+    for (let k = 0; k < 3; k++) {
+      px.data[di + k] = Math.round((rgb[k] * sa + px.data[di + k] * daf * (1 - sa)) / oa)
+    }
+    px.data[di + 3] = Math.round(oa * 255)
+  }
+
   const ensure = (w, h) => {
     if (!canvas) return null
     if (!canvas.__px || canvas.__px.width !== w || canvas.__px.height !== h) {
@@ -260,6 +386,10 @@ function makeCtx(canvas) {
   }
 
   // Только форма (img, sx, sy, sw, sh, dx, dy, dw, dh) и (img, dx, dy).
+  //
+  // Наложение — честное, как в браузере: прозрачный пиксель источника не
+  // стирает то, что под ним. Матрица учитывается обратным отображением: каждый
+  // пиксель результата переводится обратно в координаты источника.
   ctx.drawImage = (img, ...a) => {
     const px = canvas && ensure(canvas.width || 300, canvas.height || 150)
     if (!px || !img || !img.__img) return
@@ -273,23 +403,150 @@ function makeCtx(canvas) {
     const sx0 = Math.max(0, sx | 0); const sy0 = Math.max(0, sy | 0)
     const sw0 = Math.max(1, Math.min(sw | 0, src.w - sx0))
     const sh0 = Math.max(1, Math.min(sh | 0, src.h - sy0))
-    const dx0 = dx | 0; const dy0 = dy | 0
     const dw0 = Math.max(1, dw | 0); const dh0 = Math.max(1, dh | 0)
-    for (let y = 0; y < dh0; y++) {
-      const ty = dy0 + y
-      if (ty < 0 || ty >= px.height) continue
-      // Ближний сосед: масштабирование пиксельной графики не должно мылить.
-      const uy = Math.min(sh0 - 1, Math.floor((y * sh0) / dh0))
-      for (let x = 0; x < dw0; x++) {
-        const tx = dx0 + x
-        if (tx < 0 || tx >= px.width) continue
-        const ux = Math.min(sw0 - 1, Math.floor((x * sw0) / dw0))
-        const si = ((sy0 + uy) * src.w + (sx0 + ux)) * 4
+
+    // Обратная матрица: из точки экрана в точку источника.
+    const det = M[0] * M[3] - M[1] * M[2]
+    if (!det) return
+    const ia = M[3] / det
+    const ib = -M[1] / det
+    const ic = -M[2] / det
+    const id = M[0] / det
+    const ie = (M[2] * M[5] - M[3] * M[4]) / det
+    const if_ = (M[1] * M[4] - M[0] * M[5]) / det
+
+    const cs = [[dx, dy], [dx + dw, dy], [dx, dy + dh], [dx + dw, dy + dh]].map(([x, y]) => [
+      M[0] * x + M[2] * y + M[4], M[1] * x + M[3] * y + M[5],
+    ])
+    const bx0 = Math.max(0, Math.floor(Math.min(...cs.map((c) => c[0]))))
+    const bx1 = Math.min(px.width, Math.ceil(Math.max(...cs.map((c) => c[0]))))
+    const by0 = Math.max(0, Math.floor(Math.min(...cs.map((c) => c[1]))))
+    const by1 = Math.min(px.height, Math.ceil(Math.max(...cs.map((c) => c[1]))))
+    const ga = Math.max(0, Math.min(1, ctx.globalAlpha))
+    const atop = ctx.globalCompositeOperation === 'source-atop'
+
+    for (let ty = by0; ty < by1; ty++) {
+      for (let tx = bx0; tx < bx1; tx++) {
+        // Пиксель результата → точка в прямоугольнике назначения → источник.
+        // Смещение `dx, dy` вычитается обязательно: обратная матрица даёт
+        // координату на экране, а источник ищется от угла прямоугольника.
+        // Без этого плитка в правом нижнем углу ищется за краем листа и не рисуется.
+        const lx = ia * (tx + 0.5) + ic * (ty + 0.5) + ie - dx
+        const ly = ib * (tx + 0.5) + id * (ty + 0.5) + if_ - dy
+        const u = (lx / dw) * sw
+        const v = (ly / dh) * sh
+        if (u < 0 || v < 0 || u >= sw0 || v >= sh0) continue
+        const si = ((sy0 + Math.floor(v)) * src.w + (sx0 + Math.floor(u))) * 4
         const di = (ty * px.width + tx) * 4
-        px.data[di] = src.data[si]
-        px.data[di + 1] = src.data[si + 1]
-        px.data[di + 2] = src.data[si + 2]
-        px.data[di + 3] = src.data[si + 3]
+        const sa = (src.data[si + 3] / 255) * ga
+        if (sa <= 0) continue                       // прозрачный источник не стирает
+        const da = px.data[di + 3] / 255
+        if (atop && da <= 0) continue               // рисуем только по нарисованному
+        const oa = atop ? da : sa + da * (1 - sa)
+        if (oa <= 0) { px.data[di + 3] = 0; continue }
+        for (let k = 0; k < 3; k++) {
+          px.data[di + k] = Math.round((src.data[si + k] * sa
+            + px.data[di + k] * da * (1 - sa)) / oa)
+        }
+        px.data[di + 3] = Math.round(oa * 255)
+      }
+    }
+  }
+
+  ctx.fillRect = (x, y, w, h) => {
+    const px = canvas && ensure(canvas.width || 300, canvas.height || 150)
+    if (!px) return
+    const grad = ctx.fillStyle && ctx.fillStyle.__grad
+    const solid = grad ? null : parseColour(ctx.fillStyle)
+    if (!grad && solid[3] <= 0) return
+    const ga = Math.max(0, Math.min(1, ctx.globalAlpha))
+    const atop = ctx.globalCompositeOperation === 'source-atop'
+    const x0 = Math.max(0, x | 0)
+    const y0 = Math.max(0, y | 0)
+    const x1 = Math.min(px.width, (x + w) | 0)
+    const y1 = Math.min(px.height, (y + h) | 0)
+    if (x1 <= x0 || y1 <= y0) return
+
+    // СКОРОСТЬ ЗАЛИВКИ. Полноэкранная заливка — это 558 тысяч пикселей на кадр,
+    // и в бою таких заливок пятнадцать. Честное смешивание каждого пикселя
+    // стоило 8 миллионов операций на кадр, и проверка телефона вставала по
+    // таймауту вместо ответа по существу. Поэтому два быстрых пути:
+    //
+    //   непрозрачная заливка — по одной полосе на ряд (`fill` буфера, без
+    //     блоков): 3600 вызовов на кадр вместо миллиона;
+    //   полупрозрачная — блоками, не более 4096 блоков на заливку, и внутри
+    //     блока картинка считается одноцветной (взята первая точка блока).
+    //
+    // Компромисс назван прямо, и он безопасен для проверок, которые читают
+    // холст: полосы в 8–16 пикселей неразличимы на «пол темнее у дальнего края»
+    // и на «стена стоит на краю комнаты».
+    const blockAlpha = grad ? 1 : solid[3]
+    const opaque = ga * blockAlpha >= 1 && !atop
+    const area = (x1 - x0) * (y1 - y0)
+    const step = opaque ? 1 : Math.max(1, Math.round(Math.sqrt(area / 4096)))
+
+    // Запись цвета в отрезок буфера. Буфер чересстрочный (R,G,B,A подряд), поэтому
+    // `data.fill(цвет, от, до)` здесь НЕЛЬЗЯ: он залил бы весь отрезок одним
+    // каналом. Пиксели пишутся по четыре байта, без вызова функции на пиксель —
+    // на полноэкранной заливке это разница между секундой и тремя миллисекундами.
+    const data = px.data
+    const spanRow = (base, span, r, g, b, a) => {
+      for (let i = 0; i < span; i += 4) {
+        data[base + i] = r; data[base + i + 1] = g; data[base + i + 2] = b; data[base + i + 3] = a
+      }
+    }
+    const blendRow = (base, span, rgb) => {
+      for (let i = 0; i < span; i += 4) put(px, base + i, rgb, rgb[3], ga, atop)
+    }
+
+    if (step <= 1) {
+      // Без блоков: сплошной цвет — по полосе, градиент — по пикселю.
+      const span = (x1 - x0) * 4
+      for (let yy = y0; yy < y1; yy++) {
+        const base = (yy * px.width + x0) * 4
+        if (!grad && opaque) spanRow(base, span, solid[0] | 0, solid[1] | 0, solid[2] | 0, 255)
+        else if (!grad) blendRow(base, span, solid)
+        else {
+          for (let xx = x0; xx < x1; xx++) {
+            const rgb = gradAt(grad, xx, yy)
+            put(px, (yy * px.width + xx) * 4, rgb, rgb[3], ga, atop)
+          }
+        }
+      }
+      return
+    }
+
+    // Блоками: цвет берётся один раз на блок, дальше идёт прямая запись.
+    const bw = Math.min(step, x1 - x0)
+    const bh = Math.min(step, y1 - y0)
+    for (let by = y0; by < y1; by += bh) {
+      const rows = Math.min(bh, y1 - by)
+      for (let bx = x0; bx < x1; bx += bw) {
+        const cols = Math.min(bw, x1 - bx)
+        const span = cols * 4
+        const rgb = grad ? gradAt(grad, bx, by) : solid
+        if (opaque) {
+          const r = rgb[0] | 0; const g = rgb[1] | 0; const b = rgb[2] | 0
+          for (let rr = 0; rr < rows; rr++) spanRow(((by + rr) * px.width + bx) * 4, span, r, g, b, 255)
+          continue
+        }
+        if (!atop) {
+          // Полупрозрачно: смешиваем один раз по первому пикселю блока и пишем
+          // результат прямо. Внутри блока картинка считается одноцветной —
+          // компромисс назван в шапке блока.
+          const di = (by * px.width + bx) * 4
+          const sa = ga * rgb[3]
+          const da = data[di + 3] / 255
+          const oa = sa + da * (1 - sa)
+          const ch = [0, 0, 0]
+          for (let k = 0; k < 3; k++) {
+            ch[k] = oa > 0 ? Math.round((rgb[k] * sa + data[di + k] * da * (1 - sa)) / oa) : 0
+          }
+          const av = Math.round(oa * 255)
+          for (let rr = 0; rr < rows; rr++) spanRow(((by + rr) * px.width + bx) * 4, span, ch[0], ch[1], ch[2], av)
+          continue
+        }
+        for (let rr = 0; rr < rows; rr++) blendRow(((by + rr) * px.width + bx) * 4, span, rgb)
       }
     }
   }
@@ -679,9 +936,15 @@ export function installDom(opts = {}) {
     const r = el.getBoundingClientRect()
     const viewW = 420
     const viewH = 640
-    const cam = globalThis.window?.__field?.cam || { x: 0, y: 0 }
-    const sx = wx - cam.x
-    const sy = wy - cam.y
+    // Перевод спрашивается у ИГРЫ (`st.screenPoint`), а не считается здесь.
+    // Стенд раньше знал устройство рисунка: «мировая точка минус камера». Стоило
+    // рисунку стать ромбом — проверки телефона падали, хотя указующий палец был
+    // прав, и чинить приходилось не игру, а стенд.
+    const field = globalThis.window?.__field
+    const view = field?.screenPoint ? field.screenPoint(wx, wy) : null
+    if (!view) throw new Error('игра не умеет сказать, где на экране точка боя — стенду не на что опереться')
+    const sx = view.x
+    const sy = view.y
     return {
       x: r.left + (sx / viewW) * r.width,
       y: r.top + (sy / viewH) * r.height,

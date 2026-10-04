@@ -21,7 +21,8 @@
     "audit:quotes": "node --experimental-loader ./scripts/aliases.mjs scripts/auditQuotes.mjs",
     "audit:tdz": "node scripts/auditTdz.mjs",
     "audit:content": "node --experimental-loader ./scripts/aliases.mjs scripts/auditObtainable.mjs",
-    "audit:impact": "node --experimental-loader ./scripts/aliases.mjs scripts/auditImpact.mjs"
+    "audit:impact": "node --experimental-loader ./scripts/aliases.mjs scripts/auditImpact.mjs",
+    "iso:prep": "node scripts/isoPrep.mjs"
   },
   "devDependencies": {
     "vite": "^7.0.0",

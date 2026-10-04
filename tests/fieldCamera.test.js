@@ -27,6 +27,7 @@
 
 import { describe, it, expect, beforeAll } from 'vitest'
 import { installDom, clickables, textOf, chooseLordIfShown } from './helpers/dom.js'
+import { roomIso, roomWorld, ISO_W, ISO_H } from '../webapp/js/ui/iso.js'
 
 let dom
 beforeAll(() => {
@@ -109,8 +110,17 @@ function syncCam() {
   dom.flushRaf(1)
 }
 
-const visible = (f, cam) => f.x >= cam.x && f.x <= cam.x + VIEW_W
-  && f.y >= cam.y && f.y <= cam.y + VIEW_H
+/**
+ * Видна ли ока — по ромбу, а не по прямоугольнику.
+ *
+ * Комната теперь ромб, и камера считается в ромбе. Проверка, которая мерила
+ * «видно ли» по координатам боя, искала ромб там, где теперь прямоугольник: ока
+ * была «видна» при камере, которая на самом деле показывает пустоту.
+ */
+const visible = (f, cam) => {
+  const p = roomIso(f.x, f.y)
+  return p.x >= cam.x && p.x <= cam.x + VIEW_W && p.y >= cam.y && p.y <= cam.y + VIEW_H
+}
 
 describe('Арена больше экрана — и камера это показывает', () => {
   let s = null
@@ -124,12 +134,17 @@ describe('Арена больше экрана — и камера это пок
     expect(s.field.h, 'арена низкая — камера не нужна и не работает').toBeGreaterThan(VIEW_H)
   })
 
-  it('камера существует с первого кадра и лежит в границах арены', () => {
+  it('камера существует с первого кадра и лежит в границах ромба', () => {
     expect(s.cam, 'камеры нет в состоянии поля — значит, её нечем проверять').toBeTruthy()
-    expect(s.cam.x, 'камера уехала за левый край арены').toBeGreaterThanOrEqual(0)
-    expect(s.cam.y, 'камера уехала за верхний край арены').toBeGreaterThanOrEqual(0)
-    expect(s.cam.x + VIEW_W, 'камера вылезла за правый край арены').toBeLessThanOrEqual(s.field.w + 0.001)
-    expect(s.cam.y + VIEW_H, 'камера вылезла за нижний край арены').toBeLessThanOrEqual(s.field.h + 0.001)
+    // Границы — ромб, а не прямоугольник арены. По вертикали ромб ниже экрана,
+    // поэтому камера уходит в минус: это «пустое небо» над комнатой. Проверять
+    // «cam.y ≥ 0» здесь нельзя — это ломает вёрстку на ровном коде.
+    expect(s.cam.w, 'камера считает по прямоугольнику, а комната — ромб').toBe(ISO_W)
+    expect(s.cam.h, 'камера считает по прямоугольнику, а комната — ромб').toBe(ISO_H)
+    expect(s.cam.x, 'камера уехала за левый край ромба').toBeGreaterThanOrEqual(0)
+    expect(s.cam.x + VIEW_W, 'камера вылезла вправо за ромб').toBeLessThanOrEqual(ISO_W + 0.001)
+    expect(s.cam.y, 'камера уехала вниз за нижний край ромба').toBeLessThanOrEqual(0.001)
+    expect(s.cam.y + VIEW_H, 'низ комнаты отрезан экраном').toBeGreaterThanOrEqual(ISO_H - 0.001)
   })
 
   it('в начале боя видна хотя бы одна ока — иначе бой начинается вслепую', () => {
@@ -159,12 +174,12 @@ describe('Арена больше экрана — и камера это пок
       const cam = st().cam
       expect(cam.x, `игрок в (${Math.round(dx)}, ${Math.round(dy)}), а камера уехала влево в ${Math.round(cam.x)}`)
         .toBeGreaterThanOrEqual(0)
-      expect(cam.y, `игрок в (${Math.round(dx)}, ${Math.round(dy)}), а камера уехала вверх в ${Math.round(cam.y)}`)
-        .toBeGreaterThanOrEqual(0)
-      expect(cam.x + VIEW_W, `игрок в (${Math.round(dx)}, ${Math.round(dy)}), а камера вылезла вправо`)
-        .toBeLessThanOrEqual(s.field.w + 0.001)
-      expect(cam.y + VIEW_H, `игрок в (${Math.round(dx)}, ${Math.round(dy)}), а камера вылезла вниз`)
-        .toBeLessThanOrEqual(s.field.h + 0.001)
+      expect(cam.y, `игрок в (${Math.round(dx)}, ${Math.round(dy)}), камера уехала вниз в ${Math.round(cam.y)}`)
+        .toBeLessThanOrEqual(0.001)
+      expect(cam.x + VIEW_W, `игрок в (${Math.round(dx)}, ${Math.round(dy)}), камера вылезла вправо за ромб`)
+        .toBeLessThanOrEqual(ISO_W + 0.001)
+      expect(cam.y + VIEW_H, `игрок в (${Math.round(dx)}, ${Math.round(dy)}), низ комнаты отрезан экраном`)
+        .toBeGreaterThanOrEqual(ISO_H - 0.001)
     }
   })
 
@@ -213,13 +228,19 @@ describe('Арена больше экрана — и камера это пок
     const cam = st().cam
     expect(cam.x, 'камера на нуле — проверка не проверяет ничего').toBeGreaterThan(0)
     // Точка мира → точка экрана (как в стенде) → обратно в мир (как в игре).
-    const wx = cam.x + 40
-    const wy = cam.y + VIEW_H / 2
-    const screen = dom.worldPoint(dom.lastCanvas(), wx, wy)
-    const back = {
-      x: (screen.x - dom.lastCanvas().getBoundingClientRect().left) * (VIEW_W / dom.lastCanvas().getBoundingClientRect().width) + st().cam.x,
-      y: (screen.y - dom.lastCanvas().getBoundingClientRect().top) * (VIEW_H / dom.lastCanvas().getBoundingClientRect().height) + st().cam.y,
-    }
+    // Точка берётся из САМОЙ ИГРЫ (`screenPoint`), и обратный перевод берётся из
+    // `ui/iso.js` — того же модуля, которым играет экран. Раньше проверка
+    // пересчитывала оба направления сама, «минус камера», то есть знала про
+    // устройство рисунка. Стоило рисунку стать ромбом — проверка падала, хотя
+    // палец шёл правильно.
+    const wx = s4.field.w * 0.75
+    const wy = s4.field.h * 0.4
+    const view = st().screenPoint(wx, wy)
+    expect(view.x, 'точка ушла влево за кадр').toBeGreaterThanOrEqual(0)
+    expect(view.x, 'точка ушла вправо за кадр').toBeLessThanOrEqual(VIEW_W)
+    const back = roomWorld(view.x + st().cam.x, view.y + st().cam.y)
+    // Что стенд отдаёт в экранные координаты, проверяется там, где это и важно:
+    // в `tests/touchInput.test.js` палец по экранной точке оки реально бьёт её.
     expect(Math.abs(back.x - wx), `тап пришёл в ${Math.round(back.x)}, а ждали ${Math.round(wx)}`)
       .toBeLessThan(1)
     expect(Math.abs(back.y - wy), `тап пришёл в ${Math.round(back.y)}, а ждали ${Math.round(wy)}`)

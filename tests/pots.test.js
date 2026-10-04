@@ -10,6 +10,7 @@
 // достаёт. Это цена, а не «бесплатные монеты».
 
 import { describe, it, expect } from 'vitest'
+import { roomIso } from '../webapp/js/ui/iso.js'
 import { readFileSync } from 'node:fs'
 import {
   createField, stepField, smashPot, potAt, checkKrpa, DEFAULT_FIELD_OPTIONS,
@@ -337,8 +338,12 @@ describe('Горшок виден на экране — а не только в 
     expect(all.length, 'кадр не нарисован — проверка ничего не значит').toBeGreaterThan(50)
 
     for (const p of st.pots) {
+      // Экранная точка — через ромб. Проверка искала координаты боя как
+      // экранные, то есть искала ромб там, где теперь прямоугольник, и «находила»
+      // отсутствие горшка при горшке на месте.
+      const pi = roomIso(p.x, p.y)
       const drawn = all.some((c) => c.m === 'translate'
-        && Math.round(c.a[0]) === Math.round(p.x) && Math.round(c.a[1]) === Math.round(p.y))
+        && Math.round(c.a[0]) === Math.round(pi.x) && Math.round(c.a[1]) === Math.round(pi.y))
       expect(drawn, `сокровище стоит в бою (${Math.round(p.x)},${Math.round(p.y)}), но на экране его нет`).toBe(true)
     }
   })
@@ -353,7 +358,11 @@ describe('Горшок виден на экране — а не только в 
     // Смысл проверки обратный: сам экран пропускает `broken` ДО вызова
     // рисунка. Здесь фиксируем, что флаг есть и что рисунок его читает —
     // иначе «рисунок игнорирует broken» станет незаметной поломкой.
+    // Ключ и имя изменились один раз: теперь это список «всё живое», где
+    // сокровище лежит вместе с оками и просящими и сортируется по глубине.
+    // Проверка ищет именно эту форму и падает, если кто-то снова начнёт рисовать
+    // сокровище отдельным проходом — тогда порядок глубины для него сломается.
     const src = read('webapp/js/ui/screens/field.js').replace(/\/\/[^\n]*/g, '')
-    expect(src).toMatch(/for \(const p of st\.pots\) \{\s*if \(p\.broken\) continue/)
+    expect(src).toMatch(/for \(const pot of st\.pots\) \{\s*if \(pot\.broken\) continue/)
   })
 })
