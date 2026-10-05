@@ -392,17 +392,31 @@ function makeCtx(canvas) {
   // пиксель результата переводится обратно в координаты источника.
   ctx.drawImage = (img, ...a) => {
     const px = canvas && ensure(canvas.width || 300, canvas.height || 150)
-    if (!px || !img || !img.__img) return
-    const src = img.__img
-    let sx = 0; let sy = 0; let sw = src.w; let sh = src.h
+    // Источник — либо картинка (`Image`), либо ХОЛСТ. Второе нужно, чтобы пол и
+    // стены комнаты действительно появились на собранном экране: слои строятся
+    // в отдельных холстах и выводятся на экран одним `drawImage`, а раньше стенд
+    // такие вызовы молча пропускал. То есть на экране в проверках комнаты не
+    // было — и «пол нарисован правильно» было нечем подтвердить.
+    const src = img && (img.__img || img.__px)
+    if (!px || !src) return
+    // Размер источника лежит под двумя именами: у картинки это `w`/`h`
+    // (`scripts/pngReader.mjs`), у буфера холста — `width`/`height`. Раньше
+    // читалось только `w`, и вызов с холстом-источником молча рисовал пустоту:
+    // `NaN` в размерах, индекс за пределами буфера, ноль пикселей. То есть пол
+    // и стены комнаты на экране не появлялись, а проверка «модуль правильный»
+    // была зелёной.
+    const srcW = src.w !== undefined ? src.w : src.width
+    const srcH = src.h !== undefined ? src.h : src.height
+    if (!srcW || !srcH) return
+    let sx = 0; let sy = 0; let sw = srcW; let sh = srcH
     let dx; let dy; let dw; let dh
     if (a.length >= 8) { [sx, sy, sw, sh, dx, dy, dw, dh] = a }
-    else if (a.length >= 4) { [dx, dy, dw, dh] = a; sw = img.width || src.w; sh = img.height || src.h }
-    else if (a.length >= 2) { [dx, dy] = a; dw = img.width || src.w; dh = img.height || src.h }
+    else if (a.length >= 4) { [dx, dy, dw, dh] = a; sw = img.width || srcW; sh = img.height || srcH }
+    else if (a.length >= 2) { [dx, dy] = a; dw = img.width || srcW; dh = img.height || srcH }
     else return
     const sx0 = Math.max(0, sx | 0); const sy0 = Math.max(0, sy | 0)
-    const sw0 = Math.max(1, Math.min(sw | 0, src.w - sx0))
-    const sh0 = Math.max(1, Math.min(sh | 0, src.h - sy0))
+    const sw0 = Math.max(1, Math.min(sw | 0, srcW - sx0))
+    const sh0 = Math.max(1, Math.min(sh | 0, srcH - sy0))
     const dw0 = Math.max(1, dw | 0); const dh0 = Math.max(1, dh | 0)
 
     // Обратная матрица: из точки экрана в точку источника.
@@ -436,7 +450,7 @@ function makeCtx(canvas) {
         const u = (lx / dw) * sw
         const v = (ly / dh) * sh
         if (u < 0 || v < 0 || u >= sw0 || v >= sh0) continue
-        const si = ((sy0 + Math.floor(v)) * src.w + (sx0 + Math.floor(u))) * 4
+        const si = ((sy0 + Math.floor(v)) * srcW + (sx0 + Math.floor(u))) * 4
         const di = (ty * px.width + tx) * 4
         const sa = (src.data[si + 3] / 255) * ga
         if (sa <= 0) continue                       // прозрачный источник не стирает
