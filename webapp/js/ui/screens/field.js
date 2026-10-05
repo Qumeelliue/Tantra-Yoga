@@ -39,6 +39,10 @@ import {
   loadIsoTiles, buildIsoFloor, buildIsoWalls, loadIsoDoor, isoDoorImage,
   ISO_DOOR_TILE, ISO_DOOR_WALL_H, ISO_DOOR_INDEX,
 } from '../fieldIso.js'
+// Реквизит боя из лицензионных наборов: сокровище, фонтан, хаос, цветок.
+// Пока картинка едет — рисуется свой вектор, и `drawProp` честно возвращает
+// false. Проверка на собранном экране требует, чтобы на кадре была картинка.
+import { loadProps, drawProp, drawPropCube } from '../props.js'
 
 /** Плоская точка боя → точка ромба. Все рисунки берут координаты только отсюда. */
 const iso = (x, y) => roomIso(x, y)
@@ -176,6 +180,10 @@ export function fieldScreen(state, opts = {}) {
   // запасной путь, а не основной (см. `fieldSprites.js`, «Рисунок лицензионный,
   // если есть лицензионный»).
   loadIsoDoor().then((ok) => { doorLicensed = ok })
+  // Реквизит боя: ящик, фонтан, хаос, трава на месте оковы. Пока едет — рисуются
+  // векторы из `fieldArt.js`, и это запасной путь, а не основной рисунок.
+  // Загрузка ничего не блокирует: игра не должна ждать картинку, чтобы начать бой.
+  loadProps()
 
   // ── DOM-оверлеи ──
   const gunas = h('div', { class: 'field-guna' },
@@ -772,6 +780,16 @@ export function fieldScreen(state, opts = {}) {
   // ── ФОНТАН АМБРОСИИ (Hades: healing fountain) ─────────────────────
   // Стоит в последней комнате этапа. Яркая чаша в углу — её видно с порога.
   // Коснулся — вернулась часть жизни, и только раз за комнату.
+  //
+  // ЧАША И ВОДА — ЛИЦЕНЗИОННЫЕ (`assets/props/basin.png`, `water.png`). Раньше
+  // здесь была белая ваза, нарисованная в коде, и она спорила с каменной
+  // кладкой комнаты: то есть это был ровно тот «мусор 2д», за который ругали
+  // игру. Теперь каменная тумба из того же набора, что и стены, а в ней —
+  // плитка воды ромбом 2:1, то есть ровно форма плитки пола.
+  //
+  // ЗОЛОТОЙ СВЕТ остаётся своим: это свет, а не рисунок, формы у него нет, и
+  // лицензионная картинка тут не помогает. Он и был смыслом фонтана — по
+  // нему видно, что чаша ещё не тронута.
   function drawSpring(t) {
     const sp = st.spring
     if (!sp) return
@@ -779,41 +797,45 @@ export function fieldScreen(state, opts = {}) {
     const spI = iso(sp.x, sp.y)
     ctx.save()
     ctx.translate(spI.x, spI.y)
-    // тень на полу
-    ctx.fillStyle = 'rgba(0,0,0,.5)'
-    ctx.beginPath(); ctx.ellipse(0, 14, 20, 6, 0, 0, 7); ctx.fill()
-    // чаша
-    ctx.beginPath()
-    ctx.moveTo(-16, -10)
-    ctx.quadraticCurveTo(-13, 12, 0, 14)
-    ctx.quadraticCurveTo(13, 12, 16, -10)
-    ctx.closePath()
-    ctx.fillStyle = '#efe6d2'
-    ctx.fill()
-    ctx.lineWidth = 2
-    ctx.strokeStyle = sp.used ? '#6b5f4a' : '#c8a24a'
-    ctx.stroke()
-    // вода / золотой свет
+
+    const basinDrawn = drawProp(ctx, 'basin', { scale: 0.62 })
+    if (!basinDrawn) {
+      // Запасной путь, пока картинка едет: каменная тумба рисуется здесь же, но
+      // по-старому, ровным прямоугольником. Это не запас «на потом», а честный
+      // ответ «картинка ещё едет».
+      ctx.fillStyle = 'rgba(0,0,0,.5)'
+      ctx.beginPath(); ctx.ellipse(0, 14, 20, 6, 0, 0, 7); ctx.fill()
+      ctx.fillStyle = '#8a8070'
+      ctx.fillRect(-14, 2, 28, 12)
+    }
+
+    // вода — ромбом, лежит в тумбе
+    const waterDrawn = drawProp(ctx, 'water', { scale: 0.42, alpha: sp.used ? 0.4 : 0.85 })
+    if (!waterDrawn) {
+      ctx.beginPath(); ctx.ellipse(0, -2, 14, 5, 0, 0, 7); ctx.fill()
+    }
+
+    // золотой свет / «амбросия» — свой рисунок поверх лицензионной воды
     if (!sp.used) {
       ctx.save()
       ctx.globalAlpha = pulse
       ctx.fillStyle = '#ffd98a'
-      ctx.beginPath(); ctx.ellipse(0, -9, 14, 5, 0, 0, 7); ctx.fill()
+      ctx.beginPath(); ctx.ellipse(0, -4, 11, 4, 0, 0, 7); ctx.fill()
       ctx.shadowBlur = 18
       ctx.shadowColor = '#ffcf4a'
       ctx.fillStyle = 'rgba(255,236,180,.9)'
-      ctx.beginPath(); ctx.ellipse(0, -9, 10, 3.4, 0, 0, 7); ctx.fill()
+      ctx.beginPath(); ctx.ellipse(0, -4, 7.5, 2.8, 0, 0, 7); ctx.fill()
       ctx.restore()
       ctx.font = 'bold 9px ui-sans-serif, system-ui, sans-serif'
       ctx.textAlign = 'center'
       ctx.lineWidth = 3
       ctx.strokeStyle = 'rgba(0,0,0,.8)'
-      ctx.strokeText('амбросия', 0, -24)
+      ctx.strokeText('амбросия', 0, -26)
       ctx.fillStyle = '#ffe6a8'
-      ctx.fillText('амбросия', 0, -24)
+      ctx.fillText('амбросия', 0, -26)
     } else {
-      ctx.fillStyle = 'rgba(120,110,90,.8)'
-      ctx.beginPath(); ctx.ellipse(0, -9, 14, 5, 0, 0, 7); ctx.fill()
+      ctx.fillStyle = 'rgba(90,84,70,.7)'
+      ctx.beginPath(); ctx.ellipse(0, -4, 9, 3.2, 0, 0, 7); ctx.fill()
     }
     ctx.restore()
   }
@@ -934,12 +956,33 @@ export function fieldScreen(state, opts = {}) {
   // ── ХАОС-ДВЕРЬ (Hades: Chaos Gate) ───────────────────────────────
   // Фиолетовая, в стороне от обычной. Заходишь добровольно: урон удваивается,
   // зато дар даётся бесплатно. Всё равно стоит ли.
+  //
+  // ПОЛ ХАОСА — ЛИЦЕНЗИОННАЯ ЛАВА (`assets/props/lava.png`), ромб 2:1, то есть
+  // ровно форма плитки пола. Раньше здесь была ничего не значащая заливка, а сам
+  // «хаос» читался только подписью и фиолетовой обводкой. Теперь под дверью
+  // горит земля, и «здесь опасно, урон вдвое» видно до чтения текста.
+  //
+  // Сама дверь остаётся собственным рисунком: это СИМВОЛ выбора (как в Hades),
+  // а не предмет сцены, и подменять его лицензионной картинкой значило бы
+  // стереть то, что делает её дверью. Это осознанное исключение, записано в
+  // `assets/props/CREDITS.md` и в BASE-GAME, МЕХАНИКА 62.
   function drawChaos(t) {
     const c = st.chaos
     if (!c || c.taken) return
     const pulse = 0.55 + 0.3 * Math.sin(t * 2.2)
     ctx.save()
     ctx.translate(c.x, c.y)
+
+    // Лава под дверью. Пульсирует вместе с дверью: хаос дышит.
+    // Если картинка ещё едет — остаётся ромб-подложка тёмным пятном, и это не
+    // поломка, а ожидание (то же, что у фигур).
+    const lavaDrawn = drawProp(ctx, 'lava', { alpha: 0.55 + 0.25 * pulse })
+    if (!lavaDrawn) {
+      ctx.fillStyle = 'rgba(120,30,10,.5)'
+      ctx.beginPath()
+      ctx.ellipse(0, 14, 22, 11, 0, 0, 7)
+      ctx.fill()
+    }
     ctx.beginPath()
     ctx.moveTo(-16, 16)
     ctx.lineTo(-16, -5)
@@ -1108,11 +1151,35 @@ export function fieldScreen(state, opts = {}) {
       const o = item.o
       const at = iso(o.x, o.y)
       if (item.kind === 'pot') {
-        // Сокровище (Dead Cells: containers). Рисунок живёт в `fieldArt.js`
-        // вместе с остальным и проверяется `fieldArt.test.js`.
+        // Сокровище (Dead Cells: containers) — ЛИЦЕНЗИОННЫЙ ЯЩИК.
+        //
+        // Раньше здесь стоял единственный рисунок из `fieldArt.js`, и он был
+        // тем самым «мусором 2д»: горшок, нарисованный в коде, спорил с
+        // каменной кладкой комнаты. Теперь ящик из набора CC0, и вектор
+        // остался только на то время, пока картинка едет.
+        //
+        // ЧТО ИМЕННО видно игроку: закрытый ящик — «внутри есть, можно бить»,
+        // открытый (без крышки) — «уже разбит, подбирай». Раньше это читалось
+        // только по трещине из штрихов, а теперь по форме.
+        //
+        // Плюс честная цифра оставшихся ударов: игрок не тратит удар впустую.
         ctx.save()
         ctx.translate(at.x, at.y)
-        drawPotArt(ctx, o)
+        // Целый ящик и разбитый — две разные картинки, а не одна с трещиной:
+        // форма читается быстрее штрихов и работает с порога комнаты.
+        const broken = o.hp <= 0
+        const boxDrawn = drawPropCube(ctx, broken ? 'chestOpen' : 'chest', { scale: 0.5 })
+        if (!boxDrawn) drawPotArt(ctx, o)
+        if (o.maxHp > 1) {
+          const left = Math.max(0, o.hp)
+          ctx.font = 'bold 10px ui-sans-serif, system-ui, sans-serif'
+          ctx.textAlign = 'center'
+          ctx.lineWidth = 3
+          ctx.strokeStyle = 'rgba(0,0,0,.85)'
+          ctx.strokeText(`${left}`, 0, -34)
+          ctx.fillStyle = '#f0e2c0'
+          ctx.fillText(`${left}`, 0, -34)
+        }
         ctx.restore()
         continue
       }
@@ -1167,10 +1234,18 @@ export function fieldScreen(state, opts = {}) {
         const sr = f.isBoss ? 26 : 11
         groundShadow(at.x, at.y + sr * 0.85, sr, f.isBoss ? 0.55 : 0.42)
         if (f.pacified) {
-          // На месте освобождённой оковы остаётся цветок — след, а не добыча.
+          // На месте освобождённой оковы остаётся СЛЕД — лицензионная трава с
+          // цветами (`assets/props/bloom.png`), ромб 2:1. Раньше здесь был
+          // цветок, нарисованный в коде: один стебель на месте целой оковы.
+          // Теперь это пятно травы на плитке — читается как «земля стала
+          // зеленее», а не как «что-то выросло».
           ctx.save()
-          ctx.translate(at.x, at.y + 4)
-          drawFlowerArt(ctx, t)
+          ctx.translate(at.x, at.y)
+          const bloomDrawn = drawProp(ctx, 'bloom', { scale: 0.5 })
+          if (!bloomDrawn) {
+            ctx.translate(0, 4)
+            drawFlowerArt(ctx, t)
+          }
           ctx.restore()
           continue
         }
