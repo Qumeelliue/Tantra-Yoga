@@ -17,6 +17,8 @@
 // ничего не говорил об игре. Теперь макет и игра рисуются одними и теми же
 // функциями — расходиться им больше негде.
 
+import { TILE_W, TILE_H } from './iso.js'
+
 /** Палитра. Цвета гун — строго по источнику (Idea and Ideology, ч. 1). */
 export const ART = {
   ink: '#000000',
@@ -43,6 +45,60 @@ function poly(ctx, pts) {
   ctx.moveTo(pts[0], pts[1])
   for (let i = 2; i < pts.length; i += 2) ctx.lineTo(pts[i], pts[i + 1])
   ctx.closePath()
+}
+
+/**
+ * ОСНОВАНИЕ ФИГУРЫ — ромб 2:1, то есть пятно на плитке ромбического пола.
+ *
+ * ## Почему не эллипс
+ *
+ * Пол в Поле Ума изометрический (ромб 2:1, `ui/iso.js`), а эллипс под фигурой —
+ * язык вида сверху. Пока в бою был круглый пол, эллипс читался как тень. Как
+ * только пол стал ромбом, круглая тень начала спорить с полом: игрок видел «скосок
+ * на полу» и «овал, будто нарисованный сверху» одновременно, и фигура выглядела
+ * плоско. Ромб того же соотношения говорит с полом на одном языке.
+ *
+ * ## Одно число на всех
+ *
+ * Соотношение берётся из `TILE_W / TILE_H` — из пола, а не из головы. Пока у пола
+ * и у основания было по своему числу, «примерно одинаково» разъезжалось на глаз,
+ * и заметить это можно было только глазами на игре.
+ *
+ * ## Решение автора про фигуры (2026-10-05)
+ *
+ * Фигуры остались нарисованными **видом сверху** (набор Calciumtrice):
+ * изометрических фигур в свободных наборах нет, а выдумывать их запрещено
+ * правилом проекта. Вид объявлен честно — «сверху, по клеткам ромбами», — и
+ * держится на этом основании. Подробно — `design/BASE-GAME.md`, МЕХАНИКА 61.
+ *
+ * Здесь и в `ui/fieldSprites.js` это одно и то же основание: пока спрайт едет,
+ * рисуется вектор, и под ним должно быть то же пятно, что и под спрайтом. Иначе
+ * первая секунда боя и вторая отличаются — а это видно как мигание под ногами.
+ * Проверяется в `tests/figureBase.test.js`.
+ */
+export const FIGURE_BASE_RATIO = TILE_W / TILE_H
+
+/** Ширина основания в долях плитки: пятно на плитке, а не сама плитка. */
+const FIGURE_BASE_TILE_FRAC = 0.62
+
+/**
+ * Рисовать ромб-основание под фигурой. (0,0) — точка плоскости фигуры.
+ *
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} scale — масштаб фигуры
+ * @param {string} style — заливка тени
+ */
+export function drawFigureBase(ctx, scale = 1, style = ART.inkSoft) {
+  const hw = (FIGURE_BASE_TILE_FRAC * TILE_W * scale) / 2
+  const hh = hw / FIGURE_BASE_RATIO
+  ctx.fillStyle = style
+  ctx.beginPath()
+  ctx.moveTo(-hw, 1)
+  ctx.lineTo(0, 1 - hh)
+  ctx.lineTo(hw, 1)
+  ctx.lineTo(0, 1 + hh)
+  ctx.closePath()
+  ctx.fill()
 }
 
 /** Штриховка тушью: пара диагоналей внутри текущего пути. */
@@ -179,11 +235,11 @@ export function drawFoeArt(ctx, f, t) {
   const R = boss ? 44 : 18          // полуразмер
   const dark = f.trueLight === 'dark'
 
-  // ── тень на земле: жёсткая, не размытая ──
-  ctx.fillStyle = ART.inkSoft
-  ctx.beginPath()
-  ctx.ellipse(0, R * 0.92, R * 0.92, R * 0.24, 0, 0, 7)
-  ctx.fill()
+  // ── основание на полу: ромб 2:1, тот же, что под спрайтом ──
+  // Масштаб — ровно тот, что у спрайта оки в `drawFoe` (`big`): пока картинка
+  // едет и рисуется вектор, основание обязано остаться тем же, иначе под окой
+  // мигает размер пятна.
+  drawFigureBase(ctx, boss ? 1.5 : 1.15)
 
   // ── тело: рваный многоугольник ПО ФИГУРЕ ЭТОЙ ОКИ ───────────────
   // У ока свой профиль, у паши — общий «скрепный». Владыка оставляет
@@ -284,11 +340,9 @@ export function drawSadhakaArt(ctx, dir = 1, opt = {}) {
   ctx.save()
   if (opt.flip) ctx.scale(-1, 1)
 
-  // тень
-  ctx.fillStyle = ART.inkSoft
-  ctx.beginPath()
-  ctx.ellipse(0, 2, 11, 3.4, 0, 0, 7)
-  ctx.fill()
+  // Основание — ромб, а не эллипс: пол под ногами тоже ромб. Подробно — в
+  // `drawFigureBase`.
+  drawFigureBase(ctx, 1)
 
   // ── роба ──
   poly(ctx, [7, -H + 12, 14, -H + 16, 19, 2, -19, 2, -14, -H + 16, -7, -H + 12])
@@ -335,11 +389,7 @@ export function drawSadhakaArt(ctx, dir = 1, opt = {}) {
 export function drawWareArt(ctx, w, t) {
   const H = 30
   ctx.save()
-  // тень
-  ctx.fillStyle = ART.inkSoft
-  ctx.beginPath()
-  ctx.ellipse(0, 1, 8, 2.6, 0, 0, 7)
-  ctx.fill()
+  drawFigureBase(ctx, 0.8)
   // платье
   poly(ctx, [4, -H + 8, 8, -H + 10, 12, 1, -12, 1, -8, -H + 10, -4, -H + 8])
   ctx.fillStyle = w.done ? '#2a2430' : '#5b5163'
@@ -394,10 +444,7 @@ export function drawPotArt(ctx, pot) {
   ctx.save()
   if (pot.chest) {
     // сундук — прямоугольник, ободок золотой, замок светлее
-    ctx.fillStyle = ART.inkSoft
-    ctx.beginPath()
-    ctx.ellipse(0, 1, 14, 3.6, 0, 0, 7)
-    ctx.fill()
+    drawFigureBase(ctx, 1.5)
     ctx.fillStyle = '#3a2a1e'
     ctx.strokeStyle = ART.goldSoft
     ctx.lineWidth = 1.3
@@ -417,10 +464,7 @@ export function drawPotArt(ctx, pot) {
     ctx.fill()
   } else {
     // горшок — тёмный сосуд со светлым контуром и трещиной по числу ударов
-    ctx.fillStyle = ART.inkSoft
-    ctx.beginPath()
-    ctx.ellipse(0, 1, 9, 2.8, 0, 0, 7)
-    ctx.fill()
+    drawFigureBase(ctx, 1)
     ctx.fillStyle = '#3a2a1e'
     ctx.strokeStyle = ART.dim
     ctx.lineWidth = 1.2

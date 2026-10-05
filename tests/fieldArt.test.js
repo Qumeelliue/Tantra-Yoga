@@ -166,9 +166,15 @@ describe('Владыка отличается от обычной оковы р�
     const a = recorder(), b = recorder()
     drawFoeArt(a, mkFoe(), 0)
     drawFoeArt(b, mkFoe({ isBoss: true }), 0)
+    // Основание-ромб под фигурой идёт ПЕРВЫМ и даёт свои lineTo, поэтому тело
+    // начинается не с нулевого индекса. Число зафиксировано: 3 вершины ромба
+    // после moveTo. Если основание вдруг исчезнет, тест ниже на «основание
+    // нарисовано» упадёт, а этот начнёт мерить не то.
+    const BASE_LINE_TO = 3
     // тело — общая форма (10 вершин → 20 lineTo) у обоих: владыка должен
     // читаться как «тот же, но больше», а не как кто-то другой
-    const bodyPts = (r) => r.calls.filter((c) => c.name === 'lineTo').slice(0, 20)
+    const bodyPts = (r) => r.calls.filter((c) => c.name === 'lineTo')
+      .slice(BASE_LINE_TO, BASE_LINE_TO + 20)
     expect(bodyPts(a).length).toBe(20)
     expect(bodyPts(b).length).toBe(20)
     const maxA = Math.max(...bodyPts(a).map((c) => c.a[0]))
