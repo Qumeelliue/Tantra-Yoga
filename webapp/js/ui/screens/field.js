@@ -35,7 +35,10 @@ const H = 640
 // «почти таким же»: сдвиг комнаты прибавлялся в прямом и не вычитался в
 // обратном, палец уезжал на 1280 единиц, и четыре проверки телефона падали.
 import { roomIso, roomWorld, clampCamera, ISO_W, ISO_H } from '../iso.js'
-import { loadIsoTiles, buildIsoFloor, buildIsoWalls } from '../fieldIso.js'
+import {
+  loadIsoTiles, buildIsoFloor, buildIsoWalls, loadIsoDoor, isoDoorImage,
+  ISO_DOOR_TILE, ISO_DOOR_WALL_H, ISO_DOOR_INDEX,
+} from '../fieldIso.js'
 
 /** Плоская точка боя → точка ромба. Все рисунки берут координаты только отсюда. */
 const iso = (x, y) => roomIso(x, y)
@@ -91,6 +94,8 @@ export function fieldScreen(state, opts = {}) {
   // Изометрические слои комнаты: ромбовый пол и фасады стен (ui/fieldIso.js).
   let isoFloorNow = null
   let isoWallsNow = null
+  // Дверь нарисована лицензионным проёмом, а не аркой из кода.
+  let doorLicensed = false
 
   /**
    * Камера за садхакой — но на центр боя, а не только на игрока.
@@ -167,6 +172,10 @@ export function fieldScreen(state, opts = {}) {
     isoFloorNow = buildIsoFloor()
     isoWallsNow = buildIsoWalls()
   })
+  // Дверной проём из того же набора. Пока едет — рисуется арка из кода, но это
+  // запасной путь, а не основной (см. `fieldSprites.js`, «Рисунок лицензионный,
+  // если есть лицензионный»).
+  loadIsoDoor().then((ok) => { doorLicensed = ok })
 
   // ── DOM-оверлеи ──
   const gunas = h('div', { class: 'field-guna' },
@@ -834,6 +843,40 @@ export function fieldScreen(state, opts = {}) {
     const dI = iso(d.x, d.y)
     ctx.save()
     ctx.translate(dI.x, dI.y)
+    // ЛИЦЕНЗИОННЫЙ ПРОЁМ в стене. Раньше здесь стояла арка, нарисованная в коде:
+    // она была единственным оставшимся самодельным рисунком в комнате, и именно
+    // на неё смотрел игрок, выходя из боя.
+    //
+    // Ставится по кромке дальней стены: низ проёма — на кромке, верх — на высоте
+    // стены. Рисуется только стена проёма (верхние 128 строк из 192): пол под
+    // ней уже настоящий, а пол из проёма — квадрат, и он выглядел бы заплатой.
+    const doorImg = isoDoorImage()
+    if (doorLicensed && doorImg) {
+      const half = ISO_DOOR_TILE / 2
+      ctx.drawImage(
+        doorImg,
+        ISO_DOOR_INDEX * ISO_DOOR_TILE, 0, ISO_DOOR_TILE, ISO_DOOR_WALL_H,
+        -half, -half, half, half,
+      )
+      // Свет из открытого проёма. Поверх лицензионного рисунка — только свет:
+      // он не рисует проём, а делает его открытым, и иначе игрок не понимает,
+      // что выход готов.
+      if (open) {
+        ctx.save()
+        ctx.globalAlpha = 0.30 + 0.22 * Math.sin(t * 3)
+        ctx.fillStyle = '#ffcf4a'
+        ctx.beginPath()
+        ctx.moveTo(-14, 0)
+        ctx.lineTo(-14, -26)
+        ctx.quadraticCurveTo(0, -40, 14, -26)
+        ctx.lineTo(14, 0)
+        ctx.closePath()
+        ctx.fill()
+        ctx.restore()
+      }
+      ctx.restore()
+      return
+    }
     // проём: арка в стене
     ctx.beginPath()
     ctx.moveTo(-d.r, d.r)
@@ -1013,6 +1056,21 @@ export function fieldScreen(state, opts = {}) {
       ctx.fill()
     }
     ctx.restore()
+
+    // Стены, фонтан, хаос и дверь — до списка живого. Они стоят у дальнего края
+    // комнаты, и всё, что ближе к зрителю, обязано их перекрывать.
+    //
+    // Эти четыре вызова пропали при переносе оков и сокровищ в общий список по
+    // глубине: вырезали блок целиком, а вместе с ним и вызовы. Дверь, фонтан и
+    // хаос молча исчезли с экрана — ни одна проверка этого не заметила, потому
+    // что проверялись модули, а не собранный кадр. Именно поэтому появился
+    // `tests/isoScreen.test.js`.
+    drawWalls(t)
+    drawSpring(t)
+    drawChaos(t)
+    // Комната владыки: дверь закрыта, пока он не падёт (Hades: босс-комната).
+    const bossRoom = st.foes.some((f) => f.isBoss && !f.dead && !f.pacified)
+    drawDoor(t, bossRoom && !st.roomCleared)
 
     // ── ВСЁ ЖИВОЕ — ОДНИМ СПИСКОМ, ПО ГЛУБИНЕ ─────────────────────────
     //

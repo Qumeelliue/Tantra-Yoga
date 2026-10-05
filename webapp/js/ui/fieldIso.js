@@ -61,6 +61,44 @@ let tileset = null
 let floorLayer = null
 let wallLayer = null
 let loadStarted = false
+let doorImg = null
+
+/**
+ * Дверной проём из того же набора.
+ *
+ * Лист `door-sw.png` — 768×192, то есть ШЕСТЬ проёмов по 128×192. Раньше в
+ * `SOURCES.md` было написано «128×192», и это было неверно: 128×192 — размер
+ * ОДНОГО проёма, а не листа. Ошибка не выглядела ошибкой, пока проём не
+ * попытались нарисовать и он не оказался в шесть раз шире комнаты.
+ *
+ * У проёма 128×192 сверху стена с проёмом, снизу пол. Рисуется ТОЛЬКО стена
+ * (верхние 128 строк): пол под ней уже нарисован настоящими плитками, а пол из
+ * проёма — квадрат, и он выглядел бы заплатой.
+ *
+ * `sw` — потому что наша стена смотрит вниз-влево (грань +y). Набор даёт оба
+ * поворота: `se` смотрит вниз-вправо и стоит на стене столбца x = 0.
+ */
+export const ISO_DOOR_TILE = 128
+export const ISO_DOOR_WALL_H = 128
+/** Проём в листе: берём первый, а не «случайный» — порядок в наборе не описан. */
+export const ISO_DOOR_INDEX = 0
+
+export function loadIsoDoor() {
+  if (doorImg) return Promise.resolve(true)
+  if (typeof Image === 'undefined' || typeof document === 'undefined') {
+    return Promise.resolve(false)
+  }
+  return new Promise((done) => {
+    const img = new Image()
+    img.onload = () => { doorImg = img; done(true) }
+    img.onerror = () => done(false)
+    img.src = `${BASE}/door-sw.png`
+  })
+}
+
+export function isoDoorImage() {
+  return doorImg
+}
 
 /**
  * Загрузить набор. Возвращает `true`, если плитки приехали.
@@ -236,4 +274,5 @@ export function isoWallCanvas() {
 export function resetIsoRoom() {
   floorLayer = null
   wallLayer = null
+  doorImg = null
 }
