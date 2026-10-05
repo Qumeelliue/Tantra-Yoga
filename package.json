@@ -23,7 +23,8 @@
     "audit:content": "node --experimental-loader ./scripts/aliases.mjs scripts/auditObtainable.mjs",
     "audit:impact": "node --experimental-loader ./scripts/aliases.mjs scripts/auditImpact.mjs",
     "iso:prep": "node scripts/isoPrep.mjs",
-    "props:prep": "node scripts/propPrep.mjs"
+    "props:prep": "node scripts/propPrep.mjs",
+    "town:prep": "node scripts/townPrep.mjs"
   },
   "devDependencies": {
     "vite": "^7.0.0",

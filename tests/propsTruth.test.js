@@ -45,6 +45,7 @@ import { CHOSEN, prepareOne } from '../scripts/propPrep.mjs'
 import { installDom, clickables, textOf, chooseLordIfShown } from './helpers/dom.js'
 import { PROP_FILES, CUBE_LIFT } from '../webapp/js/ui/props.js'
 import { roomIso, TILE_W as PROP_TILE_W, TILE_H as PROP_TILE_H } from '../webapp/js/ui/iso.js'
+import { smashPot } from '../webapp/js/core/field.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const root = join(here, '..')
@@ -349,6 +350,15 @@ function recordDraws(ctx) {
   }
   return {
     calls,
+    /**
+     * Забыть всё записанное.
+     *
+     * Нужно перед проверкой состояния «после»: `rectOf` ищет ПОСЛЕДНИЙ вызов
+     * данной картинки, а без очистки последним останется вывод из кадра ДО
+     * действия. Проверка «после удара остался открытый ящик» прошла бы по
+     * старому кадру и ничего не проверяла.
+     */
+    clear() { calls.length = 0 },
     /** Прямоугольник вывода картинки в координатах холста, либо `null`. */
     rectOf(img) {
       for (let i = calls.length - 1; i >= 0; i--) {
@@ -490,6 +500,35 @@ describe('Собранный экран: реквизит стоит карти�
         + `${(PROP_TILE_W / PROP_TILE_H).toFixed(2)}, плитка не ляжет на ромбический пол`)
         .toBeCloseTo(PROP_TILE_W / PROP_TILE_H, 1)
     }
+  })
+
+  it('сокровище после удара остаётся на экране открытым ящиком', () => {
+    // Поломка, найденная при разборе сломанного состояния.
+    //
+    // Раньше цикл отрисовки пропускал сломанное сокровище целиком
+    // (`if (pot.broken) continue`), хотя игра учит: ударил — добыча выпала.
+    // Игра исчезновение читала как «промахнулся», а не как «попал». Особенно
+    // на сундуке: он даёт севу, и игрок не видел, что открыл.
+    const pot = s.pots && s.pots[0]
+    if (!pot) return
+    expect(pot.broken, 'в первой комнате сокровище цело — проверять нечего, '
+      + 'разбитое надо в другом забеге').toBe(false)
+    // Разбиваем его прямо в проверке: ядро — то же, чем бьёт игрок. Ударов
+    // может быть несколько (`maxHp`), поэтому бьём пока не сломается: жёсткое
+    // «один удар» было бы предположением о балансе, а тут проверяется рисунок.
+    for (let i = 0; i < (pot.maxHp || 1) && !pot.broken; i++) smashPot(s, 0)
+    // Запись чистится ДО нового кадра: иначе последним найдётся вывод ящика из
+    // кадра до удара, и проверка «после удара» прошла бы по старому кадру.
+    rec.clear()
+    dom.flushRaf(2)
+    expect(pot.broken, 'ядро не разбило сокровище').toBe(true)
+    expect(rec.rectOf(props.propImage('chestOpen')),
+      'после удара на кадре нет открытого ящика — сокровище просто исчезает, '
+      + 'и попадание не видно')
+      .not.toBeNull()
+    expect(rec.rectOf(props.propImage('chest')),
+      'на кадре остался ЦЕЛЫЙ ящик, хотя он разбит')
+      .toBeNull()
   })
 
   it('фонтан, если он есть в комнате, стоит из картинки, а не из кода', () => {

@@ -1127,7 +1127,13 @@ export function fieldScreen(state, opts = {}) {
     // нужно. Проверяется в `tests/isoDepth.test.js`.
     const order = []
     for (const pot of st.pots) {
-      if (pot.broken) continue
+      // Сломанный сокровище НЕ пропускается: он рисуется открытым ящиком.
+      //
+      // Раньше здесь стояло `if (pot.broken) continue`, и это была поломка
+      // обещания: игра учит, что ящик можно разбить и из него падает добыча, но
+      // после удара ящик просто исчезал — и по нему нельзя было понять, что
+      // попадание засчиталось. Особенно обидно на сундуке: он даёт севу, а
+      // игрок не видел, что открыл.
       order.push({ d: pot.x + pot.y, kind: 'pot', o: pot })
     }
     for (const w of st.wares) {
@@ -1167,10 +1173,12 @@ export function fieldScreen(state, opts = {}) {
         ctx.translate(at.x, at.y)
         // Целый ящик и разбитый — две разные картинки, а не одна с трещиной:
         // форма читается быстрее штрихов и работает с порога комнаты.
-        const broken = o.hp <= 0
+        const broken = o.broken || o.hp <= 0
         const boxDrawn = drawPropCube(ctx, broken ? 'chestOpen' : 'chest', { scale: 0.5 })
         if (!boxDrawn) drawPotArt(ctx, o)
-        if (o.maxHp > 1) {
+        // Цифра — только пока есть что бить. Над разбитым ящиком «0» ничего не
+        // говорило: игрок не мог понять, это счёт ударов или «тут уже пусто».
+        if (!broken && o.maxHp > 1) {
           const left = Math.max(0, o.hp)
           ctx.font = 'bold 10px ui-sans-serif, system-ui, sans-serif'
           ctx.textAlign = 'center'

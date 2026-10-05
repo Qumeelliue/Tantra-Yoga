@@ -1945,6 +1945,24 @@ body {
 
 .city-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
 .city-area { border-radius: 14px; padding: 12px 10px; text-align: center; border: 1px solid var(--line-gold-soft); transition: all 0.4s ease; }
+
+/* Земля площади — лицензионная изометрическая плитка (ромб 2:1, тот же набор,
+   что и пол комнаты). Основание 2:1 обязательно: игровая плитка пола тоже 64×32,
+   и при другой пропорции ромб «заваливается». Плитка не растягивается
+   (`background-size: contain`), потому что растянутый ромб перестаёт быть
+   ромбом. */
+.city-area-ground {
+  width: 84%;
+  margin: 0 auto 6px;
+  aspect-ratio: 2 / 1;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  transition: filter 0.6s ease;
+  /* Ромб тонкий по вертикали: без отступа снизу он прилипал бы к глифу, и
+     площадь читалась бы как одна полоса, а не как место с воздухом вокруг. */
+  margin-bottom: 10px;
+}
 .city-area.lit { background: linear-gradient(180deg, rgba(242, 196, 109, 0.16), rgba(242, 196, 109, 0.05)); box-shadow: 0 0 16px rgba(242, 196, 109, 0.18); }
 .city-area.dark { background: rgba(0, 0, 0, 0.25); opacity: 0.85; }
 .city-area.talked { opacity: 0.9; }

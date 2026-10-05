@@ -44,6 +44,10 @@ import {
   cityBlessingBonus, setVarnaBranch, flushCloud, dayKey} from './core/save.js'
 import { processAnchorReminders, reminderStatusLine } from './core/anchorPush.js'
 import { floorVarnaFood } from './core/mentalityFood.js'
+// Земля площадей Города — лицензионные изометрические плитки из того же набора,
+// что и пол комнаты. Без них Город был экраном с эмодзи рядом с изометрическим
+// боем, то есть два разных вида в одной игре.
+import { plazaSrc, PLAZA_LIT, PLAZA_DARK } from './ui/town.js'
 
 const appEl = document.getElementById('app')
 
@@ -879,13 +883,25 @@ function showCity() {
   const spoken = new Set(meta.citySpoken || [])
   const pacified = new Set(meta.pacifiedBosses || [])
 
-  const areas = Object.values(CITY_TEACHERS).map((t) => {
+  // Площадь по индексу — земля под ней берётся из того же набора, что и пол
+  // комнаты. Нумерация с нуля совпадает с `chakra` учителя, поэтому ромбы идут
+  // от мудрости к сознанию и светлеют по дороге.
+  const areas = Object.values(CITY_TEACHERS).map((t, areaIndex) => {
     const lit = teacherLit(meta, t)
     const talked = spoken.has(t.id)
     const quoteLived = isQuoteLived(meta, t.quoteId)
 
+    // Земля площади — лицензионный ромб 2:1. Фильтр и есть состояние: спящая
+    // площадь темнее и глуше, зажжённая — светлее. Отдельных картинок на два
+    // состояния нет намеренно: иначе их пришлось бы держать в паре и следить,
+    // чтобы тона не разъехались (см. `ui/town.js`).
+    const ground = h('div', { class: 'city-area-ground' })
+    ground.style.backgroundImage = `url(${plazaSrc(areaIndex)})`
+    ground.style.filter = lit ? PLAZA_LIT : PLAZA_DARK
+
     const content = lit
       ? h('div', { class: 'city-area-lit' },
+          ground,
           h('div', { class: 'city-area-glyph', style: 'font-size:34px' }, t.glyph === 'mask' ? '◐' : t.glyph === 'crown' ? '👑' : t.glyph === 'eye' ? '👁' : t.glyph === 'greed' ? '👑' : t.glyph === 'heart' ? '♥' : '✦'),
           h('div', { class: 'city-area-name' }, t.name),
           h('div', { class: 'city-area-epithet' }, t.epithet),
@@ -898,6 +914,7 @@ function showCity() {
             ? (nextTeacherQuote(t.id, meta.lived || {}) ? 'Учитель даст ещё' : 'Учитель ждёт')
             : 'Поговорить с учителем'))
       : h('div', { class: 'city-area-dark' },
+          ground,
           h('div', { class: 'city-area-glyph', style: 'font-size:34px' }, '·'),
           h('div', { class: 'city-area-name' }, t.epithet.replace('Учитель', 'Владыка')),
           h('div', { class: 'city-area-hint' }, 'площадь спит во тьме неведения'),
