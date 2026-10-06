@@ -7,17 +7,21 @@
 // различие, которое правило проекта называет палящимся — два разных вида в
 // одной игре.
 //
-// Проверяется три слоя:
+// Теперь под каждой площадью изометрическая земля, а на земле дом: дом собран
+// поверх этих же плиток (см. `tests/townHousesTruth.test.js`). Здесь
+// проверяется нижний слой — сама земля.
+//
+// Проверяется два слоя:
 //
 //   1. **Плитки.** Файлы на месте, соотношение сторон такое же, как у игровой
 //      плитки пола, альфа снята, семь плиток разных по тону.
-//   2. **Код экрана.** Земля площади ставится по индексу площади, а не одной
-//      картинкой на все семь.
-//   3. **Собранный экран.** У каждой площади на экране есть свой ромб земли.
+//   2. **Состояние.** «Спит» и «зажжено» — фильтр, а не вторая картинка.
 //
 // ## Что здесь НЕ проверяется
 //
-// Красота и уместность. Глазом здесь не проверить, и врать про это нельзя.
+// Собранный экран Города и дома — им посвящены `cityGrantaTruth.test.js` и
+// `townHousesTruth.test.js`. Красота — не проверяется нигде: глазом здесь не
+// проверить, и врать про это нельзя.
 //
 // ## Что этот файл уже ловил
 //
@@ -32,7 +36,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 import { readPng } from '../scripts/pngReader.mjs'
 import { CHOSEN, prepareOne } from '../scripts/townPrep.mjs'
-import { PLAZA_TILES, PLAZA_COUNT, plazaSrc, PLAZA_LIT, PLAZA_DARK } from '../webapp/js/ui/town.js'
+import { PLAZA_TILES, PLAZA_COUNT, PLAZA_LIT, PLAZA_DARK } from '../webapp/js/ui/town.js'
 import { TILE_W, TILE_H } from '../webapp/js/ui/iso.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
@@ -160,7 +164,7 @@ describe('Земля площадей: плитки из лицензионно�
   })
 })
 
-describe('Земля площадей: правила вида и подстановка', () => {
+describe('Земля площадей: состояние — фильтр', () => {
   it('состояние площади — фильтр, а не отдельная картинка', () => {
     // Свет в игре — это фильтр поверх того же места, а не другая картинка места.
     // Если бы для «спит» и «зажжено» были свои плитки, их пришлось бы держать
@@ -175,22 +179,5 @@ describe('Земля площадей: правила вида и подстан
       .toBeLessThan(100)
     expect(lit, 'зажжённая площадь не светлее — свет не виден')
       .toBeGreaterThan(100)
-  })
-
-  it('площадь берёт свою плитку по номеру, а не одну на все семь', () => {
-    // Ровно та молчаливая подмена, которую проверка обязана ловить: если земля
-    // бралась бы одной картинкой «для красоты», на экране было бы семь
-    // одинаковых площадей, и всё остальное осталось бы зелёным.
-    const src = readFileSync(join(root, 'webapp/js/ui/screens/../town.js'), 'utf8')
-    expect(src, 'в town.js нет адреса плитки по номеру площади').toMatch(/function plazaSrc\(index\)/)
-    expect(src, 'plazaSrc не берёт плитку по индексу').toMatch(/PLAZA_TILES\[index/)
-    const main = readFileSync(join(root, 'webapp/js/main.js'), 'utf8')
-    expect(main, 'экран Города не ставит землю площади').toMatch(/plazaSrc\(areaIndex\)/)
-    expect(main, 'земля площади не фильтруется по состоянию')
-      .toMatch(/ground\.style\.filter = lit \? PLAZA_LIT : PLAZA_DARK/)
-    // И номера площадей действительно разные.
-    const urls = new Set()
-    for (let i = 0; i < PLAZA_COUNT; i++) urls.add(plazaSrc(i))
-    expect(urls.size, 'семь площадей ссылаются на меньше семи плиток').toBe(PLAZA_COUNT)
   })
 })

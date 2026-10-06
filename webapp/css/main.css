@@ -1946,28 +1946,24 @@ body {
 .city-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
 .city-area { border-radius: 14px; padding: 12px 10px; text-align: center; border: 1px solid var(--line-gold-soft); transition: all 0.4s ease; }
 
-/* Земля площади — лицензионная изометрическая плитка (ромб 2:1, тот же набор,
-   что и пол комнаты). Основание 2:1 обязательно: игровая плитка пола тоже 64×32,
-   и при другой пропорции ромб «заваливается». Плитка не растягивается
-   (`background-size: contain`), потому что растянутый ромб перестаёт быть
-   ромбом. */
-.city-area-ground {
-  width: 84%;
-  margin: 0 auto 6px;
-  aspect-ratio: 2 / 1;
+/* Участок площади — лицензионная изометрическая картинка: земля 2×2 и дом на
+   задней плите (собирается `npm run houses:prep`). Соотношение — своё у файла
+   (272×226); при другой пропорции участок «поплывёт» и перспектива дома
+   разъедется с перспективой боя. Картинка не растягивается
+   (`background-size: contain`), потому что растянутый участок перестаёт быть
+   изометрическим. */
+.city-area-plot {
+  width: 100%;
+  margin: 0 auto 8px;
+  aspect-ratio: 272 / 226;
   background-repeat: no-repeat;
   background-position: center;
   background-size: contain;
   transition: filter 0.6s ease;
-  /* Ромб тонкий по вертикали: без отступа снизу он прилипал бы к глифу, и
-     площадь читалась бы как одна полоса, а не как место с воздухом вокруг. */
-  margin-bottom: 10px;
 }
 .city-area.lit { background: linear-gradient(180deg, rgba(242, 196, 109, 0.16), rgba(242, 196, 109, 0.05)); box-shadow: 0 0 16px rgba(242, 196, 109, 0.18); }
 .city-area.dark { background: rgba(0, 0, 0, 0.25); opacity: 0.85; }
 .city-area.talked { opacity: 0.9; }
-.city-area-glyph { font-size: 30px; line-height: 1; margin-bottom: 6px; filter: drop-shadow(0 2px 6px rgba(242, 196, 109, 0.25)); }
-.city-area.dark .city-area-glyph { filter: none; opacity: 0.4; }
 .city-area-name { font-weight: 800; font-size: 13.5px; }
 .city-area-epithet { font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--gold-soft); margin-top: 2px; }
 .city-area-hint { font-size: 10.5px; color: var(--muted); margin-top: 4px; line-height: 1.35; }

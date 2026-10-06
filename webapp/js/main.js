@@ -44,10 +44,10 @@ import {
   cityBlessingBonus, setVarnaBranch, flushCloud, dayKey} from './core/save.js'
 import { processAnchorReminders, reminderStatusLine } from './core/anchorPush.js'
 import { floorVarnaFood } from './core/mentalityFood.js'
-// Земля площадей Города — лицензионные изометрические плитки из того же набора,
-// что и пол комнаты. Без них Город был экраном с эмодзи рядом с изометрическим
-// боем, то есть два разных вида в одной игре.
-import { plazaSrc, PLAZA_LIT, PLAZA_DARK } from './ui/town.js'
+// Участки площадей Города — лицензионные изометрические картинки: земля из
+// того же набора, что и пол комнаты, и дом на ней. Без них Город был экраном с
+// эмодзи рядом с изометрическим боем, то есть два разных вида в одной игре.
+import { plotSrc, PLAZA_LIT, PLAZA_DARK } from './ui/town.js'
 
 const appEl = document.getElementById('app')
 
@@ -891,18 +891,19 @@ function showCity() {
     const talked = spoken.has(t.id)
     const quoteLived = isQuoteLived(meta, t.quoteId)
 
-    // Земля площади — лицензионный ромб 2:1. Фильтр и есть состояние: спящая
-    // площадь темнее и глуше, зажжённая — светлее. Отдельных картинок на два
-    // состояния нет намеренно: иначе их пришлось бы держать в паре и следить,
-    // чтобы тона не разъехались (см. `ui/town.js`).
-    const ground = h('div', { class: 'city-area-ground' })
-    ground.style.backgroundImage = `url(${plazaSrc(areaIndex)})`
-    ground.style.filter = lit ? PLAZA_LIT : PLAZA_DARK
+    // Участок площади — лицензионная картинка: изометрическая земля 2×2 и дом
+    // (собирается `npm run houses:prep`). Фильтр и есть состояние: спящая
+    // площадь темнее и глуше, зажжённая — светлее, и дом светлеет вместе с
+    // землёй. Отдельных картинок на два состояния нет намеренно: иначе их
+    // пришлось бы держать в паре и следить, чтобы тона не разъехались
+    // (см. `ui/town.js`).
+    const plot = h('div', { class: 'city-area-plot' })
+    plot.style.backgroundImage = `url(${plotSrc(areaIndex)})`
+    plot.style.filter = lit ? PLAZA_LIT : PLAZA_DARK
 
     const content = lit
       ? h('div', { class: 'city-area-lit' },
-          ground,
-          h('div', { class: 'city-area-glyph', style: 'font-size:34px' }, t.glyph === 'mask' ? '◐' : t.glyph === 'crown' ? '👑' : t.glyph === 'eye' ? '👁' : t.glyph === 'greed' ? '👑' : t.glyph === 'heart' ? '♥' : '✦'),
+          plot,
           h('div', { class: 'city-area-name' }, t.name),
           h('div', { class: 'city-area-epithet' }, t.epithet),
           // Учителя можно слушать и после первого визита: у него есть
@@ -914,8 +915,7 @@ function showCity() {
             ? (nextTeacherQuote(t.id, meta.lived || {}) ? 'Учитель даст ещё' : 'Учитель ждёт')
             : 'Поговорить с учителем'))
       : h('div', { class: 'city-area-dark' },
-          ground,
-          h('div', { class: 'city-area-glyph', style: 'font-size:34px' }, '·'),
+          plot,
           h('div', { class: 'city-area-name' }, t.epithet.replace('Учитель', 'Владыка')),
           h('div', { class: 'city-area-hint' }, 'площадь спит во тьме неведения'),
           h('div', { class: 'city-area-hint' }, 'успокойте этого владыку — и здесь зажжётся свет'))
